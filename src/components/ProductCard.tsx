@@ -1,8 +1,9 @@
-import { Star, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Star, Plus, Minus, ShoppingCart, Heart, Eye } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Product } from "@/data/products";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +12,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem, items, updateQuantity, removeItem } = useCart();
+  const [liked, setLiked] = useState(false);
 
   const cartItem = items.find((i) => i.id === product.id);
   const discount = product.originalPrice
@@ -23,87 +25,154 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.04 }}
+      transition={{ duration: 0.45, delay: index * 0.05 }}
       viewport={{ once: true }}
-      className="group relative bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+      className="group relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-500 hover:shadow-[var(--card-shadow-hover)] hover:border-primary/40"
     >
-      {/* Image */}
-      <Link to={`/product/${product.id}`} className="block relative aspect-square overflow-hidden bg-muted/30 p-3">
+      {/* Image Container */}
+      <Link
+        to={`/product/${product.id}`}
+        className="block relative aspect-[4/4.2] overflow-hidden bg-muted/20"
+      >
+        {/* Background glow on hover */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.08),transparent_70%)]" />
+
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
+          className="w-full h-full object-contain p-5 group-hover:scale-110 transition-transform duration-700 ease-out"
           loading="lazy"
         />
 
-        {/* Badge */}
-        {(discount > 0 || product.badge) && (
-          <span className={`absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-            discount > 0 
-              ? "gradient-accent text-accent-foreground" 
-              : "gradient-primary text-primary-foreground"
-          }`}>
-            {discount > 0 ? `${discount}% Off` : product.badge}
-          </span>
+        {/* Discount Badge */}
+        {discount > 0 && (
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent text-accent-foreground shadow-lg"
+          >
+            {discount}% OFF
+          </motion.span>
         )}
 
-        {/* Quick Add Overlay */}
-        {!cartItem && (
-          <button
-            onClick={(e) => { e.preventDefault(); handleAdd(); }}
-            className="absolute bottom-2 right-2 w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 shadow-lg hover:bg-primary/90"
+        {/* Product Badge */}
+        {!discount && product.badge && (
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg"
           >
-            <ShoppingCart className="h-4 w-4" />
+            {product.badge}
+          </motion.span>
+        )}
+
+        {/* Hover Action Buttons */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0">
+          <button
+            onClick={(e) => { e.preventDefault(); setLiked(!liked); }}
+            className={`w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-md ${
+              liked
+                ? "bg-accent text-accent-foreground"
+                : "bg-card/80 text-foreground hover:bg-accent hover:text-accent-foreground"
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
           </button>
+          <Link
+            to={`/product/${product.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-md text-foreground flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-md"
+          >
+            <Eye className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* Quick Add to Cart */}
+        {!cartItem && (
+          <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-full group-hover:translate-y-0">
+            <button
+              onClick={(e) => { e.preventDefault(); handleAdd(); }}
+              className="w-full py-3 bg-primary/95 backdrop-blur-sm text-primary-foreground flex items-center justify-center gap-2 text-sm font-semibold hover:bg-primary transition-colors"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart
+            </button>
+          </div>
         )}
       </Link>
 
-      {/* Info */}
-      <div className="p-3.5 pt-2">
-        <p className="text-[10px] text-primary font-semibold uppercase tracking-widest mb-1">{product.category}</p>
+      {/* Content */}
+      <div className="p-4 space-y-2.5">
+        {/* Category */}
+        <p className="text-[11px] text-primary font-bold uppercase tracking-[0.15em]">
+          {product.category}
+        </p>
+
+        {/* Title */}
         <Link to={`/product/${product.id}`}>
-          <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
+          <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
             {product.name}
           </h3>
         </Link>
 
         {/* Rating */}
-        <div className="flex items-center gap-1 mb-2.5">
+        <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className={`h-3 w-3 ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border"}`} />
+              <Star
+                key={i}
+                className={`h-3.5 w-3.5 transition-colors ${
+                  i < Math.floor(product.rating)
+                    ? "fill-accent text-accent"
+                    : "text-muted-foreground/30"
+                }`}
+              />
             ))}
           </div>
-          <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
+          <span className="text-xs text-muted-foreground">({product.reviews})</span>
         </div>
 
         {/* Price + Cart Controls */}
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <span className="font-display font-bold text-base text-foreground">${product.price.toFixed(2)}</span>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display font-bold text-lg text-foreground">
+              ${product.price.toFixed(2)}
+            </span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through ml-1.5">${product.originalPrice.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground line-through">
+                ${product.originalPrice.toFixed(2)}
+              </span>
             )}
           </div>
 
           {cartItem && (
-            <div className="flex items-center gap-0.5">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex items-center gap-1"
+            >
               <button
-                onClick={() => cartItem.quantity <= 1 ? removeItem(product.id) : updateQuantity(product.id, cartItem.quantity - 1)}
-                className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+                onClick={() =>
+                  cartItem.quantity <= 1
+                    ? removeItem(product.id)
+                    : updateQuantity(product.id, cartItem.quantity - 1)
+                }
+                className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
               >
                 <Minus className="h-3 w-3" />
               </button>
-              <span className="w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
+              <span className="w-8 text-center text-sm font-bold text-foreground">
+                {cartItem.quantity}
+              </span>
               <button
                 onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                className="w-7 h-7 rounded-lg gradient-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
+                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
               >
                 <Plus className="h-3 w-3" />
               </button>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
