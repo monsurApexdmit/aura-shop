@@ -7,17 +7,39 @@ import product6 from "@/assets/product-6.jpg";
 import product7 from "@/assets/product-7.jpg";
 import product8 from "@/assets/product-8.jpg";
 
+export interface ProductVariant {
+  id: string;
+  name: string;
+  attributes: Record<string, string>;
+  price: number;
+  salePrice?: number;
+  stock: number;
+  sku: string;
+}
+
+export interface ProductAttribute {
+  name: string;
+  displayName: string;
+  values: string[];
+}
+
 export interface Product {
   id: string;
   name: string;
   price: number;
   originalPrice?: number;
   image: string;
+  images?: string[];
   category: string;
   subcategory: string;
   badge?: string;
   rating: number;
   reviews: number;
+  sku?: string;
+  stock?: number;
+  attributes?: ProductAttribute[];
+  variants?: ProductVariant[];
+  description?: string;
 }
 
 const imgs = [product1, product2, product3, product4, product5, product6, product7, product8];
@@ -25,8 +47,31 @@ const img = (i: number) => imgs[i % imgs.length];
 
 export const products: Product[] = [
   // Electronics
-  { id: "1", name: "Wireless Headphones Pro Max", price: 129.99, originalPrice: 179.99, image: img(0), category: "Electronics", subcategory: "Headphones & Audio", badge: "Hot Deal", rating: 4.8, reviews: 342 },
-  { id: "4", name: "Smart Watch Elite Series", price: 249.99, originalPrice: 299.99, image: img(3), category: "Electronics", subcategory: "Smartphones", badge: "Best Seller", rating: 4.6, reviews: 567 },
+  { id: "1", name: "Wireless Headphones Pro Max", price: 129.99, originalPrice: 179.99, image: img(0), images: [img(0), img(1), img(2), img(3)], category: "Electronics", subcategory: "Headphones & Audio", badge: "Hot Deal", rating: 4.8, reviews: 342, sku: "WHP-BLK-001", stock: 25,
+    description: "Experience immersive sound with our premium wireless headphones featuring active noise cancellation, 40-hour battery life, and ultra-comfortable memory foam ear cushions.",
+    attributes: [
+      { name: "color", displayName: "Color", values: ["Black", "White", "Navy"] },
+      { name: "connectivity", displayName: "Connectivity", values: ["Bluetooth 5.3", "Wired + Bluetooth"] },
+    ],
+    variants: [
+      { id: "v1-1", name: "Black / Bluetooth 5.3", attributes: { Color: "Black", Connectivity: "Bluetooth 5.3" }, price: 129.99, salePrice: 129.99, stock: 10, sku: "WHP-BLK-BT" },
+      { id: "v1-2", name: "White / Bluetooth 5.3", attributes: { Color: "White", Connectivity: "Bluetooth 5.3" }, price: 129.99, salePrice: 129.99, stock: 8, sku: "WHP-WHT-BT" },
+      { id: "v1-3", name: "Navy / Wired + Bluetooth", attributes: { Color: "Navy", Connectivity: "Wired + Bluetooth" }, price: 149.99, salePrice: 139.99, stock: 5, sku: "WHP-NAV-WB" },
+      { id: "v1-4", name: "Black / Wired + Bluetooth", attributes: { Color: "Black", Connectivity: "Wired + Bluetooth" }, price: 149.99, salePrice: 139.99, stock: 2, sku: "WHP-BLK-WB" },
+    ],
+  },
+  { id: "4", name: "Smart Watch Elite Series", price: 249.99, originalPrice: 299.99, image: img(3), images: [img(3), img(0), img(4), img(7)], category: "Electronics", subcategory: "Smartphones", badge: "Best Seller", rating: 4.6, reviews: 567, sku: "SW-ELT-001", stock: 40,
+    description: "Track your fitness goals and stay connected with the Smart Watch Elite. Features heart rate monitoring, GPS, sleep tracking, and a stunning AMOLED display.",
+    attributes: [
+      { name: "color", displayName: "Color", values: ["Midnight Black", "Silver", "Rose Gold"] },
+      { name: "size", displayName: "Size", values: ["40mm", "44mm"] },
+    ],
+    variants: [
+      { id: "v4-1", name: "Midnight Black / 40mm", attributes: { Color: "Midnight Black", Size: "40mm" }, price: 249.99, salePrice: 249.99, stock: 12, sku: "SW-BLK-40" },
+      { id: "v4-2", name: "Silver / 44mm", attributes: { Color: "Silver", Size: "44mm" }, price: 269.99, salePrice: 259.99, stock: 8, sku: "SW-SLV-44" },
+      { id: "v4-3", name: "Rose Gold / 40mm", attributes: { Color: "Rose Gold", Size: "40mm" }, price: 259.99, salePrice: 249.99, stock: 6, sku: "SW-RG-40" },
+    ],
+  },
   { id: "e1", name: "USB-C Hub Adapter 7-in-1", price: 39.99, image: img(0), category: "Electronics", subcategory: "Accessories", rating: 4.5, reviews: 210 },
   { id: "e2", name: "Bluetooth Portable Speaker", price: 59.99, originalPrice: 79.99, image: img(3), category: "Electronics", subcategory: "Headphones & Audio", badge: "Sale", rating: 4.7, reviews: 185 },
   { id: "e3", name: "Mirrorless Camera Kit", price: 899.99, image: img(0), category: "Electronics", subcategory: "Cameras & Photography", rating: 4.9, reviews: 78 },
