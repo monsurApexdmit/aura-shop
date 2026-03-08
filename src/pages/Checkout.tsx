@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote } from "lucide-react";
 import { z } from "zod";
 
 const shippingSchema = z.object({
@@ -20,8 +20,9 @@ type ShippingData = z.infer<typeof shippingSchema>;
 
 const steps = [
   { id: 1, label: "Shipping", icon: MapPin },
-  { id: 2, label: "Review", icon: ClipboardCheck },
-  { id: 3, label: "Complete", icon: CheckCircle2 },
+  { id: 2, label: "Payment", icon: CreditCard },
+  { id: 3, label: "Review", icon: ClipboardCheck },
+  { id: 4, label: "Complete", icon: CheckCircle2 },
 ];
 
 export default function Checkout() {
@@ -30,6 +31,7 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderId] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
+  const [paymentMethod, setPaymentMethod] = useState<"cod">("cod");
 
   const [form, setForm] = useState<ShippingData>({
     fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
@@ -54,17 +56,17 @@ export default function Checkout() {
 
   const nextStep = () => {
     if (step === 1 && !validateShipping()) return;
-    if (step === 2) {
+    if (step === 3) {
       clearCart();
     }
-    setStep((s) => Math.min(s + 1, 3));
+    setStep((s) => Math.min(s + 1, 4));
   };
 
   const shipping = 5.99;
   const tax = totalPrice * 0.08;
   const grandTotal = totalPrice + shipping + tax;
 
-  if (items.length === 0 && step < 3) {
+  if (items.length === 0 && step < 4) {
     return (
       <div className="min-h-screen bg-background pt-40 flex flex-col items-center gap-4 px-4">
         <Truck className="h-16 w-16 text-muted-foreground/30" />
@@ -163,12 +165,64 @@ export default function Checkout() {
             </motion.div>
           )}
 
-          {/* Step 2: Review */}
+          {/* Step 2: Payment */}
           {step === 2 && (
+            <motion.div key="payment" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
+              <div className="grid lg:grid-cols-5 gap-6">
+                <div className="lg:col-span-3 bg-background rounded-2xl border border-border p-6 sm:p-8">
+                  <h2 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" /> Payment Method
+                  </h2>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setPaymentMethod("cod")}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === "cod"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                        paymentMethod === "cod" ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}>
+                        <Banknote className="h-5 w-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-sm text-foreground">Cash on Delivery</p>
+                        <p className="text-xs text-muted-foreground">Pay when your order arrives at your doorstep</p>
+                      </div>
+                      <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        paymentMethod === "cod" ? "border-primary" : "border-muted-foreground/30"
+                      }`}>
+                        {paymentMethod === "cod" && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                      </div>
+                    </button>
+                  </div>
+                  <div className="mt-6 p-4 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                    <Truck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">Please keep the exact amount ready at the time of delivery. Our delivery partner will collect the payment.</p>
+                  </div>
+                </div>
+                <div className="lg:col-span-2">
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shipping} tax={tax} grandTotal={grandTotal} />
+                </div>
+              </div>
+              <div className="flex justify-between mt-6">
+                <button onClick={() => setStep(1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+                  <ArrowLeft className="h-4 w-4" /> Back to Shipping
+                </button>
+                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
+                  Review Order <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Review */}
+          {step === 3 && (
             <motion.div key="review" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="grid lg:grid-cols-5 gap-6">
                 <div className="lg:col-span-3 space-y-5">
-                  {/* Shipping Review */}
                   <div className="bg-background rounded-2xl border border-border p-6">
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-primary" /> Delivery Address
@@ -182,7 +236,16 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  {/* Items Review */}
+                  <div className="bg-background rounded-2xl border border-border p-6">
+                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-primary" /> Payment Method
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <Banknote className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Cash on Delivery</span>
+                    </div>
+                  </div>
+
                   <div className="bg-background rounded-2xl border border-border p-6">
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
                       <ClipboardCheck className="h-4 w-4 text-primary" /> Order Items ({items.length})
@@ -214,8 +277,8 @@ export default function Checkout() {
               </div>
 
               <div className="flex justify-between mt-6">
-                <button onClick={() => setStep(1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
-                  <ArrowLeft className="h-4 w-4" /> Edit Shipping
+                <button onClick={() => setStep(2)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+                  <ArrowLeft className="h-4 w-4" /> Edit Payment
                 </button>
                 <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
                   Place Order <CheckCircle2 className="h-4 w-4" />
@@ -224,8 +287,8 @@ export default function Checkout() {
             </motion.div>
           )}
 
-          {/* Step 3: Confirmation */}
-          {step === 3 && (
+          {/* Step 4: Confirmation */}
+          {step === 4 && (
             <motion.div key="complete" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
               <div className="max-w-lg mx-auto text-center bg-background rounded-2xl border border-border p-8 sm:p-12">
                 <motion.div
@@ -241,7 +304,7 @@ export default function Checkout() {
                   Order Placed Successfully!
                 </motion.h2>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-muted-foreground text-sm mb-6">
-                  Thank you for your order. We'll send you a confirmation email shortly.
+                  Thank you for your order. Please keep cash ready for delivery.
                 </motion.p>
 
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
@@ -250,6 +313,10 @@ export default function Checkout() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Order ID</span>
                     <span className="font-mono font-bold text-primary">{orderId}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Payment</span>
+                    <span className="font-medium text-foreground">Cash on Delivery</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery To</span>
