@@ -97,9 +97,11 @@ export default function Header() {
             <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl relative">
               <Heart className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl">
-              <User className="h-5 w-5" />
-            </Button>
+            <Link to="/login">
+              <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
 
             {/* Cart */}
             <button
