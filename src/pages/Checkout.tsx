@@ -387,8 +387,12 @@ export default function Checkout() {
                     <span className="font-medium text-foreground">{form.fullName}</span>
                   </div>
                   <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="font-medium text-foreground">{selectedShipping.label}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Estimated Delivery</span>
-                    <span className="font-medium text-foreground">3–5 Business Days</span>
+                    <span className="font-medium text-foreground">{selectedShipping.days}</span>
                   </div>
                 </motion.div>
 
