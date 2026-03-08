@@ -25,6 +25,7 @@ const App = () => (
             <CartDrawer />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/shop" element={<Shop />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
