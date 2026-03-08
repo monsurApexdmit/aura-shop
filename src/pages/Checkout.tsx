@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap, Clock } from "lucide-react";
 import { z } from "zod";
 
 const shippingSchema = z.object({
@@ -18,6 +18,14 @@ const shippingSchema = z.object({
 
 type ShippingData = z.infer<typeof shippingSchema>;
 
+const shippingMethods = [
+  { id: "standard", label: "Standard Shipping", price: 5.99, days: "5–7 Business Days", icon: Package, description: "Reliable delivery at the best price" },
+  { id: "express", label: "Express Shipping", price: 12.99, days: "2–3 Business Days", icon: Truck, description: "Faster delivery for when you need it sooner" },
+  { id: "overnight", label: "Overnight Shipping", price: 24.99, days: "Next Business Day", icon: Zap, description: "Get it tomorrow — guaranteed next-day delivery" },
+] as const;
+
+type ShippingMethodId = typeof shippingMethods[number]["id"];
+
 const steps = [
   { id: 1, label: "Shipping", icon: MapPin },
   { id: 2, label: "Payment", icon: CreditCard },
@@ -32,6 +40,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderId] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
   const [paymentMethod, setPaymentMethod] = useState<"cod">("cod");
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>("standard");
 
   const [form, setForm] = useState<ShippingData>({
     fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
@@ -62,9 +71,11 @@ export default function Checkout() {
     setStep((s) => Math.min(s + 1, 4));
   };
 
-  const shipping = 5.99;
+  const selectedShipping = shippingMethods.find((m) => m.id === shippingMethod)!;
+  const shipping = selectedShipping.price;
   const tax = totalPrice * 0.08;
   const grandTotal = totalPrice + shipping + tax;
+
 
   if (items.length === 0 && step < 4) {
     return (
@@ -144,6 +155,46 @@ export default function Checkout() {
                         placeholder="Special delivery instructions..."
                         className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* Shipping Method Selection */}
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-primary" /> Shipping Method
+                    </h3>
+                    <div className="space-y-3">
+                      {shippingMethods.map((method) => (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => setShippingMethod(method.id)}
+                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                            shippingMethod === method.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/30"
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                            shippingMethod === method.id ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          }`}>
+                            <method.icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground">{method.label}</p>
+                            <p className="text-xs text-muted-foreground">{method.description}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-display font-bold text-sm text-foreground">${method.price.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end"><Clock className="h-3 w-3" />{method.days}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            shippingMethod === method.id ? "border-primary" : "border-muted-foreground/30"
+                          }`}>
+                            {shippingMethod === method.id && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -238,6 +289,19 @@ export default function Checkout() {
 
                   <div className="bg-background rounded-2xl border border-border p-6">
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-primary" /> Shipping Method
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <selectedShipping.icon className="h-5 w-5 text-primary" />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">{selectedShipping.label}</span>
+                        <p className="text-xs text-muted-foreground">{selectedShipping.days} · ${selectedShipping.price.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-background rounded-2xl border border-border p-6">
+                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-primary" /> Payment Method
                     </h3>
                     <div className="flex items-center gap-3">
@@ -323,8 +387,12 @@ export default function Checkout() {
                     <span className="font-medium text-foreground">{form.fullName}</span>
                   </div>
                   <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="font-medium text-foreground">{selectedShipping.label}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Estimated Delivery</span>
-                    <span className="font-medium text-foreground">3–5 Business Days</span>
+                    <span className="font-medium text-foreground">{selectedShipping.days}</span>
                   </div>
                 </motion.div>
 
