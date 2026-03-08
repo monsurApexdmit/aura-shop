@@ -339,6 +339,11 @@ export default function Checkout() {
               </div>
             </motion.div>
           )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
 function OrderSummary({ items, totalPrice, shipping, tax, grandTotal }: {
   items: { id: string; name: string; quantity: number; price: number }[];
