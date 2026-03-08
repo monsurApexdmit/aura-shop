@@ -10,6 +10,9 @@ import CartDrawer from "@/components/CartDrawer";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Deals from "./pages/Deals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/deals" element={<Deals />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
