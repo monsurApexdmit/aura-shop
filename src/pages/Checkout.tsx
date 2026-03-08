@@ -338,23 +338,7 @@ export default function Checkout() {
                 </motion.div>
               </div>
             </motion.div>
-
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={() => navigate("/")} className="flex-1 gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">
-                    Continue Shopping
-                  </button>
-                  <button onClick={() => navigate("/shop")} className="flex-1 border border-border text-foreground px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
-                    Browse More
-                  </button>
-                </motion.div>
-              </div>
-            </motion.div>
           )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
 
 function OrderSummary({ items, totalPrice, shipping, tax, grandTotal }: {
   items: { id: string; name: string; quantity: number; price: number }[];
