@@ -47,10 +47,10 @@ export default function Header() {
               <span className="hidden sm:inline">Need help? Call us:</span>
               <a href="tel:+1234567890" className="font-semibold hover:underline">+1 234-567-890</a>
             </div>
-            <div className="hidden md:flex items-center gap-1.5">
+            <Link to="/track-order" className="hidden md:flex items-center gap-1.5 hover:underline">
               <MapPin className="h-3 w-3" />
               <span>Track your order</span>
-            </div>
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/about" className="hover:underline hidden sm:inline">About</Link>

@@ -19,7 +19,7 @@ const footerLinks = {
     { label: "Dashboard", to: "/account" },
     { label: "Order History", to: "/orders" },
     { label: "Wishlist", to: "/wishlist" },
-    { label: "Track Order", to: "/track" },
+    { label: "Track Order", to: "/track-order" },
   ],
 };
 
