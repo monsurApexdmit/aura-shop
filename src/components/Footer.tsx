@@ -1,53 +1,87 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
+import { categories } from "@/data/categories";
 
 const footerLinks = {
-  Company: ["About Us", "Contact Us", "Careers", "Latest News"],
-  "Top Categories": ["Electronics", "Fashion", "Health & Medicine", "Grocery"],
-  "My Account": ["Dashboard", "My Orders", "Account Details", "Wishlist"],
-  "Customer Care": ["FAQ", "Returns", "Shipping Info", "Help Center"],
+  Company: [
+    { label: "About Us", to: "/about" },
+    { label: "Contact Us", to: "/contact" },
+    { label: "Careers", to: "/careers" },
+    { label: "Press", to: "/press" },
+  ],
+  "Customer Care": [
+    { label: "FAQ", to: "/faq" },
+    { label: "Returns & Refunds", to: "/returns" },
+    { label: "Shipping Policy", to: "/shipping" },
+    { label: "Privacy Policy", to: "/privacy" },
+  ],
+  "My Account": [
+    { label: "Dashboard", to: "/account" },
+    { label: "Order History", to: "/orders" },
+    { label: "Wishlist", to: "/wishlist" },
+    { label: "Track Order", to: "/track" },
+  ],
 };
 
 export default function Footer() {
   return (
     <footer className="bg-foreground text-background">
-      <div className="container py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+      <div className="container py-14 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 md:gap-6">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-sm">S</span>
+          <div className="col-span-2 md:col-span-3">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-display font-bold text-lg">S</span>
               </div>
-              <span className="font-display font-bold text-lg text-background">StoreFront</span>
+              <div>
+                <span className="font-display font-bold text-lg text-background leading-none">StoreFront</span>
+                <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
+              </div>
             </div>
-            <p className="text-sm text-background/60 leading-relaxed mb-4">
-              Your one-stop shop for everything — health, fashion, electronics, grocery, and more.
+            <p className="text-sm text-background/50 leading-relaxed mb-5 max-w-xs">
+              Your universal marketplace for health, fashion, electronics, grocery & beyond. Quality products, fast delivery.
             </p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs text-background/60">
-                <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-                123 Commerce St, NY 10001
-              </div>
-              <div className="flex items-center gap-2 text-xs text-background/60">
-                <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="space-y-2.5">
+              <a href="tel:+1234567890" className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
+                <Phone className="h-4 w-4 text-primary shrink-0" />
                 +1 234-567-890
-              </div>
-              <div className="flex items-center gap-2 text-xs text-background/60">
-                <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
-                support@storefront.com
-              </div>
+              </a>
+              <a href="mailto:hello@storefront.com" className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
+                <Mail className="h-4 w-4 text-primary shrink-0" />
+                hello@storefront.com
+              </a>
+              <p className="flex items-center gap-2.5 text-sm text-background/50">
+                <MapPin className="h-4 w-4 text-primary shrink-0" />
+                123 Commerce St, NY
+              </p>
             </div>
           </div>
 
+          {/* Top Categories */}
+          <div className="col-span-1 md:col-span-2">
+            <h3 className="font-display font-semibold text-sm text-background mb-4">Categories</h3>
+            <ul className="space-y-2.5">
+              {categories.slice(0, 6).map((cat) => (
+                <li key={cat.slug}>
+                  <Link to={`/shop?cat=${cat.slug}`} className="text-sm text-background/40 hover:text-primary transition-colors flex items-center gap-1 group">
+                    {cat.name}
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
+            <div key={title} className="col-span-1 md:col-span-2">
               <h3 className="font-display font-semibold text-sm text-background mb-4">{title}</h3>
               <ul className="space-y-2.5">
                 {links.map((link) => (
-                  <li key={link}>
-                    <Link to="/" className="text-sm text-background/50 hover:text-primary transition-colors">
-                      {link}
+                  <li key={link.label}>
+                    <Link to={link.to} className="text-sm text-background/40 hover:text-primary transition-colors flex items-center gap-1 group">
+                      {link.label}
+                      <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Link>
                   </li>
                 ))}
@@ -55,20 +89,20 @@ export default function Footer() {
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Payment & Copyright */}
-        <div className="border-t border-background/10 mt-10 pt-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-background/40">
-              © 2026 StoreFront. All rights reserved.
-            </p>
-            <div className="flex items-center gap-3">
-              {["Visa", "Mastercard", "PayPal", "Apple Pay"].map((method) => (
-                <span key={method} className="text-[10px] px-3 py-1.5 rounded bg-background/10 text-background/60 font-medium">
-                  {method}
-                </span>
-              ))}
-            </div>
+      {/* Bottom Bar */}
+      <div className="border-t border-background/10">
+        <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-background/30">
+            © 2026 StoreFront. All rights reserved. Built with ❤️
+          </p>
+          <div className="flex items-center gap-2">
+            {["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"].map((m) => (
+              <span key={m} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-background/8 text-background/40 font-medium border border-background/5">
+                {m}
+              </span>
+            ))}
           </div>
         </div>
       </div>
