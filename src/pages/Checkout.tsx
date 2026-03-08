@@ -157,6 +157,46 @@ export default function Checkout() {
                       />
                     </div>
                   </div>
+
+                  {/* Shipping Method Selection */}
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-primary" /> Shipping Method
+                    </h3>
+                    <div className="space-y-3">
+                      {shippingMethods.map((method) => (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => setShippingMethod(method.id)}
+                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                            shippingMethod === method.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/30"
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                            shippingMethod === method.id ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          }`}>
+                            <method.icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground">{method.label}</p>
+                            <p className="text-xs text-muted-foreground">{method.description}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-display font-bold text-sm text-foreground">${method.price.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end"><Clock className="h-3 w-3" />{method.days}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            shippingMethod === method.id ? "border-primary" : "border-muted-foreground/30"
+                          }`}>
+                            {shippingMethod === method.id && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Order Summary Sidebar */}
