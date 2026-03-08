@@ -7,17 +7,39 @@ import product6 from "@/assets/product-6.jpg";
 import product7 from "@/assets/product-7.jpg";
 import product8 from "@/assets/product-8.jpg";
 
+export interface ProductVariant {
+  id: string;
+  name: string;
+  attributes: Record<string, string>;
+  price: number;
+  salePrice?: number;
+  stock: number;
+  sku: string;
+}
+
+export interface ProductAttribute {
+  name: string;
+  displayName: string;
+  values: string[];
+}
+
 export interface Product {
   id: string;
   name: string;
   price: number;
   originalPrice?: number;
   image: string;
+  images?: string[];
   category: string;
   subcategory: string;
   badge?: string;
   rating: number;
   reviews: number;
+  sku?: string;
+  stock?: number;
+  attributes?: ProductAttribute[];
+  variants?: ProductVariant[];
+  description?: string;
 }
 
 const imgs = [product1, product2, product3, product4, product5, product6, product7, product8];
