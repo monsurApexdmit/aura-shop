@@ -31,6 +31,7 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderId] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
+  const [paymentMethod, setPaymentMethod] = useState<"cod">("cod");
 
   const [form, setForm] = useState<ShippingData>({
     fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
