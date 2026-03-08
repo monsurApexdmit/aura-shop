@@ -66,7 +66,7 @@ export default function Checkout() {
   const tax = totalPrice * 0.08;
   const grandTotal = totalPrice + shipping + tax;
 
-  if (items.length === 0 && step < 3) {
+  if (items.length === 0 && step < 4) {
     return (
       <div className="min-h-screen bg-background pt-40 flex flex-col items-center gap-4 px-4">
         <Truck className="h-16 w-16 text-muted-foreground/30" />
