@@ -56,10 +56,10 @@ export default function Checkout() {
 
   const nextStep = () => {
     if (step === 1 && !validateShipping()) return;
-    if (step === 2) {
+    if (step === 3) {
       clearCart();
     }
-    setStep((s) => Math.min(s + 1, 3));
+    setStep((s) => Math.min(s + 1, 4));
   };
 
   const shipping = 5.99;
