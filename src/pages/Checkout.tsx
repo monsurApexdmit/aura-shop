@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote } from "lucide-react";
 import { z } from "zod";
 
 const shippingSchema = z.object({
