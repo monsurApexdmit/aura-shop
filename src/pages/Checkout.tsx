@@ -20,8 +20,9 @@ type ShippingData = z.infer<typeof shippingSchema>;
 
 const steps = [
   { id: 1, label: "Shipping", icon: MapPin },
-  { id: 2, label: "Review", icon: ClipboardCheck },
-  { id: 3, label: "Complete", icon: CheckCircle2 },
+  { id: 2, label: "Payment", icon: CreditCard },
+  { id: 3, label: "Review", icon: ClipboardCheck },
+  { id: 4, label: "Complete", icon: CheckCircle2 },
 ];
 
 export default function Checkout() {
