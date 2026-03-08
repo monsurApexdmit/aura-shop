@@ -64,7 +64,7 @@ export default function CartDrawer() {
                       transition={{ delay: i * 0.05 }}
                       className="flex gap-3 p-3 rounded-xl bg-card border border-border"
                     >
-                      <div className="w-18 h-18 rounded-lg bg-muted/50 overflow-hidden shrink-0">
+                      <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden shrink-0">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
