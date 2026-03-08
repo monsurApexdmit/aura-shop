@@ -210,7 +210,7 @@ export default function ProductDetail() {
                 <span className="flex items-center gap-1">
                   <Package className="h-3 w-3" />
                   {currentStock > 0 ? (
-                    <span className="text-green-600 dark:text-green-400 font-medium">In Stock ({currentStock})</span>
+                    <span className="text-primary font-medium">In Stock ({currentStock})</span>
                   ) : (
                     <span className="text-destructive font-medium">Out of Stock</span>
                   )}
