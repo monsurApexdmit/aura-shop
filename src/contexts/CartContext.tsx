@@ -13,6 +13,7 @@ interface CartContextType {
   addItem: (item: Omit<CartItem, "quantity">) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  clearCart: () => void;
   totalItems: number;
   totalPrice: number;
   isOpen: boolean;
