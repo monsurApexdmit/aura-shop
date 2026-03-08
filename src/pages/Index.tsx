@@ -14,13 +14,21 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <HeroSection />
       <FeaturesBar />
-      <PromoBanner />
       <CategoryGrid />
+      <PromoBanner />
 
       {/* Popular Products */}
-      <section className="py-10 md:py-16 bg-muted/30">
+      <section className="py-12 md:py-16 bg-muted/30">
         <div className="container">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-primary font-semibold text-sm uppercase tracking-widest mb-2"
+            >
+              Trending Now
+            </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -33,12 +41,12 @@ const Index = () => {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-muted-foreground text-sm mt-2"
+              className="text-muted-foreground text-sm mt-2 max-w-lg mx-auto"
             >
-              See all our popular products in this week. Choose your daily needs products from this list and get some special offer with free shipping.
+              Handpicked products loved by thousands. Find your daily essentials with exclusive deals.
             </motion.p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
             {products.map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />
             ))}
@@ -49,9 +57,17 @@ const Index = () => {
       <DeliverySection />
 
       {/* Discounted Products */}
-      <section className="py-10 md:py-16 bg-background">
+      <section className="py-12 md:py-16 bg-background">
         <div className="container">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-accent font-semibold text-sm uppercase tracking-widest mb-2"
+            >
+              Save Big Today
+            </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -64,12 +80,12 @@ const Index = () => {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-muted-foreground text-sm mt-2"
+              className="text-muted-foreground text-sm mt-2 max-w-lg mx-auto"
             >
-              See our latest discounted products below. Choose your daily needs from here and get a special discount with free shipping.
+              Grab these deals before they're gone — special discounts with free shipping.
             </motion.p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
             {products.filter((p) => p.originalPrice).map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />
             ))}

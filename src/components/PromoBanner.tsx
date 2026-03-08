@@ -1,27 +1,38 @@
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function PromoBanner() {
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
-      className="bg-primary/5 border-y border-primary/10"
+      className="relative overflow-hidden"
     >
-      <div className="container py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display text-xl md:text-2xl font-bold text-primary">
-            100% Natural Quality Organic Product
-          </h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            See our latest discounted products from here and get a special discount product.
-          </p>
+      <div className="gradient-primary">
+        <div className="container py-8 md:py-10 relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-5">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center shrink-0 border border-primary-foreground/10">
+                <Zap className="h-7 w-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="font-display text-xl md:text-2xl font-bold text-primary-foreground">
+                  Flash Sale — Up to 60% Off Everything
+                </h2>
+                <p className="text-primary-foreground/70 text-sm mt-1">
+                  Limited time offer on thousands of products. Don't miss out!
+                </p>
+              </div>
+            </div>
+            <button className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm shrink-0">
+              Shop the Sale <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
-          Buy Now <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        {/* Decorative circles */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-primary-foreground/5" />
       </div>
     </motion.section>
   );

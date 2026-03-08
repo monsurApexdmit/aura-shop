@@ -1,8 +1,7 @@
-import { Star, Eye, Plus, Minus } from "lucide-react";
+import { Star, Plus, Minus, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Product } from "@/data/products";
 import { motion } from "framer-motion";
-import { useState } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -11,7 +10,6 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem, items, updateQuantity, removeItem } = useCart();
-  const [showQuickView, setShowQuickView] = useState(false);
 
   const cartItem = items.find((i) => i.id === product.id);
   const discount = product.originalPrice
@@ -24,84 +22,85 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.03 }}
+      transition={{ duration: 0.4, delay: index * 0.04 }}
       viewport={{ once: true }}
-      className="group relative bg-card rounded-lg border border-border overflow-hidden hover:border-primary/30 hover:shadow-md transition-all"
+      className="group relative bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-muted/50 p-4">
+      <div className="relative aspect-square overflow-hidden bg-muted/30 p-3">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
         />
-        {discount > 0 && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-accent text-accent-foreground text-[11px] font-bold">
-            {discount}% Off
-          </span>
-        )}
-        {product.badge && !discount && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[11px] font-bold">
-            {product.badge}
+
+        {/* Badge */}
+        {(discount > 0 || product.badge) && (
+          <span className={`absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+            discount > 0 
+              ? "gradient-accent text-accent-foreground" 
+              : "gradient-primary text-primary-foreground"
+          }`}>
+            {discount > 0 ? `${discount}% Off` : product.badge}
           </span>
         )}
 
-        {/* Quick View */}
-        <button
-          onClick={() => setShowQuickView(true)}
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-md bg-foreground/80 text-background text-xs font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-foreground flex items-center gap-1.5"
-        >
-          <Eye className="h-3 w-3" /> Quick View
-        </button>
+        {/* Quick Add Overlay */}
+        {!cartItem && (
+          <button
+            onClick={handleAdd}
+            className="absolute bottom-2 right-2 w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 shadow-lg hover:bg-primary/90"
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Info */}
-      <div className="p-3">
-        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-0.5">{product.category}</p>
-        <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
+      <div className="p-3.5 pt-2">
+        <p className="text-[10px] text-primary font-semibold uppercase tracking-widest mb-1">{product.category}</p>
+        <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
           {product.name}
         </h3>
-        <div className="flex items-center gap-0.5 mb-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} className={`h-3 w-3 ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border"}`} />
-          ))}
-          <span className="text-[11px] text-muted-foreground ml-1">({product.rating})</span>
+
+        {/* Rating */}
+        <div className="flex items-center gap-1 mb-2.5">
+          <div className="flex items-center gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className={`h-3 w-3 ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border"}`} />
+            ))}
+          </div>
+          <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-display font-bold text-primary">${product.price.toFixed(2)}</span>
+
+        {/* Price + Cart Controls */}
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <span className="font-display font-bold text-base text-foreground">${product.price.toFixed(2)}</span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground line-through ml-1.5">${product.originalPrice.toFixed(2)}</span>
             )}
           </div>
 
-          {/* Add to Cart */}
-          {cartItem ? (
-            <div className="flex items-center gap-1">
+          {cartItem && (
+            <div className="flex items-center gap-0.5">
               <button
                 onClick={() => cartItem.quantity <= 1 ? removeItem(product.id) : updateQuantity(product.id, cartItem.quantity - 1)}
-                className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/80 transition-colors"
+                className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
               >
                 <Minus className="h-3 w-3" />
               </button>
-              <span className="w-7 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
+              <span className="w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
               <button
                 onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/80 transition-colors"
+                className="w-7 h-7 rounded-lg gradient-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
               >
                 <Plus className="h-3 w-3" />
               </button>
             </div>
-          ) : (
-            <button
-              onClick={handleAdd}
-              className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/80 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
           )}
         </div>
       </div>
