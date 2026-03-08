@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap, Clock } from "lucide-react";
 import { z } from "zod";
 
 const shippingSchema = z.object({
@@ -18,6 +18,14 @@ const shippingSchema = z.object({
 
 type ShippingData = z.infer<typeof shippingSchema>;
 
+const shippingMethods = [
+  { id: "standard", label: "Standard Shipping", price: 5.99, days: "5–7 Business Days", icon: Package, description: "Reliable delivery at the best price" },
+  { id: "express", label: "Express Shipping", price: 12.99, days: "2–3 Business Days", icon: Truck, description: "Faster delivery for when you need it sooner" },
+  { id: "overnight", label: "Overnight Shipping", price: 24.99, days: "Next Business Day", icon: Zap, description: "Get it tomorrow — guaranteed next-day delivery" },
+] as const;
+
+type ShippingMethodId = typeof shippingMethods[number]["id"];
+
 const steps = [
   { id: 1, label: "Shipping", icon: MapPin },
   { id: 2, label: "Payment", icon: CreditCard },
@@ -32,6 +40,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderId] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
   const [paymentMethod, setPaymentMethod] = useState<"cod">("cod");
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>("standard");
 
   const [form, setForm] = useState<ShippingData>({
     fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
@@ -62,9 +71,11 @@ export default function Checkout() {
     setStep((s) => Math.min(s + 1, 4));
   };
 
-  const shipping = 5.99;
+  const selectedShipping = shippingMethods.find((m) => m.id === shippingMethod)!;
+  const shipping = selectedShipping.price;
   const tax = totalPrice * 0.08;
   const grandTotal = totalPrice + shipping + tax;
+
 
   if (items.length === 0 && step < 4) {
     return (
