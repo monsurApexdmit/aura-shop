@@ -289,6 +289,19 @@ export default function Checkout() {
 
                   <div className="bg-background rounded-2xl border border-border p-6">
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-primary" /> Shipping Method
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <selectedShipping.icon className="h-5 w-5 text-primary" />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">{selectedShipping.label}</span>
+                        <p className="text-xs text-muted-foreground">{selectedShipping.days} · ${selectedShipping.price.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-background rounded-2xl border border-border p-6">
+                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-primary" /> Payment Method
                     </h3>
                     <div className="flex items-center gap-3">
