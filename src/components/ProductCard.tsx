@@ -63,9 +63,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       {/* Info */}
       <div className="p-3.5 pt-2">
         <p className="text-[10px] text-primary font-semibold uppercase tracking-widest mb-1">{product.category}</p>
-        <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
-          {product.name}
-        </h3>
+        <Link to={`/product/${product.id}`}>
+          <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
+            {product.name}
+          </h3>
+        </Link>
 
         {/* Rating */}
         <div className="flex items-center gap-1 mb-2.5">
