@@ -1,9 +1,9 @@
 import { Star, Plus, Minus, ShoppingCart, Heart, Eye } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { Product } from "@/data/products";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useState } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -12,8 +12,9 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem, items, updateQuantity, removeItem } = useCart();
-  const [liked, setLiked] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
+  const liked = isInWishlist(product.id);
   const cartItem = items.find((i) => i.id === product.id);
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -36,34 +37,22 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         to={`/product/${product.id}`}
         className="block relative aspect-[4/4.2] overflow-hidden bg-muted/20"
       >
-        {/* Background glow on hover */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.08),transparent_70%)]" />
-
         <img
           src={product.image}
           alt={product.name}
           className="w-full h-full object-contain p-5 group-hover:scale-110 transition-transform duration-700 ease-out"
           loading="lazy"
         />
-
-        {/* Discount Badge */}
         {discount > 0 && (
-          <motion.span
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent text-accent-foreground shadow-lg"
-          >
+          <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent text-accent-foreground shadow-lg">
             {discount}% OFF
           </motion.span>
         )}
-
-        {/* Product Badge */}
         {!discount && product.badge && (
-          <motion.span
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg"
-          >
+          <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg">
             {product.badge}
           </motion.span>
         )}
@@ -71,11 +60,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Hover Action Buttons */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0">
           <button
-            onClick={(e) => { e.preventDefault(); setLiked(!liked); }}
+            onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
             className={`w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-md ${
-              liked
-                ? "bg-accent text-accent-foreground"
-                : "bg-card/80 text-foreground hover:bg-accent hover:text-accent-foreground"
+              liked ? "bg-accent text-accent-foreground" : "bg-card/80 text-foreground hover:bg-accent hover:text-accent-foreground"
             }`}
           >
             <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
@@ -96,8 +83,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               onClick={(e) => { e.preventDefault(); handleAdd(); }}
               className="w-full py-3 bg-primary/95 backdrop-blur-sm text-primary-foreground flex items-center justify-center gap-2 text-sm font-semibold hover:bg-primary transition-colors"
             >
-              <ShoppingCart className="h-4 w-4" />
-              Add to Cart
+              <ShoppingCart className="h-4 w-4" /> Add to Cart
             </button>
           </div>
         )}
@@ -105,67 +91,36 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
       {/* Content */}
       <div className="p-4 space-y-2.5">
-        {/* Category */}
-        <p className="text-[11px] text-primary font-bold uppercase tracking-[0.15em]">
-          {product.category}
-        </p>
-
-        {/* Title */}
+        <p className="text-[11px] text-primary font-bold uppercase tracking-[0.15em]">{product.category}</p>
         <Link to={`/product/${product.id}`}>
           <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
             {product.name}
           </h3>
         </Link>
-
-        {/* Rating */}
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={`h-3.5 w-3.5 transition-colors ${
-                  i < Math.floor(product.rating)
-                    ? "fill-accent text-accent"
-                    : "text-muted-foreground/30"
-                }`}
-              />
+              <Star key={i} className={`h-3.5 w-3.5 transition-colors ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-muted-foreground/30"}`} />
             ))}
           </div>
           <span className="text-xs text-muted-foreground">({product.reviews})</span>
         </div>
-
-        {/* Price + Cart Controls */}
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="flex items-baseline gap-2">
-            <span className="font-display font-bold text-lg text-foreground">
-              ${product.price.toFixed(2)}
-            </span>
+            <span className="font-display font-bold text-lg text-foreground">${product.price.toFixed(2)}</span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">
-                ${product.originalPrice.toFixed(2)}
-              </span>
+              <span className="text-xs text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
             )}
           </div>
-
           {cartItem && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex items-center gap-1"
-            >
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-1">
               <button
-                onClick={() =>
-                  cartItem.quantity <= 1
-                    ? removeItem(product.id)
-                    : updateQuantity(product.id, cartItem.quantity - 1)
-                }
+                onClick={() => cartItem.quantity <= 1 ? removeItem(product.id) : updateQuantity(product.id, cartItem.quantity - 1)}
                 className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
               >
                 <Minus className="h-3 w-3" />
               </button>
-              <span className="w-8 text-center text-sm font-bold text-foreground">
-                {cartItem.quantity}
-              </span>
+              <span className="w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
               <button
                 onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
                 className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"

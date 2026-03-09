@@ -4,8 +4,10 @@ import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, Che
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { categories } from "@/data/categories";
 import { AnimatePresence, motion } from "framer-motion";
+import SearchAutocomplete from "@/components/SearchAutocomplete";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -18,6 +20,7 @@ const navLinks = [
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const { totalItems, totalPrice, setIsOpen } = useCart();
+  const { totalWishlistItems } = useWishlist();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
@@ -79,14 +82,7 @@ export default function Header() {
 
           {/* Desktop Search */}
           <div className="hidden md:flex flex-1 max-w-xl mx-6">
-            <div className="relative w-full group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                placeholder="Search for products, brands, categories..."
-                className="w-full h-11 pl-11 pr-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
-              />
-            </div>
+            <SearchAutocomplete />
           </div>
 
           {/* Right Actions */}
@@ -94,9 +90,16 @@ export default function Header() {
             <Button variant="ghost" size="icon" className="md:hidden rounded-xl" onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl relative">
-              <Heart className="h-5 w-5" />
-            </Button>
+            <Link to="/wishlist">
+              <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl relative">
+                <Heart className="h-5 w-5" />
+                {totalWishlistItems > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                    {totalWishlistItems}
+                  </span>
+                )}
+              </Button>
+            </Link>
             <Link to="/login">
               <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl">
                 <User className="h-5 w-5" />
@@ -235,15 +238,7 @@ export default function Header() {
             className="md:hidden border-b border-border overflow-hidden bg-background"
           >
             <div className="container py-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  autoFocus
-                />
-              </div>
+              <SearchAutocomplete mobile onClose={() => setSearchOpen(false)} />
             </div>
           </motion.div>
         )}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
+import { toast } from "sonner";
 
 export interface CartItem {
   id: string;
@@ -30,14 +31,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
+        toast.success(`Updated quantity`, { description: `${item.name} — now ${existing.quantity + 1} in cart` });
         return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
       }
+      toast.success("Added to cart", { description: item.name });
       return [...prev, { ...item, quantity: 1 }];
     });
     setIsOpen(true);
   };
 
-  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (item) toast.info("Removed from cart", { description: item.name });
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
   const clearCart = () => setItems([]);
 
   const updateQuantity = (id: string, quantity: number) => {

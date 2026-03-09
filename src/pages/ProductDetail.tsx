@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Check, Package, Tag } from "lucide-react";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import ProductCard from "@/components/ProductCard";
+import ProductReviews from "@/components/ProductReviews";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem, items, updateQuantity, removeItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
@@ -140,8 +143,13 @@ export default function ProductDetail() {
               )}
               {/* Floating actions */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="outline" size="icon" className="rounded-full h-10 w-10 bg-background/80 backdrop-blur-sm border-border/50">
-                  <Heart className="h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => toggleWishlist(product.id)}
+                  className={`rounded-full h-10 w-10 backdrop-blur-sm border-border/50 ${isInWishlist(product.id) ? "bg-accent text-accent-foreground" : "bg-background/80"}`}
+                >
+                  <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
                 </Button>
                 <Button variant="outline" size="icon" className="rounded-full h-10 w-10 bg-background/80 backdrop-blur-sm border-border/50">
                   <Share2 className="h-4 w-4" />
@@ -375,7 +383,7 @@ export default function ProductDetail() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <p className="text-sm text-muted-foreground">Customer reviews coming soon.</p>
+              <ProductReviews productRating={product.rating} reviewCount={product.reviews} />
             </TabsContent>
           </Tabs>
         </div>
