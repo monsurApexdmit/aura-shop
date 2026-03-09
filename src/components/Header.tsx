@@ -4,8 +4,10 @@ import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, Che
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { categories } from "@/data/categories";
 import { AnimatePresence, motion } from "framer-motion";
+import SearchAutocomplete from "@/components/SearchAutocomplete";
 
 const navLinks = [
   { label: "Home", to: "/" },
