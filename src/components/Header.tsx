@@ -238,15 +238,7 @@ export default function Header() {
             className="md:hidden border-b border-border overflow-hidden bg-background"
           >
             <div className="container py-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  autoFocus
-                />
-              </div>
+              <SearchAutocomplete mobile onClose={() => setSearchOpen(false)} />
             </div>
           </motion.div>
         )}
