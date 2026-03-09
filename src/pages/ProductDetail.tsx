@@ -143,8 +143,13 @@ export default function ProductDetail() {
               )}
               {/* Floating actions */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="outline" size="icon" className="rounded-full h-10 w-10 bg-background/80 backdrop-blur-sm border-border/50">
-                  <Heart className="h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => toggleWishlist(product.id)}
+                  className={`rounded-full h-10 w-10 backdrop-blur-sm border-border/50 ${isInWishlist(product.id) ? "bg-accent text-accent-foreground" : "bg-background/80"}`}
+                >
+                  <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
                 </Button>
                 <Button variant="outline" size="icon" className="rounded-full h-10 w-10 bg-background/80 backdrop-blur-sm border-border/50">
                   <Share2 className="h-4 w-4" />
