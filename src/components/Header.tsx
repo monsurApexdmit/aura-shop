@@ -20,6 +20,7 @@ const navLinks = [
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const { totalItems, totalPrice, setIsOpen } = useCart();
+  const { totalWishlistItems } = useWishlist();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
