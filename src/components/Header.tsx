@@ -90,9 +90,16 @@ export default function Header() {
             <Button variant="ghost" size="icon" className="md:hidden rounded-xl" onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl relative">
-              <Heart className="h-5 w-5" />
-            </Button>
+            <Link to="/wishlist">
+              <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl relative">
+                <Heart className="h-5 w-5" />
+                {totalWishlistItems > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                    {totalWishlistItems}
+                  </span>
+                )}
+              </Button>
+            </Link>
             <Link to="/login">
               <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl">
                 <User className="h-5 w-5" />
