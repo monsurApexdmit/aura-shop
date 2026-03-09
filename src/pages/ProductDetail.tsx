@@ -383,7 +383,7 @@ export default function ProductDetail() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <p className="text-sm text-muted-foreground">Customer reviews coming soon.</p>
+              <ProductReviews productRating={product.rating} reviewCount={product.reviews} />
             </TabsContent>
           </Tabs>
         </div>
