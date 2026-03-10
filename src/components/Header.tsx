@@ -67,7 +67,7 @@ export default function Header() {
       </div>
 
       {/* Main Header */}
-      <div className="bg-background/95 backdrop-blur-md border-b border-border">
+      <div className="bg-background/95 backdrop-blur-md border-b border-border relative z-50">
         <div className="container flex items-center justify-between h-16 gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
