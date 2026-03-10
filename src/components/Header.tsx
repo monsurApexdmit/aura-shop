@@ -133,7 +133,7 @@ export default function Header() {
       </div>
 
       {/* Navigation Bar - Desktop */}
-      <div className="hidden lg:block bg-background border-b border-border">
+      <div className="hidden lg:block bg-background border-b border-border relative z-40">
         <div className="container flex items-center h-12">
           {/* Categories Mega Menu */}
           <div ref={catRef} className="relative">
