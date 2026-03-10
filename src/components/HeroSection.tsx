@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Copy, Sparkles, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import heroBanner from "@/assets/hero-banner.jpg";
 import catHealth from "@/assets/cat-health.jpg";
 import catGrocery from "@/assets/cat-grocery.jpg";
