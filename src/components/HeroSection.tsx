@@ -13,6 +13,7 @@ const slides = [
     title: "Discover Products That Define Your Style",
     subtitle: "Curated selections across fashion, electronics, health & more — all in one place.",
     cta: "Explore Now",
+    link: "/shop",
     gradient: "from-primary/80 via-primary/40 to-transparent",
   },
   {
@@ -21,6 +22,7 @@ const slides = [
     title: "Fresh Grocery Delivered in 30 Minutes",
     subtitle: "Handpicked organic fruits, vegetables, and daily essentials at your doorstep.",
     cta: "Order Fresh",
+    link: "/shop?category=grocery",
     gradient: "from-accent/70 via-accent/30 to-transparent",
   },
   {
@@ -29,6 +31,7 @@ const slides = [
     title: "Your Health, Our Priority",
     subtitle: "Shop vitamins, supplements, and medical essentials with certified quality.",
     cta: "Shop Health",
+    link: "/shop?category=health",
     gradient: "from-foreground/70 via-foreground/30 to-transparent",
   },
 ];
