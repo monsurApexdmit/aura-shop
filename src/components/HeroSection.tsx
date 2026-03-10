@@ -102,7 +102,10 @@ export default function HeroSection() {
                     {slides[current].subtitle}
                   </motion.p>
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
-                    <button className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm">
+                    <button
+                      onClick={() => navigate(slides[current].link)}
+                      className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm"
+                    >
                       {slides[current].cta} <ArrowRight className="h-4 w-4" />
                     </button>
                   </motion.div>
