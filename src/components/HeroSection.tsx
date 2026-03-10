@@ -45,6 +45,7 @@ const coupons = [
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 6000);
