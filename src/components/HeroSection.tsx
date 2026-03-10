@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Copy, Sparkles, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import heroBanner from "@/assets/hero-banner.jpg";
 import catHealth from "@/assets/cat-health.jpg";
 import catGrocery from "@/assets/cat-grocery.jpg";
@@ -12,6 +13,7 @@ const slides = [
     title: "Discover Products That Define Your Style",
     subtitle: "Curated selections across fashion, electronics, health & more — all in one place.",
     cta: "Explore Now",
+    link: "/shop",
     gradient: "from-primary/80 via-primary/40 to-transparent",
   },
   {
@@ -20,6 +22,7 @@ const slides = [
     title: "Fresh Grocery Delivered in 30 Minutes",
     subtitle: "Handpicked organic fruits, vegetables, and daily essentials at your doorstep.",
     cta: "Order Fresh",
+    link: "/shop?category=grocery",
     gradient: "from-accent/70 via-accent/30 to-transparent",
   },
   {
@@ -28,6 +31,7 @@ const slides = [
     title: "Your Health, Our Priority",
     subtitle: "Shop vitamins, supplements, and medical essentials with certified quality.",
     cta: "Shop Health",
+    link: "/shop?category=health",
     gradient: "from-foreground/70 via-foreground/30 to-transparent",
   },
 ];
@@ -41,6 +45,7 @@ const coupons = [
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 6000);
@@ -97,7 +102,10 @@ export default function HeroSection() {
                     {slides[current].subtitle}
                   </motion.p>
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
-                    <button className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm">
+                    <button
+                      onClick={() => navigate(slides[current].link)}
+                      className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm"
+                    >
                       {slides[current].cta} <ArrowRight className="h-4 w-4" />
                     </button>
                   </motion.div>
