@@ -81,7 +81,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-xl mx-6">
+          <div className="hidden md:flex flex-1 max-w-xl mx-6 relative z-[60]">
             <SearchAutocomplete />
           </div>
 
