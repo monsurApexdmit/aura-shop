@@ -9,6 +9,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
+import LiveChat from "@/components/LiveChat";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
