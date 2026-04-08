@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import RequireAuth from "@/components/RequireAuth";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
@@ -21,6 +23,11 @@ import ProductDetail from "./pages/ProductDetail";
 import Wishlist from "./pages/Wishlist";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Account from "./pages/Account";
+import AccountOrders from "./pages/AccountOrders";
+import OrderDetail from "./pages/OrderDetail";
+import AccountProfile from "./pages/AccountProfile";
+import AccountAddresses from "./pages/AccountAddresses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,34 +35,41 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Header />
-              <CartDrawer />
-              <BackToTop />
-              <LiveChat />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/deals" element={<Deals />} />
-                <Route path="/track-order" element={<TrackOrder />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </WishlistProvider>
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Header />
+                <CartDrawer />
+                <BackToTop />
+                <LiveChat />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/deals" element={<Deals />} />
+                  <Route path="/track-order" element={<TrackOrder />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+                  <Route path="/account/orders" element={<RequireAuth><AccountOrders /></RequireAuth>} />
+                  <Route path="/account/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
+                  <Route path="/account/profile" element={<RequireAuth><AccountProfile /></RequireAuth>} />
+                  <Route path="/account/addresses" element={<RequireAuth><AccountAddresses /></RequireAuth>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
