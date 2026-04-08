@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,14 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isLoggedIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+
+  const from = (location.state as any)?.from || "/account";
+
+  if (isLoggedIn) {
+    navigate(from, { replace: true });
+    return null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +32,9 @@ const Login = () => {
       toast.error("Please fill in all fields");
       return;
     }
-    toast.success("Login successful! (Demo only)");
-    navigate("/");
+    login(email);
+    toast.success("Login successful!");
+    navigate(from, { replace: true });
   };
 
   return (

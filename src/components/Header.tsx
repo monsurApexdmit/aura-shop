@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin } from "lucide-react";
+import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin, LogOut, Package, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { categories } from "@/data/categories";
 import { AnimatePresence, motion } from "framer-motion";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
@@ -21,18 +22,24 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
+  const { isLoggedIn, user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [mobileExpandedCat, setMobileExpandedCat] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const catRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (catRef.current && !catRef.current.contains(e.target as Node)) {
         setCatOpen(false);
         setActiveCat(null);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -100,11 +107,51 @@ export default function Header() {
                 )}
               </Button>
             </Link>
-            <Link to="/login">
-              <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl">
-                <User className="h-5 w-5" />
+            {/* User Menu */}
+            <div ref={userMenuRef} className="relative hidden sm:block">
+              <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
+                {isLoggedIn ? (
+                  <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center cursor-pointer text-primary-foreground text-xs font-bold">
+                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                ) : (
+                  <Link to="/login"><User className="h-5 w-5" /></Link>
+                )}
               </Button>
-            </Link>
+              <AnimatePresence>
+                {userMenuOpen && isLoggedIn && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                    className="absolute right-0 top-full mt-2 w-52 bg-popover border border-border rounded-xl shadow-xl z-50 py-2 overflow-hidden"
+                  >
+                    <div className="px-4 py-2 border-b border-border">
+                      <p className="font-semibold text-sm text-foreground truncate">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    </div>
+                    {[
+                      { label: "My Account", to: "/account", icon: User },
+                      { label: "My Orders", to: "/account/orders", icon: Package },
+                      { label: "Settings", to: "/account/profile", icon: Settings },
+                    ].map((item) => (
+                      <Link key={item.to} to={item.to} onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors">
+                        <item.icon className="h-4 w-4 text-muted-foreground" />
+                        {item.label}
+                      </Link>
+                    ))}
+                    <div className="border-t border-border mt-1 pt-1">
+                      <button onClick={() => { logout(); setUserMenuOpen(false); }}
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors w-full text-left">
+                        <LogOut className="h-4 w-4" />
+                        Log Out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Cart */}
             <button

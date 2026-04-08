@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap, Clock } from "lucide-react";
@@ -35,6 +36,7 @@ const steps = [
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
+  const { isLoggedIn, addOrder } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -66,6 +68,22 @@ export default function Checkout() {
   const nextStep = () => {
     if (step === 1 && !validateShipping()) return;
     if (step === 3) {
+      // Save order to history if logged in
+      if (isLoggedIn) {
+        addOrder({
+          id: orderId,
+          date: new Date().toISOString(),
+          status: "processing",
+          items: items.map((i) => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
+          subtotal: totalPrice,
+          shipping,
+          tax,
+          total: grandTotal,
+          shippingAddress: { fullName: form.fullName, address: form.address, city: form.city, state: form.state, zip: form.zip },
+          shippingMethod: selectedShipping.label,
+          paymentMethod: "Cash on Delivery",
+        });
+      }
       clearCart();
     }
     setStep((s) => Math.min(s + 1, 4));

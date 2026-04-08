@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 
 const passwordChecks = [
@@ -17,6 +18,7 @@ const passwordChecks = [
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,8 +39,9 @@ const Signup = () => {
       toast.error("Please meet all password requirements");
       return;
     }
-    toast.success("Account created! (Demo only)");
-    navigate("/login");
+    login(email, name);
+    toast.success("Account created! Welcome!");
+    navigate("/account");
   };
 
   return (

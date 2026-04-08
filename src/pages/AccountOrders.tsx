@@ -1,0 +1,109 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { Package, Clock, Truck, CheckCircle2, XCircle, ChevronRight, Search } from "lucide-react";
+import Footer from "@/components/Footer";
+
+const statusConfig = {
+  processing: { label: "Processing", color: "bg-yellow-500/10 text-yellow-600", icon: Clock },
+  shipped: { label: "Shipped", color: "bg-blue-500/10 text-blue-600", icon: Truck },
+  delivered: { label: "Delivered", color: "bg-green-500/10 text-green-600", icon: CheckCircle2 },
+  cancelled: { label: "Cancelled", color: "bg-red-500/10 text-red-600", icon: XCircle },
+};
+
+type StatusFilter = "all" | "processing" | "shipped" | "delivered" | "cancelled";
+
+export default function AccountOrders() {
+  const { orders } = useAuth();
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
+
+  const filtered = orders.filter((o) => {
+    if (filter !== "all" && o.status !== filter) return false;
+    if (search && !o.id.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex-1 pt-32 pb-16">
+        <div className="container max-w-4xl">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+              <Link to="/account" className="hover:text-primary">My Account</Link>
+              <ChevronRight className="h-3 w-3" />
+              <span className="text-foreground font-medium">Orders</span>
+            </div>
+
+            <h1 className="font-display font-bold text-2xl text-foreground mb-6">My Orders</h1>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by order ID..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-card text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {(["all", "processing", "shipped", "delivered", "cancelled"] as StatusFilter[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setFilter(s)}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors capitalize ${
+                      filter === s ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Orders List */}
+            {filtered.length === 0 ? (
+              <div className="text-center py-16 bg-card border border-border rounded-2xl">
+                <Package className="h-14 w-14 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No orders found</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map((order, i) => {
+                  const cfg = statusConfig[order.status];
+                  return (
+                    <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                      <Link to={`/account/orders/${order.id}`} className="flex items-center gap-4 p-5 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors group">
+                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <cfg.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="font-mono font-bold text-sm text-foreground">{order.id}</p>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>{cfg.label}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · {order.items.length} item{order.items.length > 1 ? "s" : ""} · {order.shippingMethod}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-display font-bold text-foreground">${order.total.toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground">{order.paymentMethod}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}
