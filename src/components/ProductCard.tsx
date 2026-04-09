@@ -1,9 +1,11 @@
-import { Star, Plus, Minus, ShoppingCart, Heart, Eye } from "lucide-react";
+import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Product } from "@/data/products";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import QuickActionButtons from "@/components/common/QuickActionButtons";
+import RatingDisplay from "@/components/common/RatingDisplay";
 
 interface ProductCardProps {
   product: Product;
@@ -58,22 +60,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         )}
 
         {/* Hover Action Buttons */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0">
-          <button
-            onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
-            className={`w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-md ${
-              liked ? "bg-accent text-accent-foreground" : "bg-card/80 text-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
-          </button>
-          <Link
-            to={`/product/${product.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-md text-foreground flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-md"
-          >
-            <Eye className="h-4 w-4" />
-          </Link>
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0">
+          <QuickActionButtons
+            liked={liked}
+            onWishlist={() => toggleWishlist(product.id)}
+            onView={() => {}}
+            onAddCart={handleAdd}
+            hideAddCart={!!cartItem}
+          />
         </div>
 
         {/* Quick Add to Cart */}
@@ -97,14 +91,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             {product.name}
           </h3>
         </Link>
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className={`h-3.5 w-3.5 transition-colors ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-muted-foreground/30"}`} />
-            ))}
-          </div>
-          <span className="text-xs text-muted-foreground">({product.reviews})</span>
-        </div>
+        <RatingDisplay rating={product.rating} reviewCount={product.reviews} size="sm" />
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="flex items-baseline gap-2">
             <span className="font-display font-bold text-lg text-foreground">${product.price.toFixed(2)}</span>

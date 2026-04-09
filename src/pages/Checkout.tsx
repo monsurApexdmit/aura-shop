@@ -3,8 +3,13 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap, Clock } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap } from "lucide-react";
 import { z } from "zod";
+import FormField from "@/components/forms/FormField";
+import ShippingOption from "@/components/features/checkout/ShippingOption";
+import StepIndicator from "@/components/features/checkout/StepIndicator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "Name is required").max(100),
@@ -111,22 +116,8 @@ export default function Checkout() {
     <div className="min-h-screen bg-muted/30 pt-32 pb-16">
       <div className="max-w-4xl mx-auto px-4">
         {/* Stepper */}
-        <div className="flex items-center justify-center gap-0 mb-10">
-          {steps.map((s, i) => (
-            <div key={s.id} className="flex items-center">
-              <div className="flex flex-col items-center gap-1.5">
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                  step >= s.id ? "gradient-primary text-primary-foreground shadow-lg" : "bg-muted text-muted-foreground"
-                }`}>
-                  {step > s.id ? <CheckCircle2 className="h-5 w-5" /> : <s.icon className="h-5 w-5" />}
-                </div>
-                <span className={`text-xs font-semibold ${step >= s.id ? "text-primary" : "text-muted-foreground"}`}>{s.label}</span>
-              </div>
-              {i < steps.length - 1 && (
-                <div className={`w-16 sm:w-24 h-0.5 mx-2 mb-5 rounded-full transition-colors duration-300 ${step > s.id ? "bg-primary" : "bg-border"}`} />
-              )}
-            </div>
-          ))}
+        <div className="mb-10">
+          <StepIndicator steps={steps} currentStep={step} />
         </div>
 
         <AnimatePresence mode="wait">
@@ -139,41 +130,80 @@ export default function Checkout() {
                     <MapPin className="h-5 w-5 text-primary" /> Shipping Information
                   </h2>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {[
-                      { name: "fullName", label: "Full Name", placeholder: "John Doe", full: true },
-                      { name: "email", label: "Email", placeholder: "john@example.com", type: "email" },
-                      { name: "phone", label: "Phone", placeholder: "+1 234 567 890", type: "tel" },
-                      { name: "address", label: "Address", placeholder: "123 Main Street", full: true },
-                      { name: "city", label: "City", placeholder: "New York" },
-                      { name: "state", label: "State", placeholder: "NY" },
-                      { name: "zip", label: "ZIP Code", placeholder: "10001" },
-                    ].map((field) => (
-                      <div key={field.name} className={field.full ? "sm:col-span-2" : ""}>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{field.label}</label>
-                        <input
-                          name={field.name}
-                          type={field.type || "text"}
-                          value={(form as any)[field.name]}
-                          onChange={handleChange}
-                          placeholder={field.placeholder}
-                          className={`w-full px-4 py-3 rounded-xl border bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
-                            errors[field.name] ? "border-destructive" : "border-border"
-                          }`}
-                        />
-                        {errors[field.name] && <p className="text-xs text-destructive mt-1">{errors[field.name]}</p>}
-                      </div>
-                    ))}
-                    <div className="sm:col-span-2">
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Order Note (Optional)</label>
-                      <textarea
+                    <FormField label="Full Name" error={errors.fullName} required className="sm:col-span-2">
+                      <Input
+                        name="fullName"
+                        value={form.fullName}
+                        onChange={handleChange}
+                        placeholder="John Doe"
+                      />
+                    </FormField>
+
+                    <FormField label="Email" error={errors.email} required>
+                      <Input
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="john@example.com"
+                      />
+                    </FormField>
+
+                    <FormField label="Phone" error={errors.phone} required>
+                      <Input
+                        name="phone"
+                        type="tel"
+                        value={form.phone}
+                        onChange={handleChange}
+                        placeholder="+1 234 567 890"
+                      />
+                    </FormField>
+
+                    <FormField label="Address" error={errors.address} required className="sm:col-span-2">
+                      <Input
+                        name="address"
+                        value={form.address}
+                        onChange={handleChange}
+                        placeholder="123 Main Street"
+                      />
+                    </FormField>
+
+                    <FormField label="City" error={errors.city} required>
+                      <Input
+                        name="city"
+                        value={form.city}
+                        onChange={handleChange}
+                        placeholder="New York"
+                      />
+                    </FormField>
+
+                    <FormField label="State" error={errors.state} required>
+                      <Input
+                        name="state"
+                        value={form.state}
+                        onChange={handleChange}
+                        placeholder="NY"
+                      />
+                    </FormField>
+
+                    <FormField label="ZIP Code" error={errors.zip} required className="sm:col-span-2">
+                      <Input
+                        name="zip"
+                        value={form.zip}
+                        onChange={handleChange}
+                        placeholder="10001"
+                      />
+                    </FormField>
+
+                    <FormField label="Order Note" helperText="Special delivery instructions..." className="sm:col-span-2">
+                      <Textarea
                         name="note"
                         value={form.note}
                         onChange={handleChange}
                         rows={3}
                         placeholder="Special delivery instructions..."
-                        className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
                       />
-                    </div>
+                    </FormField>
                   </div>
 
                   {/* Shipping Method Selection */}
@@ -183,35 +213,12 @@ export default function Checkout() {
                     </h3>
                     <div className="space-y-3">
                       {shippingMethods.map((method) => (
-                        <button
+                        <ShippingOption
                           key={method.id}
-                          type="button"
-                          onClick={() => setShippingMethod(method.id)}
-                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                            shippingMethod === method.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/30"
-                          }`}
-                        >
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                            shippingMethod === method.id ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                          }`}>
-                            <method.icon className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-foreground">{method.label}</p>
-                            <p className="text-xs text-muted-foreground">{method.description}</p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="font-display font-bold text-sm text-foreground">${method.price.toFixed(2)}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end"><Clock className="h-3 w-3" />{method.days}</p>
-                          </div>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                            shippingMethod === method.id ? "border-primary" : "border-muted-foreground/30"
-                          }`}>
-                            {shippingMethod === method.id && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                          </div>
-                        </button>
+                          option={method}
+                          selected={shippingMethod === method.id}
+                          onChange={setShippingMethod}
+                        />
                       ))}
                     </div>
                   </div>

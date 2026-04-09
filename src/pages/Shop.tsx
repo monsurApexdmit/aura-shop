@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, SlidersHorizontal, X, Grid3X3, LayoutList, ArrowUpDown } from "lucide-react";
+import { ChevronRight, SlidersHorizontal, X, Grid3X3, LayoutList, ArrowUpDown } from "lucide-react";
 import { categories } from "@/data/categories";
 import { products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
+import FilterPanel from "@/components/features/shop/FilterPanel";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "rating" | "newest";
@@ -63,139 +63,6 @@ export default function Shop() {
     return result;
   }, [activeCatSlug, activeSubSlug, activeCategory, priceRange, sortBy]);
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    products.forEach((p) => {
-      categories.forEach((cat) => {
-        if (p.category === cat.name) {
-          counts[cat.slug] = (counts[cat.slug] || 0) + 1;
-          cat.children.forEach((sub) => {
-            if (p.subcategory === sub.name) {
-              counts[`${cat.slug}__${sub.slug}`] = (counts[`${cat.slug}__${sub.slug}`] || 0) + 1;
-            }
-          });
-        }
-      });
-    });
-    return counts;
-  }, []);
-
-  const SidebarContent = () => (
-    <div className="space-y-6">
-      {/* Categories */}
-      <div>
-        <h3 className="font-display font-bold text-sm text-foreground uppercase tracking-wider mb-3">Categories</h3>
-        <button
-          onClick={() => selectCategory(null, null)}
-          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
-            !activeCatSlug ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          All Products
-          <span className="float-right text-xs opacity-60">{products.length}</span>
-        </button>
-
-        <div className="space-y-0.5">
-          {categories.map((cat) => {
-            const isExpanded = expandedCats.includes(cat.slug);
-            const isActive = activeCatSlug === cat.slug && !activeSubSlug;
-            const count = categoryCounts[cat.slug] || 0;
-
-            return (
-              <div key={cat.slug}>
-                <div className="flex items-center">
-                  <button
-                    onClick={() => selectCategory(cat.slug, null)}
-                    className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      isActive ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <cat.icon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 text-left truncate">{cat.name}</span>
-                    {count > 0 && <span className="text-[10px] text-muted-foreground">{count}</span>}
-                  </button>
-                  <button
-                    onClick={() => toggleCatExpand(cat.slug)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                  </button>
-                </div>
-
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="pl-9 pr-2 pb-1 space-y-0.5">
-                        {cat.children.map((sub) => {
-                          const subCount = categoryCounts[`${cat.slug}__${sub.slug}`] || 0;
-                          const isSubActive = activeCatSlug === cat.slug && activeSubSlug === sub.slug;
-                          return (
-                            <button
-                              key={sub.slug}
-                              onClick={() => selectCategory(cat.slug, sub.slug)}
-                              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition-colors ${
-                                isSubActive
-                                  ? "bg-primary/10 text-primary font-semibold"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                              }`}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <ChevronRight className="h-3 w-3 opacity-40" />
-                                {sub.name}
-                              </span>
-                              {subCount > 0 && <span className="text-[10px] opacity-50">{subCount}</span>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Price Range */}
-      <div className="border-t border-border pt-5">
-        <h3 className="font-display font-bold text-sm text-foreground uppercase tracking-wider mb-4">Price Range</h3>
-        <Slider
-          defaultValue={[0, 1500]}
-          min={0}
-          max={1500}
-          step={10}
-          value={priceRange}
-          onValueChange={(v) => setPriceRange(v as [number, number])}
-          className="mb-3"
-        />
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="px-2 py-1 rounded-md bg-muted font-mono">${priceRange[0]}</span>
-          <span className="text-border">—</span>
-          <span className="px-2 py-1 rounded-md bg-muted font-mono">${priceRange[1]}</span>
-        </div>
-      </div>
-
-      {/* Rating Filter */}
-      <div className="border-t border-border pt-5">
-        <h3 className="font-display font-bold text-sm text-foreground uppercase tracking-wider mb-3">Popular Tags</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {["Hot Deal", "New", "Organic", "Best Seller", "Sale", "Trending", "Premium"].map((tag) => (
-            <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
@@ -244,7 +111,15 @@ export default function Shop() {
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-72 shrink-0">
             <div className="sticky top-40 bg-card border border-border rounded-2xl p-5 max-h-[calc(100vh-180px)] overflow-y-auto">
-              <SidebarContent />
+              <FilterPanel
+                activeCatSlug={activeCatSlug}
+                activeSubSlug={activeSubSlug}
+                priceRange={priceRange}
+                expandedCats={expandedCats}
+                onSelectCategory={selectCategory}
+                onPriceChange={setPriceRange}
+                onToggleCatExpand={toggleCatExpand}
+              />
             </div>
           </aside>
 
