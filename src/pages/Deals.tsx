@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Flame, Tag, Clock, Percent, Zap, Gift } from "lucide-react";
-import { products } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
+import { mapApiProduct } from "@/lib/mappers";
 import ProductCard from "@/components/ProductCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const dealFilters = ["All Deals", "Hot Deals", "Best Sellers", "Clearance"] as const;
 
@@ -14,8 +16,11 @@ const banners = [
 export default function Deals() {
   const [activeFilter, setActiveFilter] = useState<string>("All Deals");
 
+  const { data, isLoading } = useProducts({ limit: 48 });
+  const allProducts = useMemo(() => (data?.data ?? []).map(mapApiProduct), [data]);
+
   const dealProducts = useMemo(() => {
-    const withDiscount = products.filter((p) => p.originalPrice && p.originalPrice > p.price);
+    const withDiscount = allProducts.filter((p) => p.originalPrice && p.originalPrice > p.price);
     if (activeFilter === "All Deals") return withDiscount;
     if (activeFilter === "Hot Deals") return withDiscount.filter((p) => p.badge === "Hot Deal");
     if (activeFilter === "Best Sellers") return withDiscount.filter((p) => p.badge === "Best Seller");
@@ -24,7 +29,7 @@ export default function Deals() {
       return discount >= 20;
     });
     return withDiscount;
-  }, [activeFilter]);
+  }, [allProducts, activeFilter]);
 
   const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
@@ -88,7 +93,11 @@ export default function Deals() {
 
       {/* Product Grid */}
       <section className="container">
-        {dealProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)}
+          </div>
+        ) : dealProducts.length === 0 ? (
           <div className="text-center py-16">
             <Tag className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="font-display font-bold text-lg text-foreground">No deals in this category</p>
@@ -103,9 +112,11 @@ export default function Deals() {
             ))}
           </div>
         )}
-        <motion.p {...fadeUp} className="text-center text-muted-foreground text-sm mt-8">
-          Showing {dealProducts.length} deal{dealProducts.length !== 1 ? "s" : ""}
-        </motion.p>
+        {!isLoading && (
+          <motion.p {...fadeUp} className="text-center text-muted-foreground text-sm mt-8">
+            Showing {dealProducts.length} deal{dealProducts.length !== 1 ? "s" : ""}
+          </motion.p>
+        )}
       </section>
     </div>
   );

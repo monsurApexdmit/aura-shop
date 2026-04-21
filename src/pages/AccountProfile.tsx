@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, ChevronRight, Save } from "lucide-react";
+import { User, ChevronRight, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 
@@ -11,15 +11,23 @@ export default function AccountProfile() {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
       toast.error("Name and email are required");
       return;
     }
-    updateProfile({ name: name.trim(), email: email.trim(), phone: phone.trim() });
-    toast.success("Profile updated! (Demo)");
+    try {
+      setSaving(true);
+      await updateProfile({ name: name.trim(), email: email.trim(), phone: phone.trim() || undefined });
+      toast.success("Profile updated!");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -44,7 +52,7 @@ export default function AccountProfile() {
                 <div>
                   <p className="font-display font-bold text-lg text-foreground">{user?.name}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Member since {new Date(user?.joinedDate || "").toLocaleDateString("en-US", { month: "long", year: "numeric" })}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{user?.city ? `${user.city}${user.country ? `, ${user.country}` : ""}` : "No location set"}</p>
                 </div>
               </div>
 
@@ -66,8 +74,9 @@ export default function AccountProfile() {
                   </div>
                 ))}
 
-                <button type="submit" className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
-                  <Save className="h-4 w-4" /> Save Changes
+                <button type="submit" disabled={saving} className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-70">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {saving ? "Saving..." : "Save Changes"}
                 </button>
               </form>
             </div>

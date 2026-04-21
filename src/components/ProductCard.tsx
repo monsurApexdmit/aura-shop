@@ -1,9 +1,9 @@
 import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { Product } from "@/data/products";
+import { Product } from "@/types/product";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import QuickActionButtons from "@/components/common/QuickActionButtons";
 import RatingDisplay from "@/components/common/RatingDisplay";
 
@@ -15,6 +15,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const navigate = useNavigate();
 
   const liked = isInWishlist(product.id);
   const cartItem = items.find((i) => i.id === product.id);
@@ -45,6 +46,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           alt={product.name}
           className="w-full h-full object-contain p-5 group-hover:scale-110 transition-transform duration-700 ease-out"
           loading="lazy"
+          onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
         />
         {discount > 0 && (
           <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -64,7 +66,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           <QuickActionButtons
             liked={liked}
             onWishlist={() => toggleWishlist(product.id)}
-            onView={() => {}}
+            onView={() => navigate(`/product/${product.id}`)}
             onAddCart={handleAdd}
             hideAddCart={!!cartItem}
           />

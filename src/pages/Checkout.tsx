@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlaceOrder } from "@/hooks/useOrders";
+import { addressApi, type ApiAddress } from "@/services/addressApi";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap, UserCheck, Info } from "lucide-react";
 import { z } from "zod";
 import FormField from "@/components/forms/FormField";
 import ShippingOption from "@/components/features/checkout/ShippingOption";
@@ -41,17 +45,57 @@ const steps = [
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
-  const { isLoggedIn, addOrder } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const placeOrder = usePlaceOrder();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [orderId] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"cod">("cod");
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>("standard");
+  const [addressMode, setAddressMode] = useState<"saved" | "new">(isLoggedIn ? "saved" : "new");
+
+  const { data: savedAddresses = [] } = useQuery<ApiAddress[]>({
+    queryKey: ["addresses"],
+    queryFn: addressApi.list,
+    enabled: isLoggedIn,
+  });
+
+  const defaultAddress = savedAddresses.find((a) => a.is_default) ?? savedAddresses[0] ?? null;
 
   const [form, setForm] = useState<ShippingData>({
     fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
   });
+
+  const fillFromAddress = (addr: ApiAddress | null) => {
+    if (!addr) return;
+    setForm((f) => ({
+      ...f,
+      fullName: addr.full_name || user?.name || "",
+      email: addr.email || user?.email || "",
+      phone: addr.phone || user?.phone || "",
+      address: [addr.address_line1, addr.address_line2].filter(Boolean).join(", "),
+      city: addr.city ?? "",
+      state: addr.state ?? "",
+      zip: addr.postal_code ?? "",
+    }));
+  };
+
+  useEffect(() => {
+    if (addressMode === "saved" && defaultAddress) {
+      fillFromAddress(defaultAddress);
+    }
+  }, [defaultAddress]);
+
+  const switchAddressMode = (mode: "saved" | "new") => {
+    setAddressMode(mode);
+    setErrors({});
+    if (mode === "saved" && defaultAddress) {
+      fillFromAddress(defaultAddress);
+    } else {
+      setForm({ fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "" });
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -70,26 +114,40 @@ export default function Checkout() {
     return true;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (step === 1 && !validateShipping()) return;
     if (step === 3) {
-      // Save order to history if logged in
-      if (isLoggedIn) {
-        addOrder({
-          id: orderId,
-          date: new Date().toISOString(),
-          status: "processing",
-          items: items.map((i) => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-          subtotal: totalPrice,
-          shipping,
-          tax,
-          total: grandTotal,
-          shippingAddress: { fullName: form.fullName, address: form.address, city: form.city, state: form.state, zip: form.zip },
-          shippingMethod: selectedShipping.label,
-          paymentMethod: "Cash on Delivery",
-        });
+      if (!isLoggedIn) {
+        toast.error("Please log in to place an order");
+        navigate("/login", { state: { from: "/checkout" } });
+        return;
       }
-      clearCart();
+      try {
+        const orderItems = items.map((i) => ({
+          product_id: Number(i.id),
+          quantity: i.quantity,
+        }));
+        const result = await placeOrder.mutateAsync({
+          items: orderItems,
+          shipping_address: {
+            name: form.fullName,
+            address: form.address,
+            city: form.city,
+            state: form.state,
+            zip: form.zip,
+            phone: form.phone,
+            email: form.email,
+          },
+          payment_method: "cod",
+          shipping_cost: shipping,
+        });
+        setPlacedOrderId(result.invoice_no ?? String(result.id));
+        clearCart();
+        setStep(4);
+      } catch {
+        toast.error("Failed to place order. Please try again.");
+      }
+      return;
     }
     setStep((s) => Math.min(s + 1, 4));
   };
@@ -129,6 +187,70 @@ export default function Checkout() {
                   <h2 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Shipping Information
                   </h2>
+
+                  {isLoggedIn && user && (
+                    <div className="mb-6">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Ship to</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => switchAddressMode("saved")}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                            addressMode === "saved" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                            addressMode === "saved" ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          }`}>
+                            <UserCheck className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-xs text-foreground">My Account Address</p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {defaultAddress ? [defaultAddress.address_line1, defaultAddress.city].filter(Boolean).join(", ") : user.name}
+                            </p>
+                          </div>
+                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                            addressMode === "saved" ? "border-primary" : "border-muted-foreground/30"
+                          }`}>
+                            {addressMode === "saved" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => switchAddressMode("new")}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                            addressMode === "new" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                            addressMode === "new" ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          }`}>
+                            <MapPin className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-xs text-foreground">New Address</p>
+                            <p className="text-[11px] text-muted-foreground">Enter a different address</p>
+                          </div>
+                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                            addressMode === "new" ? "border-primary" : "border-muted-foreground/30"
+                          }`}>
+                            {addressMode === "new" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                        </button>
+                      </div>
+                      {addressMode === "saved" && !defaultAddress && (
+                        <div className="mt-3 flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                          <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            Your account has no saved address yet. Please fill in the fields below.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid sm:grid-cols-2 gap-4">
                     <FormField label="Full Name" error={errors.fullName} required className="sm:col-span-2">
                       <Input
@@ -369,8 +491,8 @@ export default function Checkout() {
                 <button onClick={() => setStep(2)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                   <ArrowLeft className="h-4 w-4" /> Edit Payment
                 </button>
-                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
-                  Place Order <CheckCircle2 className="h-4 w-4" />
+                <button onClick={nextStep} disabled={placeOrder.isPending} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-70">
+                  {placeOrder.isPending ? "Placing Order..." : <><span>Place Order</span><CheckCircle2 className="h-4 w-4" /></>}
                 </button>
               </div>
             </motion.div>
@@ -401,7 +523,7 @@ export default function Checkout() {
                 >
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Order ID</span>
-                    <span className="font-mono font-bold text-primary">{orderId}</span>
+                    <span className="font-mono font-bold text-primary">{placedOrderId ?? "—"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Payment</span>

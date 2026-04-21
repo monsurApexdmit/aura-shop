@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useCategories";
 
 const footerLinks = {
   Company: [
@@ -24,6 +24,7 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const { data: categories = [] } = useCategories();
   return (
     <footer className="bg-foreground text-background">
       <div className="container py-14 md:py-16">

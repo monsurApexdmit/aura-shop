@@ -66,8 +66,20 @@ export default function CartDrawer() {
                       transition={{ delay: i * 0.05 }}
                       className="flex gap-3 p-3 rounded-xl bg-card border border-border"
                     >
-                      <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden shrink-0 flex items-center justify-center">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const t = e.currentTarget;
+                              t.style.display = "none";
+                              t.nextElementSibling?.classList.remove("hidden");
+                            }}
+                          />
+                        ) : null}
+                        <span className={`text-xs text-muted-foreground text-center leading-tight px-1 ${item.image ? "hidden" : ""}`}>No Image</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm text-card-foreground truncate">{item.name}</h3>

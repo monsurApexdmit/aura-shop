@@ -1,7 +1,8 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Check, Package, Tag } from "lucide-react";
-import { products } from "@/data/products";
+import { useProduct, useProducts } from "@/hooks/useProducts";
+import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import ProductCard from "@/components/ProductCard";
@@ -10,8 +11,10 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo, useEffect } from "react";
+import type { ProductAttribute } from "@/types/product";
 
 // Color map for visual swatches
 const COLOR_MAP: Record<string, string> = {
@@ -19,6 +22,21 @@ const COLOR_MAP: Record<string, string> = {
   "silver": "#c0c0c0", "rose gold": "#b76e79", "red": "#e53e3e", "green": "#38a169",
   "blue": "#3182ce",
 };
+
+function deriveAttributes(variants: NonNullable<ReturnType<typeof mapApiProduct>["variants"]>): ProductAttribute[] {
+  const attrMap = new Map<string, Set<string>>();
+  for (const v of variants) {
+    for (const [key, val] of Object.entries(v.attributes)) {
+      if (!attrMap.has(key)) attrMap.set(key, new Set());
+      attrMap.get(key)!.add(val);
+    }
+  }
+  return Array.from(attrMap.entries()).map(([name, valSet]) => ({
+    name,
+    displayName: name.charAt(0).toUpperCase() + name.slice(1),
+    values: Array.from(valSet),
+  }));
+}
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,21 +46,37 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
-  const product = products.find((p) => p.id === id);
+  const { data: apiProduct, isLoading } = useProduct(id ? Number(id) : null);
+  const product = useMemo(() => (apiProduct ? mapApiProduct(apiProduct) : null), [apiProduct]);
 
-  // Initialize attributes on product change
+  const attributes = useMemo(() => {
+    if (!product?.variants?.length) return [];
+    return deriveAttributes(product.variants);
+  }, [product]);
+
+  // Related products — only fetch once we know the category
+  const { data: relatedData } = useProducts(
+    product ? { category_id: apiProduct?.category_id ?? undefined, limit: 5 } : {}
+  );
+  const relatedProducts = useMemo(() => {
+    if (!product || !relatedData) return [];
+    return relatedData.data
+      .map(mapApiProduct)
+      .filter((p) => p.id !== product.id)
+      .slice(0, 4);
+  }, [relatedData, product]);
+
+  // Initialize attribute selections when product loads
   useEffect(() => {
-    if (product?.attributes?.length) {
+    if (attributes.length) {
       const initial: Record<string, string> = {};
-      product.attributes.forEach((attr) => {
-        initial[attr.displayName] = attr.values[0];
-      });
+      attributes.forEach((attr) => { initial[attr.displayName] = attr.values[0]; });
       setSelectedAttributes(initial);
     } else {
       setSelectedAttributes({});
     }
     setSelectedImage(0);
-  }, [product?.id]);
+  }, [product?.id, attributes.length]);
 
   const selectedVariant = useMemo(() => {
     if (!product?.variants?.length) return null;
@@ -53,10 +87,35 @@ export default function ProductDetail() {
 
   const cartItem = items.find((i) => i.id === (selectedVariant?.id || product?.id));
 
-  const relatedProducts = useMemo(() => {
-    if (!product) return [];
-    return products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
-  }, [product]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-muted/40 border-b border-border">
+          <div className="container py-4">
+            <Skeleton className="h-4 w-48 rounded" />
+            <Skeleton className="h-6 w-64 rounded mt-2" />
+          </div>
+        </div>
+        <div className="container py-8 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+            <div className="space-y-4">
+              <Skeleton className="aspect-square rounded-2xl" />
+              <div className="flex gap-3">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-20 h-20 rounded-xl" />)}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-3/4 rounded" />
+              <Skeleton className="h-6 w-1/2 rounded" />
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <Skeleton className="h-12 w-48 rounded-xl" />
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -121,6 +180,7 @@ export default function ProductDetail() {
                   src={images[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-contain p-8"
+                  onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.05 }}
@@ -168,7 +228,7 @@ export default function ProductDetail() {
                     selectedImage === i ? "border-primary ring-2 ring-primary/20 shadow-md" : "border-border hover:border-primary/40"
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-contain p-2" />
+                  <img src={img} alt="" className="w-full h-full object-contain p-2" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }} />
                 </motion.button>
               ))}
             </div>
@@ -227,9 +287,9 @@ export default function ProductDetail() {
             </div>
 
             {/* Variant Selectors */}
-            {product.attributes && product.attributes.length > 0 && (
+            {attributes.length > 0 && (
               <div className="space-y-5 mb-6">
-                {product.attributes.map((attr) => (
+                {attributes.map((attr) => (
                   <div key={attr.name}>
                     <label className="text-sm font-semibold text-foreground mb-2.5 block">
                       {attr.displayName}: <span className="text-primary font-bold">{selectedAttributes[attr.displayName]}</span>
@@ -361,20 +421,16 @@ export default function ProductDetail() {
                   <span className="font-medium text-foreground">{product.category}</span>
                 </div>
                 <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">Subcategory</span>
-                  <span className="font-medium text-foreground">{product.subcategory}</span>
-                </div>
-                <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
                   <span className="text-muted-foreground">SKU</span>
                   <span className="font-medium text-foreground">{currentSku}</span>
                 </div>
-                {product.attributes?.map((attr) => (
+                {attributes.map((attr) => (
                   <div key={attr.name} className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
                     <span className="text-muted-foreground">{attr.displayName}</span>
                     <span className="font-medium text-foreground">{attr.values.join(", ")}</span>
                   </div>
                 ))}
-                {product.variants && (
+                {product.variants && product.variants.length > 0 && (
                   <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
                     <span className="text-muted-foreground">Variants</span>
                     <span className="font-medium text-foreground">{product.variants.length} options</span>

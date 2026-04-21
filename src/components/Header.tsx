@@ -6,8 +6,24 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useCategories";
+import { Monitor, Shirt, Pill, ShoppingBasket, Home, Sparkles, Dumbbell, BookOpen, Baby, Coffee, Wrench, Gamepad2, Tag } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  "electronics": Monitor, "fashion": Shirt, "fashion-apparel": Shirt,
+  "health": Pill, "health-medicine": Pill, "grocery": ShoppingBasket, "grocery-food": ShoppingBasket,
+  "home": Home, "home-kitchen": Home, "beauty": Sparkles, "beauty-skincare": Sparkles,
+  "sports": Dumbbell, "sports-outdoors": Dumbbell, "books": BookOpen, "books-stationery": BookOpen,
+  "baby": Baby, "baby-kids": Baby, "beverages": Coffee, "tools": Wrench, "tools-hardware": Wrench,
+  "gaming": Gamepad2,
+};
+function getCatIcon(slug: string): LucideIcon {
+  if (ICON_MAP[slug]) return ICON_MAP[slug];
+  const key = Object.keys(ICON_MAP).find((k) => slug.includes(k) || k.includes(slug));
+  return key ? ICON_MAP[key] : Tag;
+}
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 
 const navLinks = [
@@ -23,6 +39,7 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
+  const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
@@ -203,21 +220,24 @@ export default function Header() {
                 >
                   {/* Parent Categories */}
                   <div className="w-64 border-r border-border py-2 max-h-[420px] overflow-y-auto">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat.slug}
-                        onMouseEnter={() => setActiveCat(cat.slug)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                          activeCat === cat.slug
-                            ? "bg-primary/5 text-primary font-medium"
-                            : "text-popover-foreground hover:bg-muted"
-                        }`}
-                      >
-                        <cat.icon className="h-4 w-4 shrink-0" />
-                        <span className="flex-1 text-left">{cat.name}</span>
-                        <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-                      </button>
-                    ))}
+                    {categories.map((cat) => {
+                      const Icon = getCatIcon(cat.slug);
+                      return (
+                        <button
+                          key={cat.slug}
+                          onMouseEnter={() => setActiveCat(cat.slug)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                            activeCat === cat.slug
+                              ? "bg-primary/5 text-primary font-medium"
+                              : "text-popover-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 text-left">{cat.name}</span>
+                          <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Child Categories */}
@@ -302,13 +322,15 @@ export default function Header() {
           >
             <nav className="container py-3 space-y-0.5">
               <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categories</p>
-              {categories.map((cat) => (
+              {categories.map((cat) => {
+                const Icon = getCatIcon(cat.slug);
+                return (
                 <div key={cat.slug}>
                   <button
                     onClick={() => setMobileExpandedCat(mobileExpandedCat === cat.slug ? null : cat.slug)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
                   >
-                    <cat.icon className="h-4 w-4 text-primary" />
+                    <Icon className="h-4 w-4 text-primary" />
                     <span className="flex-1 text-left">{cat.name}</span>
                     <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${mobileExpandedCat === cat.slug ? "rotate-180" : ""}`} />
                   </button>
@@ -336,7 +358,8 @@ export default function Header() {
                     )}
                   </AnimatePresence>
                 </div>
-              ))}
+                );
+              })}
 
               <div className="border-t border-border my-2" />
               {navLinks.map((link) => (

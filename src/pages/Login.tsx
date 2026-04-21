@@ -26,15 +26,24 @@ const Login = () => {
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
-    login(email);
-    toast.success("Login successful!");
-    navigate(from, { replace: true });
+    setLoading(true);
+    try {
+      await login(email, password);
+      toast.success("Login successful!");
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -141,9 +150,9 @@ const Login = () => {
               </Label>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base font-semibold gap-2" style={{ background: "var(--gradient-primary)" }}>
-              Sign In
-              <ArrowRight className="h-4 w-4" />
+            <Button type="submit" disabled={loading} className="w-full h-12 text-base font-semibold gap-2" style={{ background: "var(--gradient-primary)" }}>
+              {loading ? "Signing in..." : "Sign In"}
+              {!loading && <ArrowRight className="h-4 w-4" />}
             </Button>
           </form>
 

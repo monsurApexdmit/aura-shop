@@ -1,33 +1,69 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Package, Truck, CheckCircle2, Clock, MapPin, ArrowRight, Box } from "lucide-react";
-
-const mockStatuses = [
-  { label: "Order Placed", icon: Package, date: "Mar 5, 2026 — 10:32 AM", done: true },
-  { label: "Processing", icon: Clock, date: "Mar 5, 2026 — 11:15 AM", done: true },
-  { label: "Shipped", icon: Truck, date: "Mar 6, 2026 — 2:40 PM", done: true },
-  { label: "Out for Delivery", icon: MapPin, date: "Mar 8, 2026 — 9:00 AM", done: false },
-  { label: "Delivered", icon: CheckCircle2, date: "", done: false },
-];
+import { Search, Package, Truck, CheckCircle2, Clock, MapPin, ArrowRight, Box, XCircle } from "lucide-react";
+import { api } from "@/lib/api";
+import type { ApiOrder } from "@/services/orderApi";
+import { mapFulfillmentStatus } from "@/services/orderApi";
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
 
+function buildTimeline(order: ApiOrder) {
+  const { label } = mapFulfillmentStatus(order.fulfillment_status);
+  const steps = [
+    { label: "Order Placed", icon: Package, key: "placed" },
+    { label: "Processing", icon: Clock, key: "processing" },
+    { label: "Shipped", icon: Truck, key: "shipped" },
+    { label: "Out for Delivery", icon: MapPin, key: "out_for_delivery" },
+    { label: "Delivered", icon: CheckCircle2, key: "delivered" },
+  ];
+
+  const doneUntil: Record<string, number> = {
+    unfulfilled: 1,
+    processing: 2,
+    shipped: 3,
+    out_for_delivery: 4,
+    delivered: 5,
+    cancelled: 0,
+  };
+  const doneCount = doneUntil[order.fulfillment_status] ?? 1;
+
+  return steps.map((step, i) => ({
+    ...step,
+    done: i < doneCount,
+    isCurrent: i === doneCount - 1,
+    date: i === 0 ? new Date(order.order_time).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "",
+  }));
+}
+
 export default function TrackOrder() {
   const [orderId, setOrderId] = useState("");
-  const [tracked, setTracked] = useState(false);
+  const [order, setOrder] = useState<ApiOrder | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = orderId.trim();
-    if (!trimmed || trimmed.length < 4) {
-      setError("Please enter a valid order ID");
-      setTracked(false);
+    if (!trimmed || trimmed.length < 3) {
+      setError("Please enter a valid order ID or invoice number");
+      setOrder(null);
       return;
     }
     setError("");
-    setTracked(true);
+    setLoading(true);
+    try {
+      const res = await api.get("/orders/track", { params: { invoice: trimmed } });
+      setOrder(res.data.data);
+    } catch {
+      setError("Order not found. Please check your order ID and try again.");
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const timeline = order ? buildTimeline(order) : [];
+  const { label: statusLabel } = order ? mapFulfillmentStatus(order.fulfillment_status) : { label: "" };
 
   return (
     <div className="min-h-screen bg-background pt-32 pb-20">
@@ -41,7 +77,7 @@ export default function TrackOrder() {
           Track Your Order
         </motion.h1>
         <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-muted-foreground max-w-md mx-auto">
-          Enter your order ID to see the latest shipping status and delivery updates.
+          Enter your invoice number to see the latest shipping status and delivery updates.
         </motion.p>
       </section>
 
@@ -55,14 +91,14 @@ export default function TrackOrder() {
                 type="text"
                 value={orderId}
                 onChange={(e) => { setOrderId(e.target.value); setError(""); }}
-                placeholder="Enter order ID (e.g. ORD-K1L2M3)"
+                placeholder="Enter invoice number (e.g. INV-00123)"
                 className={`w-full pl-11 pr-4 py-3.5 rounded-xl border bg-card text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
                   error ? "border-destructive" : "border-border"
                 }`}
               />
             </div>
-            <button type="submit" className="gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg shrink-0">
-              Track <ArrowRight className="h-4 w-4" />
+            <button type="submit" disabled={loading} className="gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg shrink-0 disabled:opacity-70">
+              {loading ? "Tracking..." : <><span>Track</span><ArrowRight className="h-4 w-4" /></>}
             </button>
           </div>
           {error && <p className="text-xs text-destructive mt-2">{error}</p>}
@@ -71,7 +107,7 @@ export default function TrackOrder() {
 
       {/* Results */}
       <AnimatePresence mode="wait">
-        {tracked && (
+        {order && (
           <motion.section
             key="result"
             initial={{ opacity: 0, y: 20 }}
@@ -84,81 +120,97 @@ export default function TrackOrder() {
             <div className="bg-card border border-border rounded-2xl p-6 mb-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Order ID</p>
-                  <p className="font-mono font-bold text-primary text-lg">{orderId.trim().toUpperCase()}</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Invoice</p>
+                  <p className="font-mono font-bold text-primary text-lg">{order.invoice_no}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Estimated Delivery</p>
-                  <p className="font-display font-bold text-foreground">Mar 9, 2026</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</p>
+                  <p className="font-display font-bold text-foreground">{statusLabel}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Box className="h-4 w-4 text-primary" />
-                  <span>2 items</span>
+                  <span>{order.items.length} item{order.items.length !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Truck className="h-4 w-4 text-primary" />
-                  <span>Express Shipping</span>
+                  <span>{order.carrier ?? order.method ?? "Standard Shipping"}</span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span>New York, NY</span>
-                </div>
+                {order.shipping_address?.city && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>{[order.shipping_address.city, order.shipping_address.state].filter(Boolean).join(", ")}</span>
+                  </div>
+                )}
+                {order.tracking_number && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Package className="h-4 w-4 text-primary" />
+                    <span>Tracking: {order.tracking_number}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Timeline */}
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="font-display font-bold text-sm mb-6 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" /> Shipment Progress
-              </h2>
-              <div className="space-y-0">
-                {mockStatuses.map((status, i) => {
-                  const isLast = i === mockStatuses.length - 1;
-                  const isCurrent = status.done && (i === mockStatuses.length - 1 || !mockStatuses[i + 1].done);
-                  return (
-                    <motion.div
-                      key={status.label}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * i }}
-                      className="flex gap-4"
-                    >
-                      {/* Dot + Line */}
-                      <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                          isCurrent
-                            ? "gradient-primary text-primary-foreground shadow-lg ring-4 ring-primary/20"
-                            : status.done
-                            ? "gradient-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          <status.icon className="h-5 w-5" />
-                        </div>
-                        {!isLast && (
-                          <div className={`w-0.5 h-12 ${status.done ? "bg-primary" : "bg-border"}`} />
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="pt-2 pb-4">
-                        <p className={`font-semibold text-sm ${status.done ? "text-foreground" : "text-muted-foreground"}`}>
-                          {status.label}
-                          {isCurrent && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                              Current
-                            </span>
+            {order.fulfillment_status === "cancelled" ? (
+              <div className="bg-card border border-border rounded-2xl p-6 flex items-center gap-4 text-destructive">
+                <XCircle className="h-8 w-8 shrink-0" />
+                <div>
+                  <p className="font-semibold">Order Cancelled</p>
+                  <p className="text-sm text-muted-foreground">This order has been cancelled.</p>
+                </div>
+              </div>
+            ) : (
+              /* Timeline */
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h2 className="font-display font-bold text-sm mb-6 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" /> Shipment Progress
+                </h2>
+                <div className="space-y-0">
+                  {timeline.map((step, i) => {
+                    const isLast = i === timeline.length - 1;
+                    return (
+                      <motion.div
+                        key={step.label}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * i }}
+                        className="flex gap-4"
+                      >
+                        <div className="flex flex-col items-center">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                            step.isCurrent
+                              ? "gradient-primary text-primary-foreground shadow-lg ring-4 ring-primary/20"
+                              : step.done
+                              ? "gradient-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            <step.icon className="h-5 w-5" />
+                          </div>
+                          {!isLast && (
+                            <div className={`w-0.5 h-12 ${step.done ? "bg-primary" : "bg-border"}`} />
                           )}
-                        </p>
-                        {status.date && <p className="text-xs text-muted-foreground mt-0.5">{status.date}</p>}
-                        {!status.done && !status.date && <p className="text-xs text-muted-foreground mt-0.5">Pending</p>}
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                        </div>
+                        <div className="pt-2 pb-4">
+                          <p className={`font-semibold text-sm ${step.done ? "text-foreground" : "text-muted-foreground"}`}>
+                            {step.label}
+                            {step.isCurrent && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                                Current
+                              </span>
+                            )}
+                          </p>
+                          {step.date
+                            ? <p className="text-xs text-muted-foreground mt-0.5">{step.date}</p>
+                            : !step.done && <p className="text-xs text-muted-foreground mt-0.5">Pending</p>
+                          }
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </motion.section>
         )}
       </AnimatePresence>

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Copy, Sparkles, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { couponApi } from "@/services/couponApi";
 import heroBanner from "@/assets/hero-banner.jpg";
 import catHealth from "@/assets/cat-health.jpg";
 import catGrocery from "@/assets/cat-grocery.jpg";
@@ -36,16 +38,17 @@ const slides = [
   },
 ];
 
-const coupons = [
-  { code: "HELLO25", discount: "25%", label: "First Order", minOrder: 300, color: "primary" },
-  { code: "FLASH40", discount: "40%", label: "Flash Sale", minOrder: 800, color: "accent" },
-  { code: "FREE99", discount: "Free Ship", label: "Shipping", minOrder: 99, color: "primary" },
-];
 
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const { data: activeCoupons = [] } = useQuery({
+    queryKey: ['coupons-active'],
+    queryFn: couponApi.getActive,
+    staleTime: 1000 * 60 * 10,
+  });
 
   useEffect(() => {
     const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 6000);
@@ -149,29 +152,39 @@ export default function HeroSection() {
                 </span>
                 Active Coupons
               </h3>
-              <div className="space-y-3">
-                {coupons.map((coupon) => (
-                  <div
-                    key={coupon.code}
-                    className="group/coupon relative rounded-xl border border-dashed border-primary/30 p-3.5 hover:border-primary/60 transition-colors cursor-pointer"
-                    onClick={() => copyCode(coupon.code)}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-lg font-display font-bold text-gradient">{coupon.discount}</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{coupon.label}</span>
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-0.5">
+                {activeCoupons.map((coupon) => {
+                  const discountLabel = coupon.free_shipping
+                    ? "Free Ship"
+                    : coupon.type === "fixed"
+                    ? `$${coupon.discount} OFF`
+                    : `${coupon.discount}%`;
+
+                  return (
+                    <div
+                      key={coupon.code}
+                      className="group/coupon relative rounded-xl border border-dashed border-primary/30 p-3.5 hover:border-primary/60 transition-colors cursor-pointer"
+                      onClick={() => copyCode(coupon.code)}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-lg font-display font-bold text-gradient">{discountLabel}</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{coupon.campaign_name}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {coupon.min_order_amount ? `Min. $${coupon.min_order_amount}` : "No minimum"}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs font-mono font-bold text-primary">
+                          {copiedCode === coupon.code ? (
+                            <><Check className="h-3 w-3" /> Copied!</>
+                          ) : (
+                            <><Copy className="h-3 w-3" /> {coupon.code}</>
+                          )}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Min. ${coupon.minOrder}</span>
-                      <span className="flex items-center gap-1 text-xs font-mono font-bold text-primary">
-                        {copiedCode === coupon.code ? (
-                          <><Check className="h-3 w-3" /> Copied!</>
-                        ) : (
-                          <><Copy className="h-3 w-3" /> {coupon.code}</>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

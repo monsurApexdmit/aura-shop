@@ -6,10 +6,22 @@ import ProductCard from "@/components/ProductCard";
 import DeliverySection from "@/components/DeliverySection";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
-import { products } from "@/data/products";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProducts } from "@/hooks/useProducts";
+import { mapApiProduct } from "@/lib/mappers";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 
 const Index = () => {
+  const { data: popularData, isLoading: popularLoading } = useProducts({ limit: 8 });
+  const { data: saleData, isLoading: saleLoading } = useProducts({ limit: 12 });
+
+  const popularProducts = useMemo(() => (popularData?.data ?? []).map(mapApiProduct), [popularData]);
+  const saleProducts = useMemo(
+    () => (saleData?.data ?? []).map(mapApiProduct).filter((p) => p.originalPrice),
+    [saleData]
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <HeroSection />
@@ -47,9 +59,10 @@ const Index = () => {
             </motion.p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-            {products.map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
-            ))}
+            {popularLoading
+              ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)
+              : popularProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
+            }
           </div>
         </div>
       </section>
@@ -86,9 +99,12 @@ const Index = () => {
             </motion.p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-            {products.filter((p) => p.originalPrice).map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
-            ))}
+            {saleLoading
+              ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)
+              : saleProducts.length > 0
+                ? saleProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
+                : popularProducts.slice(0, 4).map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
+            }
           </div>
         </div>
       </section>

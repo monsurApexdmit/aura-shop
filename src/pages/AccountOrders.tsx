@@ -1,29 +1,40 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
+import { mapFulfillmentStatus } from "@/services/orderApi";
 import { Package, Clock, Truck, CheckCircle2, XCircle, ChevronRight, Search } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 
-const statusConfig = {
-  processing: { label: "Processing", color: "bg-yellow-500/10 text-yellow-600", icon: Clock },
-  shipped: { label: "Shipped", color: "bg-blue-500/10 text-blue-600", icon: Truck },
-  delivered: { label: "Delivered", color: "bg-green-500/10 text-green-600", icon: CheckCircle2 },
-  cancelled: { label: "Cancelled", color: "bg-red-500/10 text-red-600", icon: XCircle },
-};
+const statusIcons = { yellow: Clock, blue: Truck, green: CheckCircle2, red: XCircle, gray: Package };
 
 type StatusFilter = "all" | "processing" | "shipped" | "delivered" | "cancelled";
 
+const statusColorMap: Record<string, string> = {
+  yellow: "bg-yellow-500/10 text-yellow-600",
+  blue: "bg-blue-500/10 text-blue-600",
+  green: "bg-green-500/10 text-green-600",
+  red: "bg-red-500/10 text-red-600",
+  gray: "bg-gray-500/10 text-gray-600",
+};
+
 export default function AccountOrders() {
-  const { orders } = useAuth();
+  const { isLoggedIn } = useAuth();
+  const { data, isLoading } = useOrders(isLoggedIn);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
 
-  const filtered = orders.filter((o) => {
-    if (filter !== "all" && o.status !== filter) return false;
-    if (search && !o.id.toLowerCase().includes(search.toLowerCase())) return false;
+  const orders = data?.data ?? [];
+
+  const filtered = useMemo(() => orders.filter((o) => {
+    const { label } = mapFulfillmentStatus(o.fulfillment_status);
+    const labelKey = label.toLowerCase() as StatusFilter;
+    if (filter !== "all" && labelKey !== filter) return false;
+    if (search && !o.invoice_no.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
-  });
+  }), [orders, filter, search]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -65,7 +76,11 @@ export default function AccountOrders() {
             </div>
 
             {/* Orders List */}
-            {filtered.length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border rounded-2xl">
                 <Package className="h-14 w-14 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-muted-foreground">No orders found</p>
@@ -73,25 +88,27 @@ export default function AccountOrders() {
             ) : (
               <div className="space-y-3">
                 {filtered.map((order, i) => {
-                  const cfg = statusConfig[order.status];
+                  const { label, color } = mapFulfillmentStatus(order.fulfillment_status);
+                  const Icon = statusIcons[color as keyof typeof statusIcons] ?? Package;
+                  const colorClass = statusColorMap[color] ?? statusColorMap.gray;
                   return (
                     <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                       <Link to={`/account/orders/${order.id}`} className="flex items-center gap-4 p-5 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors group">
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                          <cfg.icon className="h-5 w-5 text-primary" />
+                          <Icon className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <p className="font-mono font-bold text-sm text-foreground">{order.id}</p>
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>{cfg.label}</span>
+                            <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no}</p>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${colorClass}`}>{label}</span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(order.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · {order.items.length} item{order.items.length > 1 ? "s" : ""} · {order.shippingMethod}
+                            {new Date(order.order_time).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · {order.items.length} item{order.items.length > 1 ? "s" : ""} · {order.method}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="font-display font-bold text-foreground">${order.total.toFixed(2)}</p>
-                          <p className="text-xs text-muted-foreground">{order.paymentMethod}</p>
+                          <p className="font-display font-bold text-foreground">${order.amount.toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground">{order.payment_status}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                       </Link>
