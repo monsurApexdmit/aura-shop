@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
@@ -28,9 +29,52 @@ import AccountOrders from "./pages/AccountOrders";
 import OrderDetail from "./pages/OrderDetail";
 import AccountProfile from "./pages/AccountProfile";
 import AccountAddresses from "./pages/AccountAddresses";
+import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const pageVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+  exit:    { opacity: 0, y: -8,  transition: { duration: 0.18, ease: "easeIn"  } },
+};
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Index />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/deals" element={<Deals />} />
+          <Route path="/track-order" element={<TrackOrder />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+          <Route path="/account/orders" element={<RequireAuth><AccountOrders /></RequireAuth>} />
+          <Route path="/account/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
+          <Route path="/account/profile" element={<RequireAuth><AccountProfile /></RequireAuth>} />
+          <Route path="/account/addresses" element={<RequireAuth><AccountAddresses /></RequireAuth>} />
+          <Route path="/support" element={<Support />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -46,25 +90,7 @@ const App = () => (
                 <CartDrawer />
                 <BackToTop />
                 <LiveChat />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/shop" element={<Shop />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/deals" element={<Deals />} />
-                  <Route path="/track-order" element={<TrackOrder />} />
-                  <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
-                  <Route path="/account/orders" element={<RequireAuth><AccountOrders /></RequireAuth>} />
-                  <Route path="/account/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
-                  <Route path="/account/profile" element={<RequireAuth><AccountProfile /></RequireAuth>} />
-                  <Route path="/account/addresses" element={<RequireAuth><AccountAddresses /></RequireAuth>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <AnimatedRoutes />
               </BrowserRouter>
             </TooltipProvider>
           </WishlistProvider>

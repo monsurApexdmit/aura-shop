@@ -24,6 +24,7 @@ export interface PlaceOrderPayload {
   coupon_code?: string
   discount?: number
   shipping_cost?: number
+  shipping_method?: string
 }
 
 export interface ApiOrderItem {
@@ -34,6 +35,24 @@ export interface ApiOrderItem {
   quantity: number
   unit_price: number
   total_price: number
+}
+
+export interface TrackingEvent {
+  status: string
+  location: string | null
+  description: string | null
+  event_time: string
+}
+
+export interface ApiShipment {
+  tracking_number: string | null
+  carrier: string | null
+  shipping_method: string | null
+  status: string
+  shipped_at: string | null
+  estimated_delivery: string | null
+  delivered_at: string | null
+  tracking_history: TrackingEvent[]
 }
 
 export interface ApiOrder {
@@ -59,6 +78,7 @@ export interface ApiOrder {
     country: string | null
   }
   items: ApiOrderItem[]
+  shipment?: ApiShipment | null
 }
 
 export const mapFulfillmentStatus = (status: string): { label: string; color: string } =>
@@ -83,6 +103,11 @@ export const orderApi = {
 
   place: async (payload: PlaceOrderPayload): Promise<ApiOrder> => {
     const res = await api.post('/orders', payload)
+    return res.data.data
+  },
+
+  trackByInvoice: async (invoice: string): Promise<ApiOrder> => {
+    const res = await api.get('/orders/track', { params: { invoice } })
     return res.data.data
   },
 }

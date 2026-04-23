@@ -7,7 +7,11 @@ import { addressApi, type ApiAddress } from "@/services/addressApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Package, Zap, UserCheck, Info } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info } from "lucide-react";
+import { useShippingMethods } from "@/hooks/useShippingMethods";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { LucideIcon } from "lucide-react";
 import { z } from "zod";
 import FormField from "@/components/forms/FormField";
 import ShippingOption from "@/components/features/checkout/ShippingOption";
@@ -28,13 +32,22 @@ const shippingSchema = z.object({
 
 type ShippingData = z.infer<typeof shippingSchema>;
 
-const shippingMethods = [
-  { id: "standard", label: "Standard Shipping", price: 5.99, days: "5–7 Business Days", icon: Package, description: "Reliable delivery at the best price" },
-  { id: "express", label: "Express Shipping", price: 12.99, days: "2–3 Business Days", icon: Truck, description: "Faster delivery for when you need it sooner" },
-  { id: "overnight", label: "Overnight Shipping", price: 24.99, days: "Next Business Day", icon: Zap, description: "Get it tomorrow — guaranteed next-day delivery" },
-] as const;
+const SHIPPING_ICON_MAP: Record<string, LucideIcon> = {
+  package: Package,
+  truck:   Truck,
+  zap:     Zap,
+  box:     Box,
+  globe:   Globe,
+};
 
-type ShippingMethodId = typeof shippingMethods[number]["id"];
+const PAYMENT_ICON_MAP: Record<string, LucideIcon> = {
+  banknote:      Banknote,
+  landmark:      Landmark,
+  "credit-card": CreditCard,
+  wallet:        Wallet,
+  "qr-code":     QrCode,
+  smartphone:    Smartphone,
+};
 
 const steps = [
   { id: 1, label: "Shipping", icon: MapPin },
@@ -51,9 +64,23 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"cod">("cod");
-  const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>("standard");
+  const { data: shippingMethods = [], isLoading: methodsLoading } = useShippingMethods();
+  const { data: paymentMethods = [], isLoading: paymentMethodsLoading } = usePaymentMethods();
+  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
+  const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
   const [addressMode, setAddressMode] = useState<"saved" | "new">(isLoggedIn ? "saved" : "new");
+
+  useEffect(() => {
+    if (shippingMethods.length > 0 && shippingMethodId === null) {
+      setShippingMethodId(shippingMethods[0].id);
+    }
+  }, [shippingMethods]);
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && paymentMethodId === null) {
+      setPaymentMethodId(paymentMethods[0].id);
+    }
+  }, [paymentMethods]);
 
   const { data: savedAddresses = [] } = useQuery<ApiAddress[]>({
     queryKey: ["addresses"],
@@ -138,8 +165,9 @@ export default function Checkout() {
             phone: form.phone,
             email: form.email,
           },
-          payment_method: "cod",
+          payment_method: selectedPayment?.name ?? "cod",
           shipping_cost: shipping,
+          shipping_method: selectedShipping?.name,
         });
         setPlacedOrderId(result.invoice_no ?? String(result.id));
         clearCart();
@@ -152,8 +180,9 @@ export default function Checkout() {
     setStep((s) => Math.min(s + 1, 4));
   };
 
-  const selectedShipping = shippingMethods.find((m) => m.id === shippingMethod)!;
-  const shipping = selectedShipping.price;
+  const selectedShipping = shippingMethods.find((m) => m.id === shippingMethodId) ?? null;
+  const selectedPayment = paymentMethods.find((m) => m.id === paymentMethodId) ?? null;
+  const shipping = selectedShipping?.price ?? 0;
   const tax = totalPrice * 0.08;
   const grandTotal = totalPrice + shipping + tax;
 
@@ -334,14 +363,31 @@ export default function Checkout() {
                       <Truck className="h-4 w-4 text-primary" /> Shipping Method
                     </h3>
                     <div className="space-y-3">
-                      {shippingMethods.map((method) => (
-                        <ShippingOption
-                          key={method.id}
-                          option={method}
-                          selected={shippingMethod === method.id}
-                          onChange={setShippingMethod}
-                        />
-                      ))}
+                      {methodsLoading ? (
+                        <>
+                          <Skeleton className="h-[72px] rounded-xl" />
+                          <Skeleton className="h-[72px] rounded-xl" />
+                          <Skeleton className="h-[72px] rounded-xl" />
+                        </>
+                      ) : shippingMethods.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">No shipping options available.</p>
+                      ) : (
+                        shippingMethods.map((method) => (
+                          <ShippingOption
+                            key={method.id}
+                            option={{
+                              id: String(method.id),
+                              label: method.name,
+                              price: method.price,
+                              days: method.estimated_days ?? "",
+                              icon: SHIPPING_ICON_MAP[method.icon ?? ""] ?? Package,
+                              description: method.description ?? "",
+                            }}
+                            selected={shippingMethodId === method.id}
+                            onChange={(idStr) => setShippingMethodId(Number(idStr))}
+                          />
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -372,33 +418,44 @@ export default function Checkout() {
                     <CreditCard className="h-5 w-5 text-primary" /> Payment Method
                   </h2>
                   <div className="space-y-3">
-                    <button
-                      onClick={() => setPaymentMethod("cod")}
-                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                        paymentMethod === "cod"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                        paymentMethod === "cod" ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}>
-                        <Banknote className="h-5 w-5" />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-semibold text-sm text-foreground">Cash on Delivery</p>
-                        <p className="text-xs text-muted-foreground">Pay when your order arrives at your doorstep</p>
-                      </div>
-                      <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        paymentMethod === "cod" ? "border-primary" : "border-muted-foreground/30"
-                      }`}>
-                        {paymentMethod === "cod" && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                      </div>
-                    </button>
-                  </div>
-                  <div className="mt-6 p-4 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
-                    <Truck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Please keep the exact amount ready at the time of delivery. Our delivery partner will collect the payment.</p>
+                    {paymentMethodsLoading ? (
+                      <>
+                        <Skeleton className="h-[72px] rounded-xl" />
+                        <Skeleton className="h-[72px] rounded-xl" />
+                        <Skeleton className="h-[72px] rounded-xl" />
+                      </>
+                    ) : paymentMethods.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">No payment options available.</p>
+                    ) : (
+                      paymentMethods.map((method) => {
+                        const Icon = PAYMENT_ICON_MAP[method.icon ?? ""] ?? CreditCard;
+                        const isSelected = paymentMethodId === method.id;
+                        return (
+                          <button
+                            key={method.id}
+                            onClick={() => setPaymentMethodId(method.id)}
+                            className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                              isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                              isSelected ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}>
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div className="text-left">
+                              <p className="font-semibold text-sm text-foreground">{method.name}</p>
+                              {method.description && <p className="text-xs text-muted-foreground">{method.description}</p>}
+                            </div>
+                            <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                              isSelected ? "border-primary" : "border-muted-foreground/30"
+                            }`}>
+                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
                 <div className="lg:col-span-2">
@@ -438,23 +495,32 @@ export default function Checkout() {
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
                       <Truck className="h-4 w-4 text-primary" /> Shipping Method
                     </h3>
-                    <div className="flex items-center gap-3">
-                      <selectedShipping.icon className="h-5 w-5 text-primary" />
-                      <div>
-                        <span className="text-sm font-medium text-foreground">{selectedShipping.label}</span>
-                        <p className="text-xs text-muted-foreground">{selectedShipping.days} · ${selectedShipping.price.toFixed(2)}</p>
-                      </div>
-                    </div>
-                  </div>
+                    {selectedShipping && (() => {
+                      const Icon = SHIPPING_ICON_MAP[selectedShipping.icon ?? ""] ?? Package;
+                      return (
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <div>
+                            <span className="text-sm font-medium text-foreground">{selectedShipping.name}</span>
+                            <p className="text-xs text-muted-foreground">{selectedShipping.estimated_days} · ${selectedShipping.price.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}</div>
 
                   <div className="bg-background rounded-2xl border border-border p-6">
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-primary" /> Payment Method
                     </h3>
-                    <div className="flex items-center gap-3">
-                      <Banknote className="h-5 w-5 text-primary" />
-                      <span className="text-sm font-medium text-foreground">Cash on Delivery</span>
-                    </div>
+                    {selectedPayment && (() => {
+                      const Icon = PAYMENT_ICON_MAP[selectedPayment.icon ?? ""] ?? CreditCard;
+                      return (
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <span className="text-sm font-medium text-foreground">{selectedPayment.name}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="bg-background rounded-2xl border border-border p-6">
@@ -464,8 +530,19 @@ export default function Checkout() {
                     <div className="space-y-3">
                       {items.map((item) => (
                         <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
-                          <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted">
-                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted flex items-center justify-center">
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                  e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                                }}
+                              />
+                            ) : null}
+                            <span className={`text-[10px] text-muted-foreground text-center leading-tight px-1 ${item.image ? "hidden" : ""}`}>No Image</span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
@@ -515,7 +592,7 @@ export default function Checkout() {
                   Order Placed Successfully!
                 </motion.h2>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-muted-foreground text-sm mb-6">
-                  Thank you for your order. Please keep cash ready for delivery.
+                  Thank you for your order. We'll send a confirmation to your email once it's on the way.
                 </motion.p>
 
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
@@ -527,7 +604,7 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Payment</span>
-                    <span className="font-medium text-foreground">Cash on Delivery</span>
+                    <span className="font-medium text-foreground">{selectedPayment?.name ?? "—"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery To</span>
@@ -535,11 +612,11 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-medium text-foreground">{selectedShipping.label}</span>
+                    <span className="font-medium text-foreground">{selectedShipping?.name ?? "—"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Estimated Delivery</span>
-                    <span className="font-medium text-foreground">{selectedShipping.days}</span>
+                    <span className="font-medium text-foreground">{selectedShipping?.estimated_days ?? "—"}</span>
                   </div>
                 </motion.div>
 

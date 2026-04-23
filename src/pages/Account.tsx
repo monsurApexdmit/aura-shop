@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders } from "@/hooks/useOrders";
 import { mapFulfillmentStatus } from "@/services/orderApi";
-import { Package, MapPin, User, LogOut, ChevronRight, ShoppingBag, Clock, Truck, CheckCircle2, XCircle } from "lucide-react";
+import { Package, MapPin, User, LogOut, ChevronRight, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, Headphones } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 
@@ -65,6 +65,7 @@ export default function Account() {
               {[
                 { label: "My Orders", desc: "View order history & status", icon: Package, to: "/account/orders" },
                 { label: "Addresses", desc: "Manage shipping addresses", icon: MapPin, to: "/account/addresses" },
+                { label: "Support", desc: "Get help with your orders", icon: Headphones, to: "/support" },
                 { label: "Profile Settings", desc: "Edit your personal info", icon: User, to: "/account/profile" },
               ].map((link) => (
                 <Link key={link.to} to={link.to} className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-primary/30 transition-colors group">
