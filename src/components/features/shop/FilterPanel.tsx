@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useCategories";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface FilterPanelProps {
   /**
@@ -76,6 +77,7 @@ export default function FilterPanel({
   className = "",
 }: FilterPanelProps) {
   const { data: categories = [] } = useCategories();
+  const { formatCurrency } = useCurrency();
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -187,11 +189,11 @@ export default function FilterPanel({
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span className="px-2 py-1 rounded-md bg-muted font-mono">
-            ${priceRange[0]}
+            {formatCurrency(priceRange[0])}
           </span>
           <span className="text-border">—</span>
           <span className="px-2 py-1 rounded-md bg-muted font-mono">
-            ${priceRange[1]}
+            {formatCurrency(priceRange[1])}
           </span>
         </div>
       </div>

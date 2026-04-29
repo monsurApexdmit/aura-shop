@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { mapApiProduct } from "@/lib/mappers";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SearchAutocompleteProps {
   mobile?: boolean;
@@ -16,6 +17,7 @@ export default function SearchAutocomplete({ mobile, onClose }: SearchAutocomple
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
 
   // Debounce the search query by 300ms
   useEffect(() => {
@@ -39,18 +41,18 @@ export default function SearchAutocomplete({ mobile, onClose }: SearchAutocomple
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSelect = (id: string) => {
+  const handleSelect = (slug: string) => {
     setQuery("");
     setDebouncedQuery("");
     setOpen(false);
     onClose?.();
-    navigate(`/product/${id}`);
+    navigate(`/product/${slug}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       if (results.length > 0) {
-        handleSelect(results[0].id);
+        handleSelect(results[0].slug);
       } else if (query.trim()) {
         setOpen(false);
         onClose?.();
@@ -96,13 +98,13 @@ export default function SearchAutocomplete({ mobile, onClose }: SearchAutocomple
               results.map((product) => (
                 <button
                   key={product.id}
-                  onClick={() => handleSelect(product.id)}
+                  onClick={() => handleSelect(product.slug)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
                 >
                   <img src={product.image} alt={product.name} className="w-10 h-10 object-contain rounded-lg bg-muted/30 p-1" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-popover-foreground truncate">{product.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{product.category} · ${product.price.toFixed(2)}</p>
+                    <p className="text-[11px] text-muted-foreground">{product.category} · {formatCurrency(product.price)}</p>
                   </div>
                 </button>
               ))

@@ -26,8 +26,12 @@ export function mapApiProduct(p: ApiProduct): Product {
     }
   })
 
+  const badge = p.deal_label
+    ?? (p.is_hot_deal ? 'Hot Deal' : p.is_best_seller ? 'Best Seller' : p.is_featured ? 'Featured' : undefined)
+
   return {
     id:            String(p.id),
+    slug:          p.slug,
     name:          p.name,
     price:         displayPrice,
     originalPrice,
@@ -35,11 +39,12 @@ export function mapApiProduct(p: ApiProduct): Product {
     images:        p.images?.map(getImageUrl) ?? [primaryImage],
     category:      p.category_name ?? '',
     subcategory:   '',
+    badge,
     sku:           p.sku ?? '',
     stock:         p.stock,
     description:   p.description ?? '',
-    rating:        0,
-    reviews:       0,
+    rating:        p.rating ?? 0,
+    reviews:       p.reviews_count ?? 0,
     variants,
   }
 }

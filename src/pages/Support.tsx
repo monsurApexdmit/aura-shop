@@ -1,17 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
   Headphones, ChevronRight, Plus, Send, ArrowLeft,
-  CheckCircle2, Clock, AlertCircle, XCircle, Loader2, MessageSquare, X,
+  CheckCircle2, Clock, AlertCircle, XCircle, Loader2, MessageSquare, X, Paperclip, Mic, Square,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeToSupportTicket } from "@/lib/reverb";
 import { supportApi, type SupportTicket, type TicketCategory, type SupportMessage } from "@/services/supportApi";
+import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 // ── Sound ─────────────────────────────────────────────────────────
 function playNotificationSound() {
@@ -89,7 +91,10 @@ function StatusBadge({ status }: { status: SupportTicket["status"] }) {
 function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) => void; onCancel: () => void }) {
   const [form, setForm] = useState<NewTicketData>({ subject: "", message: "", category: "general" });
   const [errors, setErrors] = useState<Partial<Record<keyof NewTicketData, string>>>({});
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isRecording, start: startRecording, stop: stopRecording } = useVoiceRecorder();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,13 +107,37 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
     }
     setSubmitting(true);
     try {
-      const ticket = await supportApi.create(form);
+      const ticket = await supportApi.create({ ...form, attachments });
       toast.success("Ticket submitted! We'll get back to you soon.");
       onCreated(ticket);
     } catch {
       toast.error("Failed to submit ticket. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files || []);
+    if (selected.length === 0) return;
+    setAttachments((prev) => [...prev, ...selected].slice(0, 5));
+    event.target.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+  };
+
+  const handleVoiceToggle = async () => {
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+
+    try {
+      await startRecording((file) => setAttachments((prev) => [...prev, file].slice(0, 5)));
+    } catch {
+      toast.error("Microphone access failed.");
     }
   };
 
@@ -122,6 +151,14 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
       </div>
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,.pdf,.txt,.csv,.xls,.xlsx,.doc,.docx,audio/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
         <div>
           <label className="block text-sm font-medium mb-1.5">Category</label>
           <select
@@ -153,6 +190,17 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
           />
           {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message}</p>}
         </div>
+        <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
+        <div className="flex gap-2">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm hover:bg-muted">
+            <Paperclip className="w-4 h-4" />
+            Attach
+          </button>
+          <button type="button" onClick={handleVoiceToggle} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm hover:bg-muted">
+            {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isRecording ? "Stop" : "Voice"}
+          </button>
+        </div>
         <div className="flex gap-3">
           <button
             type="button" onClick={onCancel}
@@ -180,11 +228,14 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
   const { user } = useAuth();
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [reply, setReply] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optimisticIds = useRef<Set<number>>(new Set());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const ticketRef = useRef<SupportTicket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isRecording, start: startRecording, stop: stopRecording } = useVoiceRecorder();
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -275,32 +326,38 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
   useEffect(() => { scrollToBottom(); }, [ticket?.messages.length]);
 
   const sendReply = async () => {
-    if (!reply.trim() || !ticket) return;
+    const body = reply.trim();
+    if ((!body && attachments.length === 0) || !ticket) return;
     setSending(true);
     const optimisticId = Date.now();
-    const optimisticMsg: SupportMessage = {
-      id: optimisticId,
-      ticketId: ticket.id,
-      customerId: null,
-      body: reply.trim(),
-      senderType: "customer",
-      senderName: user?.name ?? null,
-      createdAt: new Date().toISOString(),
-    };
-    optimisticIds.current.add(optimisticId);
-    setTicket((prev) => prev ? { ...prev, messages: [...prev.messages, optimisticMsg] } : prev);
-    const sentText = reply.trim();
+    if (body && attachments.length === 0) {
+      const optimisticMsg: SupportMessage = {
+        id: optimisticId,
+        ticketId: ticket.id,
+        customerId: null,
+        body,
+        senderType: "customer",
+        senderName: user?.name ?? null,
+        createdAt: new Date().toISOString(),
+        attachments: [],
+      };
+      optimisticIds.current.add(optimisticId);
+      setTicket((prev) => prev ? { ...prev, messages: [...prev.messages, optimisticMsg] } : prev);
+    }
+    const sentText = body;
     setReply("");
+    setAttachments([]);
     scrollToBottom();
 
     try {
-      const updated = await supportApi.reply(ticket.id, sentText);
+      const updated = await supportApi.reply(ticket.id, { body: sentText, attachments });
       // Replace optimistic with real messages from server
       setTicket(updated);
       onTicketUpdate(updated);
     } catch {
       setTicket((prev) => prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimisticId) } : prev);
       setReply(sentText);
+      setAttachments(attachments);
       toast.error("Failed to send message.");
     } finally {
       optimisticIds.current.delete(optimisticId);
@@ -311,6 +368,30 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
+  };
+
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files || []);
+    if (selected.length === 0) return;
+    setAttachments((prev) => [...prev, ...selected].slice(0, 5));
+    event.target.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+  };
+
+  const handleVoiceToggle = async () => {
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+
+    try {
+      await startRecording((file) => setAttachments((prev) => [...prev, file].slice(0, 5)));
+    } catch {
+      toast.error("Microphone access failed.");
+    }
   };
 
   if (!ticket) {
@@ -364,7 +445,8 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
                   ? "bg-primary text-primary-foreground rounded-br-sm"
                   : "bg-muted text-foreground rounded-bl-sm"
               }`}>
-                {msg.body}
+                {msg.body ? <p>{msg.body}</p> : null}
+                <MessageAttachments attachments={msg.attachments} />
               </div>
               <span className="text-xs text-muted-foreground px-1">
                 {isCustomer ? (user?.name ?? "You") : (msg.senderName ?? "Support Team")}
@@ -379,7 +461,32 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
       {/* Input */}
       {canReply ? (
         <div className="shrink-0 border-t border-border p-3 bg-card/50">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.txt,.csv,.xls,.xlsx,.doc,.docx,audio/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
           <div className="flex gap-2 items-end">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 w-10 h-10 rounded-xl border border-border bg-background text-foreground flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleVoiceToggle}
+              className={`shrink-0 w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
+                isRecording ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
             <textarea
               ref={textareaRef}
               value={reply}
@@ -392,13 +499,13 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
             />
             <button
               onClick={sendReply}
-              disabled={sending || !reply.trim()}
+              disabled={sending || (!reply.trim() && attachments.length === 0)}
               className="shrink-0 w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-40 transition-opacity"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground/60 mt-1.5 ml-1">Shift+Enter for new line</p>
+          <p className="text-xs text-muted-foreground/60 mt-1.5 ml-1">Shift+Enter for new line. Attach up to 5 files or record a voice note.</p>
         </div>
       ) : (
         <div className="shrink-0 border-t border-border p-4 text-center">

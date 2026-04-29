@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
-import { Package, ChevronRight, Calendar, DollarSign } from "lucide-react";
+import { Package, ChevronRight, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface Order {
   id: string;
@@ -105,6 +106,7 @@ export default function OrderCard({
   const statusInfo = statusConfig[order.status];
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const timeAgo = formatDistanceToNow(new Date(order.date), { addSuffix: true });
+  const { formatCurrency } = useCurrency();
 
   return (
     <div
@@ -169,12 +171,9 @@ export default function OrderCard({
       {/* Order Total */}
       <div className="mb-4 pb-4 border-b border-border/50 flex items-center justify-between">
         <span className="text-sm text-muted-foreground">Order Total</span>
-        <div className="flex items-center gap-1">
-          <DollarSign className="h-4 w-4 text-primary" />
-          <span className="font-bold text-lg text-foreground">
-            {order.total.toFixed(2)}
-          </span>
-        </div>
+        <span className="font-bold text-lg text-foreground">
+          {formatCurrency(order.total)}
+        </span>
       </div>
 
       {/* Actions */}

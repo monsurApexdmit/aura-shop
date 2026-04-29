@@ -5,6 +5,7 @@ import { mapFulfillmentStatus } from "@/services/orderApi";
 import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const STATUS_ICON: Record<string, React.ElementType> = {
   Processing: Clock,
@@ -37,6 +38,7 @@ const TIMELINE_IDX: Record<string, number> = {
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const numericId = id ? Number(id) : null;
   const { data: order, isLoading, isError } = useOrder(numericId);
 
@@ -69,8 +71,13 @@ export default function OrderDetail() {
   const statusColor = STATUS_COLOR[statusLabel] ?? "bg-muted text-muted-foreground";
   const timelineIdx = TIMELINE_IDX[statusLabel] ?? 0;
   const isCancelled = statusLabel === "Cancelled";
-  const subtotal = order.items.reduce((s, i) => s + i.total_price, 0);
-  const tax = order.amount - subtotal - order.shipping_cost;
+  const items = Array.isArray(order.items) ? order.items : [];
+  const subtotal = items.reduce((s, i) => s + Number(i.total_price ?? 0), 0);
+  const tax = Number(order.amount ?? 0) - subtotal - Number(order.shipping_cost ?? 0);
+  const orderDate = order.order_time ? new Date(order.order_time) : null;
+  const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
+    ? orderDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "Date unavailable";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -91,7 +98,7 @@ export default function OrderDetail() {
               <div>
                 <h1 className="font-display font-bold text-2xl text-foreground mb-1">{order.invoice_no}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Placed on {new Date(order.order_time).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  Placed on {orderDateLabel}
                 </p>
               </div>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
@@ -127,9 +134,9 @@ export default function OrderDetail() {
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Items */}
               <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6">
-                <h2 className="font-display font-bold text-sm mb-4">Order Items ({order.items.length})</h2>
+                <h2 className="font-display font-bold text-sm mb-4">Order Items ({items.length})</h2>
                 <div className="space-y-3">
-                  {order.items.map((item) => (
+                  {items.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
                       <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted flex items-center justify-center">
                         <span className="text-[10px] text-muted-foreground text-center leading-tight px-1">No Image</span>
@@ -137,9 +144,9 @@ export default function OrderDetail() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-foreground truncate">{item.product_name}</p>
                         {item.variant_name && <p className="text-xs text-muted-foreground">{item.variant_name}</p>}
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity} × ${item.unit_price.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">Qty: {item.quantity} × {formatCurrency(item.unit_price)}</p>
                       </div>
-                      <p className="font-display font-bold text-sm text-foreground shrink-0">${item.total_price.toFixed(2)}</p>
+                      <p className="font-display font-bold text-sm text-foreground shrink-0">{formatCurrency(item.total_price)}</p>
                     </div>
                   ))}
                 </div>
@@ -151,13 +158,13 @@ export default function OrderDetail() {
                 <div className="bg-card border border-border rounded-2xl p-5">
                   <h3 className="font-display font-bold text-sm mb-4">Order Summary</h3>
                   <div className="space-y-2 text-sm border-b border-border pb-3 mb-3">
-                    <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>${order.shipping_cost.toFixed(2)}</span></div>
-                    {tax > 0 && <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>${tax.toFixed(2)}</span></div>}
-                    {order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${order.discount.toFixed(2)}</span></div>}
+                    <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{formatCurrency(order.shipping_cost)}</span></div>
+                    {tax > 0 && <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>{formatCurrency(tax)}</span></div>}
+                    {order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatCurrency(order.discount)}</span></div>}
                   </div>
                   <div className="flex justify-between font-display font-bold text-base">
-                    <span>Total</span><span className="text-primary">${order.amount.toFixed(2)}</span>
+                    <span>Total</span><span className="text-primary">{formatCurrency(order.amount)}</span>
                   </div>
                 </div>
 

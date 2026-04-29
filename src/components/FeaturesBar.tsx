@@ -1,14 +1,16 @@
 import { motion } from "framer-motion";
 import { Truck, Shield, RotateCcw, Headphones } from "lucide-react";
-
-const features = [
-  { icon: Truck, title: "Free Shipping", desc: "On orders over $50", color: "from-primary/10 to-primary/5" },
-  { icon: Shield, title: "Secure Payment", desc: "SSL encrypted", color: "from-accent/10 to-accent/5" },
-  { icon: RotateCcw, title: "Easy Returns", desc: "30-day guarantee", color: "from-primary/10 to-primary/5" },
-  { icon: Headphones, title: "24/7 Support", desc: "Expert assistance", color: "from-accent/10 to-accent/5" },
-];
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function FeaturesBar() {
+  const { formatCurrency } = useCurrency();
+
+  const features = [
+    { icon: Truck, title: "Free Shipping", desc: `On orders over ${formatCurrency(50)}`, color: "from-primary/10 to-primary/5" },
+    { icon: Shield, title: "Secure Payment", desc: "SSL encrypted", color: "from-accent/10 to-accent/5" },
+    { icon: RotateCcw, title: "Easy Returns", desc: "30-day guarantee", color: "from-primary/10 to-primary/5" },
+    { icon: Headphones, title: "24/7 Support", desc: "Expert assistance", color: "from-accent/10 to-accent/5" },
+  ];
   return (
     <section className="border-y border-border bg-card/50">
       <div className="container py-6 md:py-8">

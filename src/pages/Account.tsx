@@ -6,6 +6,7 @@ import { mapFulfillmentStatus } from "@/services/orderApi";
 import { Package, MapPin, User, LogOut, ChevronRight, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, Headphones } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const statusIcons = { yellow: Clock, blue: Truck, green: CheckCircle2, red: XCircle, gray: Package };
 const statusColors: Record<string, string> = {
@@ -20,11 +21,12 @@ const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
 
 export default function Account() {
   const { user, isLoggedIn, logout } = useAuth();
-  const { data, isLoading } = useOrders(isLoggedIn);
+  const { data, isLoading, isError } = useOrders(isLoggedIn);
+  const { formatCurrency } = useCurrency();
 
   const orders = data?.data ?? [];
   const recentOrders = orders.slice(0, 3);
-  const totalSpent = orders.reduce((s, o) => s + o.amount, 0);
+  const totalSpent = orders.reduce((s, o) => s + Number(o.amount ?? 0), 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -42,7 +44,7 @@ export default function Account() {
           <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[
               { label: "Total Orders", value: isLoading ? "..." : String(orders.length), icon: Package, link: "/account/orders" },
-              { label: "Total Spent", value: isLoading ? "..." : `$${totalSpent.toFixed(2)}`, icon: ShoppingBag, link: "/account/orders" },
+              { label: "Total Spent", value: isLoading ? "..." : formatCurrency(totalSpent), icon: ShoppingBag, link: "/account/orders" },
               { label: "Addresses", value: "Manage", icon: MapPin, link: "/account/addresses" },
               { label: "Profile", value: "Edit", icon: User, link: "/account/profile" },
             ].map((stat) => (
@@ -103,6 +105,11 @@ export default function Account() {
                   <div className="space-y-3">
                     {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
                   </div>
+                ) : isError ? (
+                  <div className="text-center py-10">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                    <p className="text-sm text-muted-foreground">We could not load your orders right now.</p>
+                  </div>
                 ) : recentOrders.length === 0 ? (
                   <div className="text-center py-10">
                     <Package className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
@@ -115,22 +122,27 @@ export default function Account() {
                       const { label, color } = mapFulfillmentStatus(order.fulfillment_status);
                       const Icon = statusIcons[color as keyof typeof statusIcons] ?? Package;
                       const colorClass = statusColors[color] ?? statusColors.gray;
+                      const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+                      const orderDate = order.order_time ? new Date(order.order_time) : null;
+                      const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
+                        ? orderDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                        : "Date unavailable";
                       return (
                         <Link key={order.id} to={`/account/orders/${order.id}`} className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors">
                           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                             <Icon className="h-5 w-5 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no}</p>
+                            <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no || `Order #${order.id}`}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(order.order_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {order.items.length} item{order.items.length > 1 ? "s" : ""}
+                              {orderDateLabel} · {itemCount} item{itemCount !== 1 ? "s" : ""}
                             </p>
                           </div>
                           <div className="text-right shrink-0">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${colorClass}`}>
                               {label}
                             </span>
-                            <p className="font-display font-bold text-sm text-foreground mt-1">${order.amount.toFixed(2)}</p>
+                            <p className="font-display font-bold text-sm text-foreground mt-1">{formatCurrency(order.amount)}</p>
                           </div>
                         </Link>
                       );

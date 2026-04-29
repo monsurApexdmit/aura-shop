@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { usePlaceOrder } from "@/hooks/useOrders";
 import { addressApi, type ApiAddress } from "@/services/addressApi";
+import { couponApi, type CouponResult } from "@/services/couponApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X, Loader2 } from "lucide-react";
 import { useShippingMethods } from "@/hooks/useShippingMethods";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,6 +61,7 @@ const steps = [
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { isLoggedIn, user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const placeOrder = usePlaceOrder();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -69,6 +72,9 @@ export default function Checkout() {
   const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
   const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
   const [addressMode, setAddressMode] = useState<"saved" | "new">(isLoggedIn ? "saved" : "new");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
+  const [couponApplying, setCouponApplying] = useState(false);
 
   useEffect(() => {
     if (shippingMethods.length > 0 && shippingMethodId === null) {
@@ -141,6 +147,33 @@ export default function Checkout() {
     return true;
   };
 
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponApplying(true);
+    try {
+      const result = await couponApi.validate(couponCode.trim());
+      setCouponResult(result);
+      toast.success("Coupon applied!", { description: result.campaign_name });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Invalid or expired coupon");
+      setCouponResult(null);
+    } finally {
+      setCouponApplying(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponResult(null);
+    setCouponCode("");
+  };
+
+  const calcDiscount = (subtotal: number): number => {
+    if (!couponResult) return 0;
+    if (couponResult.free_shipping) return 0;
+    if (couponResult.type === "fixed") return Math.min(couponResult.discount, subtotal);
+    return Math.round((subtotal * couponResult.discount) / 100 * 100) / 100;
+  };
+
   const nextStep = async () => {
     if (step === 1 && !validateShipping()) return;
     if (step === 3) {
@@ -151,7 +184,8 @@ export default function Checkout() {
       }
       try {
         const orderItems = items.map((i) => ({
-          product_id: Number(i.id),
+          product_id: i.productId,
+          variant_id: i.variantId ?? undefined,
           quantity: i.quantity,
         }));
         const result = await placeOrder.mutateAsync({
@@ -166,7 +200,9 @@ export default function Checkout() {
             email: form.email,
           },
           payment_method: selectedPayment?.name ?? "cod",
-          shipping_cost: shipping,
+          coupon_code: couponResult ? couponResult.code : undefined,
+          discount: discount > 0 ? discount : undefined,
+          shipping_cost: shippingCost,
           shipping_method: selectedShipping?.name,
         });
         setPlacedOrderId(result.invoice_no ?? String(result.id));
@@ -182,9 +218,10 @@ export default function Checkout() {
 
   const selectedShipping = shippingMethods.find((m) => m.id === shippingMethodId) ?? null;
   const selectedPayment = paymentMethods.find((m) => m.id === paymentMethodId) ?? null;
-  const shipping = selectedShipping?.price ?? 0;
-  const tax = totalPrice * 0.08;
-  const grandTotal = totalPrice + shipping + tax;
+  const shippingCost = couponResult?.free_shipping ? 0 : (selectedShipping?.price ?? 0);
+  const discount = calcDiscount(totalPrice);
+  const tax = (totalPrice - discount) * 0.08;
+  const grandTotal = totalPrice - discount + shippingCost + tax;
 
 
   if (items.length === 0 && step < 4) {
@@ -394,7 +431,7 @@ export default function Checkout() {
 
                 {/* Order Summary Sidebar */}
                 <div className="lg:col-span-2">
-                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shipping} tax={tax} grandTotal={grandTotal} />
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                 </div>
               </div>
 
@@ -459,7 +496,7 @@ export default function Checkout() {
                   </div>
                 </div>
                 <div className="lg:col-span-2">
-                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shipping} tax={tax} grandTotal={grandTotal} />
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                 </div>
               </div>
               <div className="flex justify-between mt-6">
@@ -502,7 +539,7 @@ export default function Checkout() {
                           <Icon className="h-5 w-5 text-primary" />
                           <div>
                             <span className="text-sm font-medium text-foreground">{selectedShipping.name}</span>
-                            <p className="text-xs text-muted-foreground">{selectedShipping.estimated_days} · ${selectedShipping.price.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">{selectedShipping.estimated_days} · {formatCurrency(selectedShipping.price)}</p>
                           </div>
                         </div>
                       );
@@ -548,7 +585,7 @@ export default function Checkout() {
                             <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                             <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                           </div>
-                          <p className="font-display font-bold text-sm text-foreground">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="font-display font-bold text-sm text-foreground">{formatCurrency(item.price * item.quantity)}</p>
                         </div>
                       ))}
                     </div>
@@ -556,7 +593,7 @@ export default function Checkout() {
                 </div>
 
                 <div className="lg:col-span-2">
-                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shipping} tax={tax} grandTotal={grandTotal} />
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                   <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-start gap-3">
                     <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     <p className="text-xs text-muted-foreground">Your order information is secure. We'll send a confirmation to your email.</p>
@@ -637,30 +674,80 @@ export default function Checkout() {
   );
 }
 
-function OrderSummary({ items, totalPrice, shipping, tax, grandTotal }: {
+function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, couponResult, couponCode, onCouponCodeChange, onApplyCoupon, onRemoveCoupon, couponApplying }: {
   items: { id: string; name: string; quantity: number; price: number }[];
-  totalPrice: number; shipping: number; tax: number; grandTotal: number;
+  totalPrice: number;
+  shipping: number;
+  discount: number;
+  tax: number;
+  grandTotal: number;
+  couponResult: CouponResult | null;
+  couponCode: string;
+  onCouponCodeChange: (v: string) => void;
+  onApplyCoupon: () => void;
+  onRemoveCoupon: () => void;
+  couponApplying: boolean;
 }) {
+  const { formatCurrency } = useCurrency();
   return (
     <div className="bg-background rounded-2xl border border-border p-6 sticky top-36">
       <h3 className="font-display font-bold text-sm mb-4">Order Summary</h3>
       <div className="space-y-2 text-sm border-b border-border pb-4 mb-4">
         <div className="flex justify-between text-muted-foreground">
           <span>Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} items)</span>
-          <span>${totalPrice.toFixed(2)}</span>
+          <span>{formatCurrency(totalPrice)}</span>
         </div>
         <div className="flex justify-between text-muted-foreground">
           <span>Shipping</span>
-          <span>${shipping.toFixed(2)}</span>
+          <span>{couponResult?.free_shipping ? <span className="text-green-600 font-medium">FREE</span> : formatCurrency(shipping)}</span>
         </div>
+        {discount > 0 && (
+          <div className="flex justify-between text-green-600 font-medium">
+            <span>Discount {couponResult && `(${couponResult.code})`}</span>
+            <span>-{formatCurrency(discount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-muted-foreground">
           <span>Tax</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
       </div>
+
+      {/* Coupon input */}
+      <div className="mb-4">
+        {couponResult ? (
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800">
+            <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-xs font-medium">
+              <Tag className="h-3.5 w-3.5" />
+              <span>{couponResult.code} — {couponResult.campaign_name}</span>
+            </div>
+            <button onClick={onRemoveCoupon} className="text-green-600 hover:text-green-800 dark:hover:text-green-300">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Coupon code"
+              value={couponCode}
+              onChange={(e) => onCouponCodeChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onApplyCoupon(); } }}
+              className="h-9 text-sm"
+            />
+            <button
+              onClick={onApplyCoupon}
+              disabled={couponApplying || !couponCode.trim()}
+              className="shrink-0 px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+            >
+              {couponApplying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="flex justify-between font-display font-bold text-lg">
         <span>Total</span>
-        <span className="text-primary">${grandTotal.toFixed(2)}</span>
+        <span className="text-primary">{formatCurrency(grandTotal)}</span>
       </div>
     </div>
   );

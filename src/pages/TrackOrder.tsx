@@ -7,6 +7,7 @@ import {
 import { orderApi } from "@/services/orderApi";
 import type { ApiOrder } from "@/services/orderApi";
 import { mapFulfillmentStatus } from "@/services/orderApi";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
 
@@ -29,16 +30,19 @@ const DONE_UNTIL: Record<string, number> = {
 
 function buildTimeline(order: ApiOrder) {
   const doneCount = DONE_UNTIL[order.fulfillment_status] ?? 1;
+  const orderDate = order.order_time ? new Date(order.order_time) : null;
+  const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
+    ? orderDate.toLocaleString("en-US", {
+        month: "short", day: "numeric", year: "numeric",
+        hour: "numeric", minute: "2-digit",
+      })
+    : "";
+
   return TIMELINE_STEPS.map((step, i) => ({
     ...step,
     done: i < doneCount,
     isCurrent: i === doneCount - 1,
-    date: i === 0
-      ? new Date(order.order_time).toLocaleString("en-US", {
-          month: "short", day: "numeric", year: "numeric",
-          hour: "numeric", minute: "2-digit",
-        })
-      : "",
+    date: i === 0 ? orderDateLabel : "",
   }));
 }
 
@@ -55,6 +59,7 @@ export default function TrackOrder() {
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { formatCurrency } = useCurrency();
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +86,7 @@ export default function TrackOrder() {
   const { label: statusLabel } = order ? mapFulfillmentStatus(order.fulfillment_status) : { label: "" };
   const shipment = order?.shipment ?? null;
   const trackingHistory = shipment?.tracking_history ?? [];
+  const itemCount = Array.isArray(order?.items) ? order.items.length : 0;
 
   return (
     <div className="min-h-screen bg-background pt-32 pb-20">
@@ -153,7 +159,7 @@ export default function TrackOrder() {
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Box className="h-4 w-4 text-primary" />
-                  <span>{order.items.length} item{order.items.length !== 1 ? "s" : ""}</span>
+                  <span>{itemCount} item{itemCount !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Truck className="h-4 w-4 text-primary" />
@@ -346,7 +352,7 @@ export default function TrackOrder() {
                         </div>
                         <div className="text-right shrink-0 ml-4">
                           <p className="text-muted-foreground text-xs">x{item.quantity}</p>
-                          <p className="font-semibold text-foreground">${item.total_price.toFixed(2)}</p>
+                          <p className="font-semibold text-foreground">{formatCurrency(item.total_price)}</p>
                         </div>
                       </div>
                     ))}
@@ -355,18 +361,18 @@ export default function TrackOrder() {
                     {order.shipping_cost > 0 && (
                       <div className="flex justify-between text-muted-foreground">
                         <span>Shipping</span>
-                        <span>${order.shipping_cost.toFixed(2)}</span>
+                        <span>{formatCurrency(order.shipping_cost)}</span>
                       </div>
                     )}
                     {order.discount > 0 && (
                       <div className="flex justify-between text-muted-foreground">
                         <span>Discount</span>
-                        <span className="text-emerald-600">-${order.discount.toFixed(2)}</span>
+                        <span className="text-emerald-600">-{formatCurrency(order.discount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-bold text-base pt-1">
                       <span>Total</span>
-                      <span className="text-primary">${order.amount.toFixed(2)}</span>
+                      <span className="text-primary">{formatCurrency(order.amount)}</span>
                     </div>
                   </div>
                 </div>

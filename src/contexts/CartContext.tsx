@@ -3,6 +3,8 @@ import { toast } from "sonner";
 
 export interface CartItem {
   id: string;
+  productId: number;
+  variantId: number | null;
   name: string;
   price: number;
   image: string;

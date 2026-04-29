@@ -5,6 +5,7 @@ import { useProduct, useProducts } from "@/hooks/useProducts";
 import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import Footer from "@/components/Footer";
@@ -39,14 +40,15 @@ function deriveAttributes(variants: NonNullable<ReturnType<typeof mapApiProduct>
 }
 
 export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { formatCurrency } = useCurrency();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
-  const { data: apiProduct, isLoading } = useProduct(id ? Number(id) : null);
+  const { data: apiProduct, isLoading } = useProduct(slug ?? null);
   const product = useMemo(() => (apiProduct ? mapApiProduct(apiProduct) : null), [apiProduct]);
 
   const attributes = useMemo(() => {
@@ -68,9 +70,15 @@ export default function ProductDetail() {
 
   // Initialize attribute selections when product loads
   useEffect(() => {
+    if (product?.slug && slug && product.slug !== slug) {
+      navigate(`/product/${product.slug}`, { replace: true });
+    }
+  }, [navigate, product?.slug, slug]);
+
+  useEffect(() => {
     if (attributes.length) {
       const initial: Record<string, string> = {};
-      attributes.forEach((attr) => { initial[attr.displayName] = attr.values[0]; });
+      attributes.forEach((attr) => { initial[attr.name] = attr.values[0]; });
       setSelectedAttributes(initial);
     } else {
       setSelectedAttributes({});
@@ -85,7 +93,7 @@ export default function ProductDetail() {
     ) || product.variants[0];
   }, [product, selectedAttributes]);
 
-  const cartItem = items.find((i) => i.id === (selectedVariant?.id || product?.id));
+  const cartItem = items.find((i) => i.id === String(selectedVariant?.id ?? product?.id));
 
   if (isLoading) {
     return (
@@ -141,7 +149,9 @@ export default function ProductDetail() {
 
   const handleAdd = () => {
     addItem({
-      id: selectedVariant?.id || product.id,
+      id: String(selectedVariant?.id ?? product.id),
+      productId: Number(product.id),
+      variantId: selectedVariant ? Number(selectedVariant.id) : null,
       name: selectedVariant ? `${product.name} - ${selectedVariant.name}` : product.name,
       price: currentPrice,
       image: product.image,
@@ -263,13 +273,13 @@ export default function ProductDetail() {
             {/* Price Block */}
             <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 mb-6">
               <div className="flex items-baseline gap-3">
-                <span className="font-display text-3xl font-bold text-foreground">${currentPrice.toFixed(2)}</span>
+                <span className="font-display text-3xl font-bold text-foreground">{formatCurrency(currentPrice)}</span>
                 {originalPrice && originalPrice > currentPrice && (
-                  <span className="text-lg text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>
+                  <span className="text-lg text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
                 )}
                 {discount > 0 && (
                   <Badge className="gradient-accent text-accent-foreground border-0 text-xs">
-                    Save ${(originalPrice! - currentPrice).toFixed(2)}
+                    Save {formatCurrency(originalPrice! - currentPrice)}
                   </Badge>
                 )}
               </div>
@@ -292,19 +302,19 @@ export default function ProductDetail() {
                 {attributes.map((attr) => (
                   <div key={attr.name}>
                     <label className="text-sm font-semibold text-foreground mb-2.5 block">
-                      {attr.displayName}: <span className="text-primary font-bold">{selectedAttributes[attr.displayName]}</span>
+                      {attr.displayName}: <span className="text-primary font-bold">{selectedAttributes[attr.name]}</span>
                     </label>
                     {isColorAttribute(attr.displayName) ? (
                       <div className="flex flex-wrap gap-2.5">
                         {attr.values.map((val) => {
                           const hex = COLOR_MAP[val.toLowerCase()] || "#888";
-                          const selected = selectedAttributes[attr.displayName] === val;
+                          const selected = selectedAttributes[attr.name] === val;
                           return (
                             <motion.button
                               key={val}
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.displayName]: val }))}
+                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
                               className={`relative w-10 h-10 rounded-full border-2 transition-all ${
                                 selected ? "border-primary ring-2 ring-primary/30 shadow-lg" : "border-border hover:border-primary/50"
                               }`}
@@ -323,13 +333,13 @@ export default function ProductDetail() {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {attr.values.map((val) => {
-                          const selected = selectedAttributes[attr.displayName] === val;
+                          const selected = selectedAttributes[attr.name] === val;
                           return (
                             <motion.button
                               key={val}
                               whileHover={{ scale: 1.03 }}
                               whileTap={{ scale: 0.97 }}
-                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.displayName]: val }))}
+                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
                               className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                                 selected
                                   ? "border-primary bg-primary/10 text-primary shadow-sm"
@@ -344,6 +354,16 @@ export default function ProductDetail() {
                     )}
                   </div>
                 ))}
+                <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-foreground">Available stock</span>
+                    {currentStock > 0 ? (
+                      <span className="font-semibold text-primary">{currentStock} unit{currentStock === 1 ? "" : "s"}</span>
+                    ) : (
+                      <span className="font-semibold text-destructive">Out of stock</span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -385,7 +405,7 @@ export default function ProductDetail() {
             {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: Truck, title: "Free Shipping", sub: "Orders $50+" },
+                { icon: Truck, title: "Free Shipping", sub: `Orders ${formatCurrency(50)}+` },
                 { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
                 { icon: RotateCcw, title: "Easy Returns", sub: "30-Day Policy" },
               ].map(({ icon: Icon, title, sub }) => (
@@ -439,7 +459,7 @@ export default function ProductDetail() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <ProductReviews productRating={product.rating} reviewCount={product.reviews} />
+            <ProductReviews productSlug={product.slug} productRating={product.rating} reviewCount={product.reviews} />
             </TabsContent>
           </Tabs>
         </div>

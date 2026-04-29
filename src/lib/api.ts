@@ -34,5 +34,7 @@ api.interceptors.response.use(
 export const getImageUrl = (path: string | null | undefined): string => {
   if (!path) return '/placeholder.svg'
   if (path.startsWith('http')) return path
-  return `${IMAGE_BASE}/storage/${path.replace(/^\//, '')}`
+  const clean = path.replace(/^\//, '')
+  if (clean.startsWith('storage/')) return `${IMAGE_BASE}/${clean}`
+  return `${IMAGE_BASE}/storage/${clean}`
 }

@@ -6,6 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCategories } from "@/hooks/useCategories";
 import { Monitor, Shirt, Pill, ShoppingBasket, Home, Sparkles, Dumbbell, BookOpen, Baby, Coffee, Wrench, Gamepad2, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -39,6 +40,7 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
+  const { formatCurrency } = useCurrency();
   const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -185,7 +187,7 @@ export default function Header() {
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-[10px] opacity-80 leading-none">{totalItems} Items</p>
-                <p className="text-sm font-bold leading-none mt-0.5">${totalPrice.toFixed(2)}</p>
+                <p className="text-sm font-bold leading-none mt-0.5">{formatCurrency(totalPrice)}</p>
               </div>
             </button>
 
@@ -290,7 +292,7 @@ export default function Header() {
 
           <div className="ml-auto text-sm text-muted-foreground flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-soft" />
-            Free shipping on orders $50+
+            Free shipping on orders {formatCurrency(50)}+
           </div>
         </div>
       </div>

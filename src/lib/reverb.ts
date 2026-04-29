@@ -30,9 +30,21 @@ function getAuthHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export function getSupportEcho() {
+type EchoOptions = {
+  guestToken?: string;
+};
+
+export function getSupportEcho(options?: EchoOptions) {
   if (typeof window === "undefined") return null;
   if (!REVERB_ENABLED) return null;
+
+  const authParams: Record<string, string> = {
+    company_id: COMPANY_ID,
+  };
+
+  if (options?.guestToken) {
+    authParams.guest_token = options.guestToken;
+  }
 
   if (!echo) {
     window.Pusher = Pusher;
@@ -48,17 +60,13 @@ export function getSupportEcho() {
       authEndpoint: `${API_ORIGIN}/api/store/realtime/auth`,
       auth: {
         headers: getAuthHeaders(),
-        params: {
-          company_id: COMPANY_ID,
-        },
+        params: authParams,
       },
     });
   } else {
     echo.connector.options.auth = {
       headers: getAuthHeaders(),
-      params: {
-        company_id: COMPANY_ID,
-      },
+      params: authParams,
     };
   }
 
@@ -67,6 +75,35 @@ export function getSupportEcho() {
 
 export function subscribeToSupportTicket(ticketId: number, handlers: TicketHandlers): () => void {
   const client = getSupportEcho();
+  if (!client) return () => {};
+
+  const channel = client.private(`support.ticket.${ticketId}`);
+
+  if (handlers.onMessageSent) {
+    channel.listen(".support.ticket.message.sent", (event: { ticketId: number; message: SupportMessage }) => {
+      handlers.onMessageSent?.(event.ticketId, event.message);
+    });
+  }
+
+  if (handlers.onStatusUpdated) {
+    channel.listen(".support.ticket.status.updated", (event: { ticketId: number; status: TicketStatus }) => {
+      handlers.onStatusUpdated?.(event.ticketId, event.status);
+    });
+  }
+
+  if (handlers.onPriorityUpdated) {
+    channel.listen(".support.ticket.priority.updated", (event: { ticketId: number; priority: SupportTicket["priority"] }) => {
+      handlers.onPriorityUpdated?.(event.ticketId, event.priority);
+    });
+  }
+
+  return () => {
+    client.leave(`support.ticket.${ticketId}`);
+  };
+}
+
+export function subscribeToGuestSupportTicket(ticketId: number, guestToken: string, handlers: TicketHandlers): () => void {
+  const client = getSupportEcho({ guestToken });
   if (!client) return () => {};
 
   const channel = client.private(`support.ticket.${ticketId}`);

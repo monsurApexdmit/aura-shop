@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare, Headphones, FileQuestion } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supportApi, type SupportTicket, type TicketCategory } from "@/services/supportApi";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -29,16 +32,20 @@ const topics = [
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
 export default function Contact() {
+  const { isLoggedIn } = useAuth();
   const [form, setForm] = useState<ContactData>({ name: "", email: "", subject: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<TicketCategory>("general");
+  const [submittedTicket, setSubmittedTicket] = useState<SupportTicket | null>(null);
+  const [guestAccessToken, setGuestAccessToken] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
     setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = contactSchema.safeParse(form);
     if (!result.success) {
@@ -48,11 +55,21 @@ export default function Contact() {
       return;
     }
     setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      toast.success("Message sent! We'll get back to you soon.");
+    try {
+      const result = await supportApi.contact({
+        ...form,
+        category: selectedCategory,
+      });
+      setSubmittedTicket(result.ticket);
+      setGuestAccessToken(result.guestAccessToken);
+      toast.success("Message sent! Our team has received your request.");
       setForm({ name: "", email: "", subject: "", message: "" });
-    }, 1200);
+      setErrors({});
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to send your message. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputClass = (field: string) =>
@@ -101,6 +118,35 @@ export default function Contact() {
               <h2 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
                 <Send className="h-5 w-5 text-primary" /> Send a Message
               </h2>
+              {submittedTicket && (
+                <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                  <p className="font-semibold text-foreground">Message received</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Ticket <span className="font-medium text-foreground">{submittedTicket.ticketNumber}</span> has been created. Our team will follow up soon.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {isLoggedIn ? (
+                      <Link to="/support" className="text-sm font-medium text-primary hover:underline">
+                        Open support center
+                      </Link>
+                    ) : submittedTicket && guestAccessToken ? (
+                      <Link
+                        to={`/support/guest/${submittedTicket.ticketNumber}?token=${encodeURIComponent(guestAccessToken)}`}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        Track this conversation
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => { setSubmittedTicket(null); setGuestAccessToken(""); }}
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      Send another message
+                    </button>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -113,6 +159,20 @@ export default function Contact() {
                     <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputClass("email")} />
                     {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                   </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Topic</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value as TicketCategory)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="order">Order Support</option>
+                    <option value="product">Product Inquiry</option>
+                    <option value="payment">Payment Issue</option>
+                    <option value="shipping">Shipping Problem</option>
+                    <option value="general">General Question</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Subject</label>

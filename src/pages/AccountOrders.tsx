@@ -7,6 +7,7 @@ import { mapFulfillmentStatus } from "@/services/orderApi";
 import { Package, Clock, Truck, CheckCircle2, XCircle, ChevronRight, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const statusIcons = { yellow: Clock, blue: Truck, green: CheckCircle2, red: XCircle, gray: Package };
 
@@ -22,7 +23,8 @@ const statusColorMap: Record<string, string> = {
 
 export default function AccountOrders() {
   const { isLoggedIn } = useAuth();
-  const { data, isLoading } = useOrders(isLoggedIn);
+  const { data, isLoading, isError } = useOrders(isLoggedIn);
+  const { formatCurrency } = useCurrency();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
 
@@ -32,7 +34,7 @@ export default function AccountOrders() {
     const { label } = mapFulfillmentStatus(o.fulfillment_status);
     const labelKey = label.toLowerCase() as StatusFilter;
     if (filter !== "all" && labelKey !== filter) return false;
-    if (search && !o.invoice_no.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !(o.invoice_no ?? "").toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   }), [orders, filter, search]);
 
@@ -80,6 +82,11 @@ export default function AccountOrders() {
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
               </div>
+            ) : isError ? (
+              <div className="text-center py-16 bg-card border border-border rounded-2xl">
+                <Package className="h-14 w-14 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">We could not load your orders</p>
+              </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border rounded-2xl">
                 <Package className="h-14 w-14 mx-auto text-muted-foreground/30 mb-3" />
@@ -91,6 +98,11 @@ export default function AccountOrders() {
                   const { label, color } = mapFulfillmentStatus(order.fulfillment_status);
                   const Icon = statusIcons[color as keyof typeof statusIcons] ?? Package;
                   const colorClass = statusColorMap[color] ?? statusColorMap.gray;
+                  const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+                  const orderDate = order.order_time ? new Date(order.order_time) : null;
+                  const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
+                    ? orderDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+                    : "Date unavailable";
                   return (
                     <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                       <Link to={`/account/orders/${order.id}`} className="flex items-center gap-4 p-5 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors group">
@@ -99,15 +111,15 @@ export default function AccountOrders() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no}</p>
+                            <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no || `Order #${order.id}`}</p>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${colorClass}`}>{label}</span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(order.order_time).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · {order.items.length} item{order.items.length > 1 ? "s" : ""} · {order.method}
+                            {orderDateLabel} · {itemCount} item{itemCount !== 1 ? "s" : ""} · {order.method || "Standard"}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="font-display font-bold text-foreground">${order.amount.toFixed(2)}</p>
+                          <p className="font-display font-bold text-foreground">{formatCurrency(order.amount)}</p>
                           <p className="text-xs text-muted-foreground">{order.payment_status}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />

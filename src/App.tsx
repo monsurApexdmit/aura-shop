@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import RequireAuth from "@/components/RequireAuth";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
@@ -17,6 +18,12 @@ import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
 import About from "./pages/About";
+import ContentPage, {
+  defaultFaqPageContent,
+  defaultPrivacyPolicyPageContent,
+  defaultReturnsRefundsPageContent,
+  defaultShippingPolicyPageContent,
+} from "./pages/ContentPage";
 import Contact from "./pages/Contact";
 import Deals from "./pages/Deals";
 import TrackOrder from "./pages/TrackOrder";
@@ -30,6 +37,7 @@ import OrderDetail from "./pages/OrderDetail";
 import AccountProfile from "./pages/AccountProfile";
 import AccountAddresses from "./pages/AccountAddresses";
 import Support from "./pages/Support";
+import GuestSupport from "./pages/GuestSupport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,10 +64,14 @@ function AnimatedRoutes() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<ContentPage slug="faq" fallbackContent={defaultFaqPageContent} />} />
+          <Route path="/returns" element={<ContentPage slug="returns" fallbackContent={defaultReturnsRefundsPageContent} />} />
+          <Route path="/shipping" element={<ContentPage slug="shipping" fallbackContent={defaultShippingPolicyPageContent} />} />
+          <Route path="/privacy" element={<ContentPage slug="privacy" fallbackContent={defaultPrivacyPolicyPageContent} />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/deals" element={<Deals />} />
           <Route path="/track-order" element={<TrackOrder />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -69,6 +81,7 @@ function AnimatedRoutes() {
           <Route path="/account/profile" element={<RequireAuth><AccountProfile /></RequireAuth>} />
           <Route path="/account/addresses" element={<RequireAuth><AccountAddresses /></RequireAuth>} />
           <Route path="/support" element={<Support />} />
+          <Route path="/support/guest/:ticketNumber" element={<GuestSupport />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>
@@ -79,6 +92,7 @@ function AnimatedRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
+      <CurrencyProvider>
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>
@@ -96,6 +110,7 @@ const App = () => (
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>
+      </CurrencyProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

@@ -4,11 +4,15 @@ import { ArrowRight, ChevronLeft, ChevronRight, Copy, Sparkles, Check } from "lu
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { couponApi } from "@/services/couponApi";
+import storefrontSettingsApi from "@/services/storefrontSettingsApi";
 import heroBanner from "@/assets/hero-banner.jpg";
 import catHealth from "@/assets/cat-health.jpg";
 import catGrocery from "@/assets/cat-grocery.jpg";
+import { getImageUrl } from "@/lib/api";
+import { useMemo } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
-const slides = [
+const fallbackSlides = [
   {
     image: heroBanner,
     tag: "New Collection 2026",
@@ -43,6 +47,7 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
 
   const { data: activeCoupons = [] } = useQuery({
     queryKey: ['coupons-active'],
@@ -50,10 +55,39 @@ export default function HeroSection() {
     staleTime: 1000 * 60 * 10,
   });
 
+  const { data: heroSettings } = useQuery({
+    queryKey: ["homepage-hero-settings"],
+    queryFn: storefrontSettingsApi.getHomepageHero,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const slides = useMemo(() => {
+    const remoteSlides = (heroSettings?.slides ?? [])
+      .filter((slide) => slide.enabled && slide.title && slide.cta)
+      .map((slide) => ({
+        image: slide.imagePath ? getImageUrl(slide.imagePath) : heroBanner,
+        tag: slide.tag,
+        title: slide.title,
+        subtitle: slide.subtitle,
+        cta: slide.cta,
+        link: slide.link || "/shop",
+        gradient: slide.gradient || "from-primary/80 via-primary/40 to-transparent",
+      }));
+
+    return remoteSlides.length > 0 ? remoteSlides : fallbackSlides;
+  }, [heroSettings]);
+
   useEffect(() => {
-    const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 6000);
+    const autoplayMs = Math.max(2000, heroSettings?.autoplayMs ?? 6000);
+    const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), autoplayMs);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSettings?.autoplayMs, slides.length]);
+
+  useEffect(() => {
+    if (current >= slides.length) {
+      setCurrent(0);
+    }
+  }, [current, slides.length]);
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -157,7 +191,7 @@ export default function HeroSection() {
                   const discountLabel = coupon.free_shipping
                     ? "Free Ship"
                     : coupon.type === "fixed"
-                    ? `$${coupon.discount} OFF`
+                    ? `${formatCurrency(Number(coupon.discount ?? 0))} OFF`
                     : `${coupon.discount}%`;
 
                   return (
@@ -172,7 +206,7 @@ export default function HeroSection() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          {coupon.min_order_amount ? `Min. $${coupon.min_order_amount}` : "No minimum"}
+                          {coupon.min_order_amount ? `Min. ${formatCurrency(Number(coupon.min_order_amount ?? 0))}` : "No minimum"}
                         </span>
                         <span className="flex items-center gap-1 text-xs font-mono font-bold text-primary">
                           {copiedCode === coupon.code ? (

@@ -81,6 +81,71 @@ export interface ApiOrder {
   shipment?: ApiShipment | null
 }
 
+const normalizeOrderItem = (item: Partial<ApiOrderItem> | null | undefined): ApiOrderItem => ({
+  id: Number(item?.id ?? 0),
+  product_id: Number(item?.product_id ?? 0),
+  product_name: item?.product_name ?? 'Product',
+  variant_name: item?.variant_name ?? null,
+  quantity: Number(item?.quantity ?? 0),
+  unit_price: Number(item?.unit_price ?? 0),
+  total_price: Number(item?.total_price ?? 0),
+})
+
+const normalizeTrackingEvent = (event: Partial<TrackingEvent> | null | undefined): TrackingEvent => ({
+  status: event?.status ?? '',
+  location: event?.location ?? null,
+  description: event?.description ?? null,
+  event_time: event?.event_time ?? '',
+})
+
+const normalizeShipment = (shipment: Partial<ApiShipment> | null | undefined): ApiShipment | null => {
+  if (!shipment) return null
+
+  return {
+    tracking_number: shipment.tracking_number ?? null,
+    carrier: shipment.carrier ?? null,
+    shipping_method: shipment.shipping_method ?? null,
+    status: shipment.status ?? '',
+    shipped_at: shipment.shipped_at ?? null,
+    estimated_delivery: shipment.estimated_delivery ?? null,
+    delivered_at: shipment.delivered_at ?? null,
+    tracking_history: Array.isArray(shipment.tracking_history)
+      ? shipment.tracking_history.map((event) => normalizeTrackingEvent(event))
+      : [],
+  }
+}
+
+const normalizeOrder = (order: Partial<ApiOrder> | null | undefined): ApiOrder => ({
+  id: Number(order?.id ?? 0),
+  invoice_no: order?.invoice_no ?? `ORD-${Number(order?.id ?? 0) || 'UNKNOWN'}`,
+  order_time: order?.order_time ?? '',
+  amount: Number(order?.amount ?? 0),
+  shipping_cost: Number(order?.shipping_cost ?? 0),
+  discount: Number(order?.discount ?? 0),
+  status: order?.status ?? '',
+  payment_status: order?.payment_status ?? '',
+  fulfillment_status: order?.fulfillment_status ?? '',
+  tracking_number: order?.tracking_number ?? null,
+  carrier: order?.carrier ?? null,
+  method: order?.method ?? 'Standard',
+  shipping_address: {
+    name: order?.shipping_address?.name ?? '',
+    phone: order?.shipping_address?.phone ?? null,
+    address: order?.shipping_address?.address ?? null,
+    city: order?.shipping_address?.city ?? null,
+    state: order?.shipping_address?.state ?? null,
+    zip: order?.shipping_address?.zip ?? null,
+    country: order?.shipping_address?.country ?? null,
+  },
+  items: Array.isArray(order?.items) ? order.items.map((item) => normalizeOrderItem(item)) : [],
+  shipment: normalizeShipment(order?.shipment),
+})
+
+const normalizeOrderList = (payload: unknown): ApiOrder[] => {
+  if (!Array.isArray(payload)) return []
+  return payload.map((order) => normalizeOrder(order as Partial<ApiOrder>))
+}
+
 export const mapFulfillmentStatus = (status: string): { label: string; color: string } =>
   ({
     unfulfilled: { label: 'Processing', color: 'yellow' },
@@ -93,21 +158,28 @@ export const mapFulfillmentStatus = (status: string): { label: string; color: st
 export const orderApi = {
   getAll: async (): Promise<{ data: ApiOrder[]; meta: { current_page: number; last_page: number; total: number } }> => {
     const res = await api.get('/orders')
-    return res.data
+    return {
+      data: normalizeOrderList(res.data?.data),
+      meta: {
+        current_page: Number(res.data?.meta?.current_page ?? 1),
+        last_page: Number(res.data?.meta?.last_page ?? 1),
+        total: Number(res.data?.meta?.total ?? 0),
+      },
+    }
   },
 
   getById: async (id: number): Promise<ApiOrder> => {
     const res = await api.get(`/orders/${id}`)
-    return res.data.data
+    return normalizeOrder(res.data?.data)
   },
 
   place: async (payload: PlaceOrderPayload): Promise<ApiOrder> => {
     const res = await api.post('/orders', payload)
-    return res.data.data
+    return normalizeOrder(res.data?.data)
   },
 
   trackByInvoice: async (invoice: string): Promise<ApiOrder> => {
     const res = await api.get('/orders/track', { params: { invoice } })
-    return res.data.data
+    return normalizeOrder(res.data?.data)
   },
 }

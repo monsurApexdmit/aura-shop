@@ -17,6 +17,7 @@ export interface ProductAttribute {
 
 export interface Product {
   id: string
+  slug: string
   name: string
   price: number
   originalPrice?: number
@@ -32,4 +33,22 @@ export interface Product {
   attributes?: ProductAttribute[]
   variants?: ProductVariant[]
   description?: string
+}
+
+export interface ProductReviewReply {
+  body: string
+  authorName: string
+  repliedAt: string | null
+}
+
+export interface ProductReview {
+  id: string
+  productId: string
+  customerId: number | null
+  customerName: string
+  rating: number
+  comment: string
+  verifiedPurchase: boolean
+  createdAt: string
+  reply?: ProductReviewReply | null
 }

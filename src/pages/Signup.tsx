@@ -182,8 +182,9 @@ const Signup = () => {
               />
               <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-snug">
                 I agree to the{" "}
-                <span className="text-primary hover:underline cursor-pointer">Terms of Service</span> and{" "}
-                <span className="text-primary hover:underline cursor-pointer">Privacy Policy</span>
+                <Link to="/privacy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
               </Label>
             </div>
 

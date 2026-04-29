@@ -1,11 +1,11 @@
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Product } from "@/types/product";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import QuickActionButtons from "@/components/common/QuickActionButtons";
+import { Link } from "react-router-dom";
 import RatingDisplay from "@/components/common/RatingDisplay";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ProductCardProps {
   product: Product;
@@ -15,16 +15,16 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
 
   const liked = isInWishlist(product.id);
-  const cartItem = items.find((i) => i.id === product.id);
+  const cartItem = items.find((i) => i.id === String(product.id));
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
   const handleAdd = () => {
-    addItem({ id: product.id, name: product.name, price: product.price, image: product.image });
+    addItem({ id: String(product.id), productId: Number(product.id), variantId: null, name: product.name, price: product.price, image: product.image });
   };
 
   return (
@@ -37,7 +37,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     >
       {/* Image Container */}
       <Link
-        to={`/product/${product.id}`}
+        to={`/product/${product.slug}`}
         className="block relative aspect-[4/4.2] overflow-hidden bg-muted/20"
       >
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.08),transparent_70%)]" />
@@ -61,16 +61,19 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </motion.span>
         )}
 
-        {/* Hover Action Buttons */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0">
-          <QuickActionButtons
-            liked={liked}
-            onWishlist={() => toggleWishlist(product.id)}
-            onView={() => navigate(`/product/${product.id}`)}
-            onAddCart={handleAdd}
-            hideAddCart={!!cartItem}
-          />
-        </div>
+        {/* Persistent wishlist heart */}
+        <button
+          onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
+          className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm ${
+            liked
+              ? "bg-red-500 text-white"
+              : "bg-white/80 backdrop-blur-sm text-muted-foreground hover:text-red-500 hover:bg-white"
+          }`}
+          aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+        </button>
+
 
         {/* Quick Add to Cart */}
         {!cartItem && (
@@ -88,7 +91,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       {/* Content */}
       <div className="p-4 space-y-2.5">
         <p className="text-[11px] text-primary font-bold uppercase tracking-[0.15em]">{product.category}</p>
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product.slug}`}>
           <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
             {product.name}
           </h3>
@@ -96,22 +99,22 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         <RatingDisplay rating={product.rating} reviewCount={product.reviews} size="sm" />
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="flex items-baseline gap-2">
-            <span className="font-display font-bold text-lg text-foreground">${product.price.toFixed(2)}</span>
+            <span className="font-display font-bold text-lg text-foreground">{formatCurrency(product.price)}</span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground line-through">{formatCurrency(product.originalPrice)}</span>
             )}
           </div>
           {cartItem && (
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-1">
               <button
-                onClick={() => cartItem.quantity <= 1 ? removeItem(product.id) : updateQuantity(product.id, cartItem.quantity - 1)}
+                onClick={() => cartItem.quantity <= 1 ? removeItem(String(product.id)) : updateQuantity(String(product.id), cartItem.quantity - 1)}
                 className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
               >
                 <Minus className="h-3 w-3" />
               </button>
               <span className="w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
               <button
-                onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
                 className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
               >
                 <Plus className="h-3 w-3" />
