@@ -44,19 +44,19 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-contain p-5 group-hover:scale-110 transition-transform duration-700 ease-out"
+          className="w-full h-full object-contain p-3 sm:p-5 group-hover:scale-110 transition-transform duration-700 ease-out"
           loading="lazy"
           onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
         />
         {discount > 0 && (
           <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent text-accent-foreground shadow-lg">
+            className="absolute top-2 left-2 sm:top-3 sm:left-3 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-accent text-accent-foreground shadow-lg">
             {discount}% OFF
           </motion.span>
         )}
         {!discount && product.badge && (
           <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg">
+            className="absolute top-2 left-2 sm:top-3 sm:left-3 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg">
             {product.badge}
           </motion.span>
         )}
@@ -64,7 +64,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Persistent wishlist heart */}
         <button
           onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
-          className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm ${
+          className={`absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm ${
             liked
               ? "bg-red-500 text-white"
               : "bg-white/80 backdrop-blur-sm text-muted-foreground hover:text-red-500 hover:bg-white"
@@ -77,7 +77,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
         {/* Quick Add to Cart */}
         {!cartItem && (
-          <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-full group-hover:translate-y-0">
+          <div className="absolute bottom-0 left-0 right-0 opacity-100 translate-y-0 md:opacity-0 md:group-hover:opacity-100 md:translate-y-full md:group-hover:translate-y-0 transition-all duration-300">
             <button
               onClick={(e) => { e.preventDefault(); handleAdd(); }}
               className="w-full py-3 bg-primary/95 backdrop-blur-sm text-primary-foreground flex items-center justify-center gap-2 text-sm font-semibold hover:bg-primary transition-colors"
@@ -89,7 +89,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="p-4 space-y-2.5">
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-2.5">
         <p className="text-[11px] text-primary font-bold uppercase tracking-[0.15em]">{product.category}</p>
         <Link to={`/product/${product.slug}`}>
           <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
@@ -97,25 +97,25 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </h3>
         </Link>
         <RatingDisplay rating={product.rating} reviewCount={product.reviews} size="sm" />
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display font-bold text-lg text-foreground">{formatCurrency(product.price)}</span>
+        <div className="flex items-start justify-between gap-2 pt-1 min-w-0">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-display font-bold text-base sm:text-lg text-foreground break-words">{formatCurrency(product.price)}</span>
             {product.originalPrice && (
               <span className="text-xs text-muted-foreground line-through">{formatCurrency(product.originalPrice)}</span>
             )}
           </div>
           {cartItem && (
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-1">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex shrink-0 items-center gap-0.5 sm:gap-1">
               <button
                 onClick={() => cartItem.quantity <= 1 ? removeItem(String(product.id)) : updateQuantity(String(product.id), cartItem.quantity - 1)}
-                className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
               >
                 <Minus className="h-3 w-3" />
               </button>
-              <span className="w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
+              <span className="w-6 sm:w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
               <button
                 onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
-                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
               >
                 <Plus className="h-3 w-3" />
               </button>

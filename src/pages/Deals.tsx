@@ -51,7 +51,7 @@ export default function Deals() {
         <div className="grid sm:grid-cols-2 gap-4">
           {banners.map((b, i) => (
             <motion.div key={b.title} {...fadeUp} transition={{ delay: i * 0.1 }}
-              className={`bg-gradient-to-r ${b.color} rounded-2xl p-6 text-primary-foreground flex items-center gap-4`}
+              className={`bg-gradient-to-r ${b.color} rounded-2xl p-5 sm:p-6 text-primary-foreground flex flex-col text-center items-center gap-4 sm:flex-row sm:text-left`}
             >
               <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                 <b.icon className="h-6 w-6" />
@@ -88,7 +88,7 @@ export default function Deals() {
       {/* Product Grid */}
       <section className="container">
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)}
           </div>
         ) : dealProducts.length === 0 ? (
@@ -98,7 +98,7 @@ export default function Deals() {
             <p className="text-sm text-muted-foreground">Try a different filter or check back later!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {dealProducts.map((product, i) => (
               <motion.div key={product.id} {...fadeUp} transition={{ delay: (i % 4) * 0.05 }}>
                 <ProductCard product={product} />

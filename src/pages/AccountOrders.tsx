@@ -105,12 +105,12 @@ export default function AccountOrders() {
                     : "Date unavailable";
                   return (
                     <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                      <Link to={`/account/orders/${order.id}`} className="flex items-center gap-4 p-5 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors group">
+                      <Link to={`/account/orders/${order.id}`} className="flex flex-col gap-3 p-4 sm:p-5 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors group sm:flex-row sm:items-center sm:gap-4">
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                           <Icon className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-0.5">
                             <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no || `Order #${order.id}`}</p>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${colorClass}`}>{label}</span>
                           </div>
@@ -118,11 +118,11 @@ export default function AccountOrders() {
                             {orderDateLabel} · {itemCount} item{itemCount !== 1 ? "s" : ""} · {order.method || "Standard"}
                           </p>
                         </div>
-                        <div className="text-right shrink-0">
+                        <div className="shrink-0 sm:text-right">
                           <p className="font-display font-bold text-foreground">{formatCurrency(order.amount)}</p>
                           <p className="text-xs text-muted-foreground">{order.payment_status}</p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        <ChevronRight className="hidden h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 sm:block" />
                       </Link>
                     </motion.div>
                   );

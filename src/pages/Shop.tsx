@@ -179,7 +179,7 @@ export default function Shop() {
 
             {/* Product Grid */}
             {isLoading ? (
-              <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
+              <div className={`grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className="h-72 rounded-2xl" />
                 ))}
@@ -194,7 +194,7 @@ export default function Shop() {
               </div>
             ) : (
               <>
-                <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
+                <div className={`grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product.id} product={product} index={i} />
                   ))}

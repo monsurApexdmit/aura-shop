@@ -128,7 +128,7 @@ export default function Account() {
                         ? orderDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                         : "Date unavailable";
                       return (
-                        <Link key={order.id} to={`/account/orders/${order.id}`} className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors">
+                        <Link key={order.id} to={`/account/orders/${order.id}`} className="flex flex-col gap-3 p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors sm:flex-row sm:items-center sm:gap-4">
                           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                             <Icon className="h-5 w-5 text-primary" />
                           </div>
@@ -138,7 +138,7 @@ export default function Account() {
                               {orderDateLabel} · {itemCount} item{itemCount !== 1 ? "s" : ""}
                             </p>
                           </div>
-                          <div className="text-right shrink-0">
+                          <div className="shrink-0 sm:text-right">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${colorClass}`}>
                               {label}
                             </span>

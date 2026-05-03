@@ -272,7 +272,7 @@ export default function ProductDetail() {
 
             {/* Price Block */}
             <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 mb-6">
-              <div className="flex items-baseline gap-3">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="font-display text-3xl font-bold text-foreground">{formatCurrency(currentPrice)}</span>
                 {originalPrice && originalPrice > currentPrice && (
                   <span className="text-lg text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
@@ -283,7 +283,7 @@ export default function ProductDetail() {
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> SKU: {currentSku}</span>
                 <span className="flex items-center gap-1">
                   <Package className="h-3 w-3" />
@@ -370,7 +370,7 @@ export default function ProductDetail() {
             <Separator className="mb-6" />
 
             {/* Add to Cart */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex flex-col gap-3 mb-6 min-[420px]:flex-row min-[420px]:items-center">
               {cartItem ? (
                 <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 border border-border rounded-xl p-1 bg-muted/30">
                   <button
@@ -392,7 +392,7 @@ export default function ProductDetail() {
                   onClick={handleAdd}
                   size="lg"
                   disabled={currentStock === 0}
-                  className="rounded-xl gap-2 flex-1 max-w-xs h-12 text-base"
+                  className="rounded-xl gap-2 flex-1 h-12 text-base min-[420px]:max-w-xs"
                 >
                   <ShoppingCart className="h-5 w-5" />
                   {currentStock === 0 ? "Out of Stock" : "Add to Cart"}
@@ -403,7 +403,7 @@ export default function ProductDetail() {
             <Separator className="mb-6" />
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
               {[
                 { icon: Truck, title: "Free Shipping", sub: `Orders ${formatCurrency(50)}+` },
                 { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
@@ -422,7 +422,7 @@ export default function ProductDetail() {
         {/* Product Tabs */}
         <div className="mt-16">
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="w-full justify-start rounded-xl bg-muted/50 p-1 h-auto">
+            <TabsList className="w-full justify-start overflow-x-auto rounded-xl bg-muted/50 p-1 h-auto">
               <TabsTrigger value="description" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Description</TabsTrigger>
               <TabsTrigger value="specifications" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Specifications</TabsTrigger>
               <TabsTrigger value="reviews" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Reviews ({product.reviews})</TabsTrigger>
@@ -436,22 +436,22 @@ export default function ProductDetail() {
             </TabsContent>
             <TabsContent value="specifications" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                   <span className="text-muted-foreground">Category</span>
                   <span className="font-medium text-foreground">{product.category}</span>
                 </div>
-                <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                   <span className="text-muted-foreground">SKU</span>
                   <span className="font-medium text-foreground">{currentSku}</span>
                 </div>
                 {attributes.map((attr) => (
-                  <div key={attr.name} className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                  <div key={attr.name} className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                     <span className="text-muted-foreground">{attr.displayName}</span>
-                    <span className="font-medium text-foreground">{attr.values.join(", ")}</span>
+                    <span className="font-medium text-foreground text-right">{attr.values.join(", ")}</span>
                   </div>
                 ))}
                 {product.variants && product.variants.length > 0 && (
-                  <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                  <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                     <span className="text-muted-foreground">Variants</span>
                     <span className="font-medium text-foreground">{product.variants.length} options</span>
                   </div>
@@ -475,7 +475,7 @@ export default function ProductDetail() {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {relatedProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} index={i} />
               ))}

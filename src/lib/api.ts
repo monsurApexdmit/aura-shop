@@ -1,11 +1,20 @@
 import axios from 'axios'
 
-const BASE_URL   = import.meta.env.VITE_API_BASE_URL as string
+const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+const isBrowser = typeof window !== 'undefined'
+const rawApiOrigin = RAW_BASE_URL.replace(/\/api\/?$/, '')
+const shouldUseDevProxy =
+  import.meta.env.DEV &&
+  isBrowser &&
+  rawApiOrigin &&
+  rawApiOrigin !== window.location.origin
+
+export const API_BASE_URL = shouldUseDevProxy ? '/api' : RAW_BASE_URL
 export const COMPANY_ID = import.meta.env.VITE_COMPANY_ID as string
-const IMAGE_BASE = BASE_URL.replace('/api', '')
+const IMAGE_BASE = shouldUseDevProxy ? '' : rawApiOrigin
 
 export const api = axios.create({
-  baseURL: `${BASE_URL}/store`,
+  baseURL: `${API_BASE_URL}/store`,
   headers: { 'Content-Type': 'application/json' },
 })
 

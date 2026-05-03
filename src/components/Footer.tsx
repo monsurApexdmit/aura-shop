@@ -98,7 +98,7 @@ export default function Footer() {
           <p className="text-xs text-background/30">
             © 2026 StoreFront. All rights reserved. Built with ❤️
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             {["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"].map((m) => (
               <span key={m} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-background/8 text-background/40 font-medium border border-background/5">
                 {m}

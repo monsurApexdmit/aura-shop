@@ -111,7 +111,8 @@ export default function OrderDetail() {
             {!isCancelled && (
               <div className="bg-card border border-border rounded-2xl p-6 mb-6">
                 <h2 className="font-display font-bold text-sm mb-5">Order Progress</h2>
-                <div className="flex items-center justify-between">
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex min-w-[560px] items-center justify-between">
                   {TIMELINE.map((step, i) => (
                     <div key={step.label} className="flex items-center flex-1">
                       <div className="flex flex-col items-center gap-1.5">
@@ -127,6 +128,7 @@ export default function OrderDetail() {
                       )}
                     </div>
                   ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -137,7 +139,7 @@ export default function OrderDetail() {
                 <h2 className="font-display font-bold text-sm mb-4">Order Items ({items.length})</h2>
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+                    <div key={item.id} className="flex flex-col gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-4">
                       <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted flex items-center justify-center">
                         <span className="text-[10px] text-muted-foreground text-center leading-tight px-1">No Image</span>
                       </div>
@@ -146,7 +148,7 @@ export default function OrderDetail() {
                         {item.variant_name && <p className="text-xs text-muted-foreground">{item.variant_name}</p>}
                         <p className="text-xs text-muted-foreground">Qty: {item.quantity} × {formatCurrency(item.unit_price)}</p>
                       </div>
-                      <p className="font-display font-bold text-sm text-foreground shrink-0">{formatCurrency(item.total_price)}</p>
+                      <p className="font-display font-bold text-sm text-foreground shrink-0 min-[420px]:text-right">{formatCurrency(item.total_price)}</p>
                     </div>
                   ))}
                 </div>

@@ -32,7 +32,7 @@ export default function DeliverySection() {
               From groceries to gadgets — we deliver everything you need with speed and care. Track your orders in real-time.
             </p>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 md:gap-4 mb-8">
               {stats.map((s, i) => (
                 <motion.div
                   key={s.label}

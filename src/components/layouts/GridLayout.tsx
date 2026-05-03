@@ -47,6 +47,13 @@ const gapClasses: Record<GapSize, string> = {
   xl: "gap-8",
 };
 
+const mdGapClasses: Record<GapSize, string> = {
+  sm: "md:gap-3",
+  md: "md:gap-4",
+  lg: "md:gap-6",
+  xl: "md:gap-8",
+};
+
 const colClasses: Record<GridColumns, Record<"sm" | "md" | "lg", string>> = {
   1: { sm: "grid-cols-1", md: "md:grid-cols-1", lg: "lg:grid-cols-1" },
   2: { sm: "grid-cols-1", md: "md:grid-cols-2", lg: "lg:grid-cols-2" },
@@ -80,21 +87,16 @@ export default function GridLayout({
   children,
   className = "",
 }: GridLayoutProps) {
-  const desktopGap = gapClasses[gap];
-  const mobileGapClass = gapClasses[mobileGap || (gap === "xl" ? "lg" : gap)];
+  const gapClass = mobileGap
+    ? `${gapClasses[mobileGap]} ${mdGapClasses[gap]}`
+    : gapClasses[gap];
   const actualMdColumns = mdColumns || (columns > 1 ? (columns - 1) as GridColumns : 1);
 
   // Build responsive column classes
   const colClass = `grid ${colClasses[smColumns].sm} ${colClasses[actualMdColumns].md} ${colClasses[columns].lg}`;
 
   return (
-    <div
-      className={`${colClass} ${desktopGap} ${className}`}
-      style={{
-        gap: "var(--grid-gap)",
-        "--grid-gap": "var(--spacing-md)",
-      } as React.CSSProperties & Record<string, string>}
-    >
+    <div className={`${colClass} ${gapClass} ${className}`}>
       {children}
     </div>
   );

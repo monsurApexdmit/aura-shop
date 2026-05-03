@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin, LogOut, Package, Settings } from "lucide-react";
+import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin, LogOut, Package, Settings, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
@@ -175,7 +175,7 @@ export default function Header() {
             {/* Cart */}
             <button
               onClick={() => setIsOpen(true)}
-              className="flex items-center gap-2.5 gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+              className="flex items-center gap-2.5 gradient-primary text-primary-foreground px-3 sm:px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg"
             >
               <div className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -364,6 +364,14 @@ export default function Header() {
               })}
 
               <div className="border-t border-border my-2" />
+              <Link
+                to="/track-order"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
+              >
+                <Truck className="h-4 w-4 text-primary" />
+                Track your order
+              </Link>
               {navLinks.map((link) => (
                 <Link
                   key={link.to}

@@ -12,7 +12,7 @@ export default function PromoBanner() {
       <div className="gradient-primary">
         <div className="container py-8 md:py-10 relative z-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-5">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
               <div className="w-14 h-14 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center shrink-0 border border-primary-foreground/10">
                 <Zap className="h-7 w-7 text-primary-foreground" />
               </div>
@@ -25,7 +25,7 @@ export default function PromoBanner() {
                 </p>
               </div>
             </div>
-            <button className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm shrink-0">
+            <button className="inline-flex w-full items-center justify-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm shrink-0 sm:w-auto">
               Shop the Sale <ArrowRight className="h-4 w-4" />
             </button>
           </div>

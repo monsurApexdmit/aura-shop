@@ -238,7 +238,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-muted/30 pt-32 pb-16">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Stepper */}
         <div className="mb-10">
           <StepIndicator steps={steps} currentStep={step} />
@@ -257,7 +257,7 @@ export default function Checkout() {
                   {isLoggedIn && user && (
                     <div className="mb-6">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Ship to</p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button
                           type="button"
                           onClick={() => switchAddressMode("saved")}
@@ -435,11 +435,11 @@ export default function Checkout() {
                 </div>
               </div>
 
-              <div className="flex justify-between mt-6">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
                 <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
-                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
+                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
                   Review Order <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -499,11 +499,11 @@ export default function Checkout() {
                   <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                 </div>
               </div>
-              <div className="flex justify-between mt-6">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
                 <button onClick={() => setStep(1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                   <ArrowLeft className="h-4 w-4" /> Back to Shipping
                 </button>
-                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
+                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
                   Review Order <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -601,11 +601,11 @@ export default function Checkout() {
                 </div>
               </div>
 
-              <div className="flex justify-between mt-6">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
                 <button onClick={() => setStep(2)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                   <ArrowLeft className="h-4 w-4" /> Edit Payment
                 </button>
-                <button onClick={nextStep} disabled={placeOrder.isPending} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-70">
+                <button onClick={nextStep} disabled={placeOrder.isPending} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-70">
                   {placeOrder.isPending ? "Placing Order..." : <><span>Place Order</span><CheckCircle2 className="h-4 w-4" /></>}
                 </button>
               </div>
@@ -690,7 +690,7 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
 }) {
   const { formatCurrency } = useCurrency();
   return (
-    <div className="bg-background rounded-2xl border border-border p-6 sticky top-36">
+    <div className="bg-background rounded-2xl border border-border p-4 sm:p-6 lg:sticky lg:top-36">
       <h3 className="font-display font-bold text-sm mb-4">Order Summary</h3>
       <div className="space-y-2 text-sm border-b border-border pb-4 mb-4">
         <div className="flex justify-between text-muted-foreground">
@@ -726,7 +726,7 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
             </button>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 min-[420px]:flex-row">
             <Input
               placeholder="Coupon code"
               value={couponCode}
@@ -737,7 +737,7 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
             <button
               onClick={onApplyCoupon}
               disabled={couponApplying || !couponCode.trim()}
-              className="shrink-0 px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+              className="shrink-0 px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
             >
               {couponApplying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
             </button>

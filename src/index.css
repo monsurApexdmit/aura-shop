@@ -105,11 +105,24 @@
 }
 
 @layer base {
+  html {
+    @apply overflow-x-hidden;
+  }
+  body,
+  #root {
+    @apply min-w-0 overflow-x-hidden;
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+  }
+  img,
+  video,
+  canvas,
+  svg {
+    @apply max-w-full;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
