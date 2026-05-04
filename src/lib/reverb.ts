@@ -3,8 +3,6 @@ import Pusher from "pusher-js";
 import { COMPANY_ID } from "@/lib/api";
 import type { SupportMessage, SupportTicket, TicketStatus } from "@/services/supportApi";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
-const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 const REVERB_ENABLED = (import.meta.env.VITE_REVERB_ENABLED as string) === "true";
 const REVERB_KEY = (import.meta.env.VITE_REVERB_APP_KEY as string) || "local-app-key";
 const REVERB_SCHEME = ((import.meta.env.VITE_REVERB_SCHEME as string) || "http") as "http" | "https";
@@ -57,7 +55,7 @@ export function getSupportEcho(options?: EchoOptions) {
       wssPort: REVERB_PORT,
       forceTLS: REVERB_SCHEME === "https",
       enabledTransports: ["ws", "wss"],
-      authEndpoint: `${API_ORIGIN}/api/store/realtime/auth`,
+      authEndpoint: "/api/store/realtime/auth",
       auth: {
         headers: getAuthHeaders(),
         params: authParams,
