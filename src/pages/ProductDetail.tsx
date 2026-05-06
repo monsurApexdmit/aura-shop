@@ -137,13 +137,35 @@ export default function ProductDetail() {
     );
   }
 
-  const currentPrice = selectedVariant?.salePrice ?? selectedVariant?.price ?? product.price;
-  const originalPrice = selectedVariant ? selectedVariant.price : product.originalPrice;
+  const currentPrice = (() => {
+    if (!selectedVariant) return product.price
+    // variant base price (sale_price or price)
+    const vBase = selectedVariant.salePrice && selectedVariant.salePrice > 0 ? selectedVariant.salePrice : selectedVariant.price
+    // use variant's own offer if set, else fall back to product-level offer
+    const offerPrice = selectedVariant.offerPrice ?? product.offerPrice
+    const offerType = selectedVariant.offerType ?? product.offerType ?? 'percentage'
+    if (offerPrice && offerPrice > 0) {
+      const final = offerType === 'percentage' ? vBase * (1 - offerPrice / 100) : vBase - offerPrice
+      if (final > 0 && final < vBase) return final
+    }
+    return vBase
+  })()
+  const originalPrice = (() => {
+    if (!selectedVariant) return product.originalPrice
+    const vBase = selectedVariant.salePrice && selectedVariant.salePrice > 0 ? selectedVariant.salePrice : selectedVariant.price
+    const offerPrice = selectedVariant.offerPrice ?? product.offerPrice
+    const offerType = selectedVariant.offerType ?? product.offerType ?? 'percentage'
+    if (offerPrice && offerPrice > 0) {
+      const final = offerType === 'percentage' ? vBase * (1 - offerPrice / 100) : vBase - offerPrice
+      if (final > 0 && final < vBase) return vBase
+    }
+    return undefined
+  })()
   const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
   const currentSku = selectedVariant?.sku ?? product.sku ?? "N/A";
   const discount = originalPrice && originalPrice > currentPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-    : product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
+    : 0;
 
   const images = product.images?.length ? product.images : [product.image];
 

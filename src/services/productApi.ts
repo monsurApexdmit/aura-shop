@@ -5,6 +5,8 @@ export interface ApiProductVariant {
   name: string
   price: number
   sale_price: number | null
+  offer_price: number | null
+  offer_type: string | null
   stock: number
   sku: string
   attributes: string | Record<string, string>
@@ -17,6 +19,8 @@ export interface ApiProduct {
   description: string | null
   price: number
   sale_price: number | null
+  offer_price: number | null
+  offer_type: string | null
   sku: string | null
   stock: number
   image: string | null

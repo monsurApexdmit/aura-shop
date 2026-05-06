@@ -3,8 +3,17 @@ import type { ApiProduct } from '@/services/productApi'
 import type { Product, ProductVariant } from '@/types/product'
 
 export function mapApiProduct(p: ApiProduct): Product {
-  const displayPrice    = (p.sale_price && p.sale_price > 0) ? p.sale_price : p.price
-  const originalPrice   = (p.sale_price && p.sale_price > 0 && p.sale_price < p.price) ? p.price : undefined
+  const basePrice = (p.sale_price && p.sale_price > 0) ? p.sale_price : p.price
+  const offerFinal = p.offer_price && p.offer_price > 0
+    ? (p.offer_type === 'percentage'
+        ? basePrice * (1 - p.offer_price / 100)
+        : basePrice - p.offer_price)
+    : null
+  const hasValidOffer = offerFinal !== null && offerFinal > 0 && offerFinal < basePrice
+  const displayPrice  = hasValidOffer ? offerFinal! : basePrice
+  const originalPrice = hasValidOffer ? basePrice
+                      : (p.sale_price && p.sale_price > 0 && p.sale_price < p.price) ? p.price
+                      : undefined
   const primaryImage    = p.image ? getImageUrl(p.image) : (p.images?.[0] ? getImageUrl(p.images[0]) : '/placeholder.jpg')
 
   const variants: ProductVariant[] = p.variants.map((v) => {
@@ -15,12 +24,22 @@ export function mapApiProduct(p: ApiProduct): Product {
       attrs = v.attributes as Record<string, string>
     }
 
+    const vBase = (v.sale_price && v.sale_price > 0) ? v.sale_price : v.price
+    const vOfferFinal = v.offer_price && v.offer_price > 0
+      ? (v.offer_type === 'percentage'
+          ? vBase * (1 - v.offer_price / 100)
+          : vBase - v.offer_price)
+      : null
+    const vDisplay = vOfferFinal !== null && vOfferFinal > 0 && vOfferFinal < vBase ? vOfferFinal : vBase
+
     return {
       id:         String(v.id),
       name:       v.name,
       attributes: attrs,
-      price:      v.price,
-      salePrice:  v.sale_price ?? undefined,
+      price:      vDisplay,
+      salePrice:  vBase !== v.price ? vBase : undefined,
+      offerPrice: v.offer_price ?? undefined,
+      offerType:  v.offer_type ?? undefined,
       stock:      v.stock,
       sku:        v.sku,
     }
@@ -35,6 +54,8 @@ export function mapApiProduct(p: ApiProduct): Product {
     name:          p.name,
     price:         displayPrice,
     originalPrice,
+    offerPrice:    p.offer_price ?? undefined,
+    offerType:     p.offer_type ?? undefined,
     image:         primaryImage,
     images:        p.images?.map(getImageUrl) ?? [primaryImage],
     category:      p.category_name ?? '',

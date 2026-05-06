@@ -5,6 +5,8 @@ export interface ProductVariant {
   attributes: Record<string, string>
   price: number
   salePrice?: number
+  offerPrice?: number
+  offerType?: string
   stock: number
   sku: string
 }
@@ -21,6 +23,8 @@ export interface Product {
   name: string
   price: number
   originalPrice?: number
+  offerPrice?: number
+  offerType?: string
   image: string
   images?: string[]
   category: string
