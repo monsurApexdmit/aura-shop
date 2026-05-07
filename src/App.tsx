@@ -38,6 +38,7 @@ import AccountProfile from "./pages/AccountProfile";
 import AccountAddresses from "./pages/AccountAddresses";
 import Support from "./pages/Support";
 import GuestSupport from "./pages/GuestSupport";
+import OrderResult from "./pages/OrderResult";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,7 @@ function AnimatedRoutes() {
           <Route path="/account/addresses" element={<RequireAuth><AccountAddresses /></RequireAuth>} />
           <Route path="/support" element={<Support />} />
           <Route path="/support/guest/:ticketNumber" element={<GuestSupport />} />
+          <Route path="/order/result" element={<OrderResult />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>

@@ -173,9 +173,12 @@ export const orderApi = {
     return normalizeOrder(res.data?.data)
   },
 
-  place: async (payload: PlaceOrderPayload): Promise<ApiOrder> => {
+  place: async (payload: PlaceOrderPayload): Promise<{ order: ApiOrder; payment_url?: string }> => {
     const res = await api.post('/orders', payload)
-    return normalizeOrder(res.data?.data)
+    return {
+      order: normalizeOrder(res.data?.data),
+      payment_url: res.data?.payment_url ?? undefined,
+    }
   },
 
   trackByInvoice: async (invoice: string): Promise<ApiOrder> => {

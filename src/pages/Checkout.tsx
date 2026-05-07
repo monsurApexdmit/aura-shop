@@ -188,7 +188,7 @@ export default function Checkout() {
           variant_id: i.variantId ?? undefined,
           quantity: i.quantity,
         }));
-        const result = await placeOrder.mutateAsync({
+        const { order, payment_url } = await placeOrder.mutateAsync({
           items: orderItems,
           shipping_address: {
             name: form.fullName,
@@ -205,8 +205,12 @@ export default function Checkout() {
           shipping_cost: shippingCost,
           shipping_method: selectedShipping?.name,
         });
-        setPlacedOrderId(result.invoice_no ?? String(result.id));
         clearCart();
+        if (payment_url) {
+          window.location.href = payment_url;
+          return;
+        }
+        setPlacedOrderId(order.invoice_no ?? String(order.id));
         setStep(4);
       } catch {
         toast.error("Failed to place order. Please try again.");
@@ -480,9 +484,19 @@ export default function Checkout() {
                             }`}>
                               <Icon className="h-5 w-5" />
                             </div>
-                            <div className="text-left">
+                            <div className="text-left flex-1">
                               <p className="font-semibold text-sm text-foreground">{method.name}</p>
                               {method.description && <p className="text-xs text-muted-foreground">{method.description}</p>}
+                              {isSelected && method.gateway_type === "sslcommerz" && (
+                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> You'll be redirected to pay securely
+                                </p>
+                              )}
+                              {isSelected && method.gateway_type === "portwallet" && (
+                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> You'll be redirected to PortWallet
+                                </p>
+                              )}
                             </div>
                             <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                               isSelected ? "border-primary" : "border-muted-foreground/30"
