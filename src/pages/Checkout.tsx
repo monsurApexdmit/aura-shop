@@ -497,6 +497,34 @@ export default function Checkout() {
                                   <Globe className="h-3 w-3" /> You'll be redirected to PortWallet
                                 </p>
                               )}
+                              {isSelected && method.gateway_type === "stripe" && (
+                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> You'll be redirected to Stripe Checkout
+                                </p>
+                              )}
+                              {isSelected && method.gateway_type === "paypal" && (
+                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> You'll be redirected to PayPal
+                                </p>
+                              )}
+                              {isSelected && method.gateway_type === "bkash" && (
+                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> You'll be redirected to bKash
+                                </p>
+                              )}
+                              {isSelected && method.gateway_type === "nagad" && (
+                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> You'll be redirected to Nagad
+                                </p>
+                              )}
+                              {method.gateway_type === "cod" && method.cod_deposit_required && (
+                                <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                                  <Globe className="h-3 w-3" />
+                                  {method.cod_deposit_amount
+                                    ? `Shipping deposit of ৳${method.cod_deposit_amount} required before delivery`
+                                    : "Shipping charge must be paid upfront via bKash/Nagad/Card"}
+                                </p>
+                              )}
                             </div>
                             <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                               isSelected ? "border-primary" : "border-muted-foreground/30"

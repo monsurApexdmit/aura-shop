@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, AlertCircle, ShoppingBag, Home } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, ShoppingBag, Home, Truck } from "lucide-react";
 
 type ResultStatus = "success" | "fail" | "cancel";
 
@@ -36,10 +36,16 @@ export default function OrderResult() {
 
   const rawStatus = params.get("status") ?? "fail";
   const status: ResultStatus = rawStatus in CONFIG ? (rawStatus as ResultStatus) : "fail";
-  const invoice = params.get("invoice");
-  const reason  = params.get("reason");
+  const invoice   = params.get("invoice");
+  const reason    = params.get("reason");
+  const isDeposit = params.get("deposit") === "1";
 
-  const { icon: Icon, iconClass, title, message } = CONFIG[status];
+  const { icon: Icon, iconClass, title: baseTitle, message: baseMessage } = CONFIG[status];
+
+  const title   = isDeposit && status === "success" ? "Shipping Deposit Paid!" : baseTitle;
+  const message = isDeposit && status === "success"
+    ? "Your shipping deposit was received. Your order is confirmed — pay the remaining balance on delivery."
+    : baseMessage;
 
   return (
     <div className="min-h-screen bg-muted/30 pt-32 pb-16 flex items-start justify-center px-4">
@@ -50,11 +56,20 @@ export default function OrderResult() {
         className="w-full max-w-md bg-background rounded-2xl border border-border p-8 text-center shadow-sm"
       >
         <div className="flex justify-center mb-5">
-          <Icon className={`h-16 w-16 ${iconClass}`} />
+          {isDeposit && status === "success"
+            ? <Truck className="h-16 w-16 text-amber-500" />
+            : <Icon className={`h-16 w-16 ${iconClass}`} />
+          }
         </div>
 
         <h1 className="font-display font-bold text-2xl text-foreground mb-2">{title}</h1>
         <p className="text-sm text-muted-foreground mb-1">{message}</p>
+
+        {isDeposit && status === "success" && (
+          <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 font-medium">
+            Pay the rest of your order amount when it arrives at your door.
+          </div>
+        )}
 
         {invoice && (
           <p className="text-xs text-muted-foreground mt-3">

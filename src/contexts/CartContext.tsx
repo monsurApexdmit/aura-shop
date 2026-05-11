@@ -48,10 +48,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
-        toast.success(`Updated quantity`, { description: `${item.name} — now ${existing.quantity + 1} in cart` });
+        toast.success(`Updated quantity`, { description: `${item.name} — now ${existing.quantity + 1} in cart`, closeButton: true });
         return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
       }
-      toast.success("Added to cart", { description: item.name });
+      toast.success("Added to cart", { description: item.name, closeButton: true });
       return [...prev, { ...item, quantity: 1 }];
     });
     setIsOpen(true);
@@ -59,7 +59,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = (id: string) => {
     const item = items.find((i) => i.id === id);
-    if (item) toast.info("Removed from cart", { description: item.name });
+    if (item) toast.info("Removed from cart", { description: item.name, closeButton: true });
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 

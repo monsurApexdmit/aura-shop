@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 
-export type PaymentGatewayType = 'cod' | 'sslcommerz' | 'portwallet'
+export type PaymentGatewayType = 'cod' | 'manual' | 'sslcommerz' | 'portwallet' | 'stripe' | 'paypal' | 'bkash' | 'nagad'
 
 export interface PaymentMethod {
   id: number
@@ -8,6 +8,8 @@ export interface PaymentMethod {
   description: string | null
   icon: string | null
   gateway_type: PaymentGatewayType
+  cod_deposit_required?: boolean
+  cod_deposit_amount?: number | null
 }
 
 export const paymentMethodApi = {
