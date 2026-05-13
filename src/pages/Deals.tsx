@@ -88,7 +88,7 @@ export default function Deals() {
       {/* Product Grid */}
       <section className="container">
         {isLoading ? (
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)}
           </div>
         ) : dealProducts.length === 0 ? (
@@ -98,7 +98,7 @@ export default function Deals() {
             <p className="text-sm text-muted-foreground">Try a different filter or check back later!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {dealProducts.map((product, i) => (
               <motion.div key={product.id} {...fadeUp} transition={{ delay: (i % 4) * 0.05 }}>
                 <ProductCard product={product} />

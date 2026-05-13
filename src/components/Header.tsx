@@ -40,7 +40,7 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, storePhone } = useCurrency();
   const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -71,11 +71,13 @@ export default function Header() {
       <div className="gradient-primary text-primary-foreground">
         <div className="container flex items-center justify-between h-9 text-xs">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <Phone className="h-3 w-3" />
-              <span className="hidden sm:inline">Need help? Call us:</span>
-              <a href="tel:+1234567890" className="font-semibold hover:underline">+1 234-567-890</a>
-            </div>
+            {storePhone && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="h-3 w-3" />
+                <span className="hidden sm:inline">Need help? Call us:</span>
+                <a href={`tel:${storePhone}`} className="font-semibold hover:underline">{storePhone}</a>
+              </div>
+            )}
             <Link to="/track-order" className="hidden md:flex items-center gap-1.5 hover:underline">
               <MapPin className="h-3 w-3" />
               <span>Track your order</span>

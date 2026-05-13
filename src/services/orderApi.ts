@@ -64,6 +64,9 @@ export interface ApiOrder {
   discount: number
   status: string
   payment_status: string
+  payment_transaction_id: string | null
+  shipping_deposit_amount: number | null
+  shipping_deposit_transaction_id: string | null
   fulfillment_status: string
   tracking_number: string | null
   carrier: string | null
@@ -124,6 +127,9 @@ const normalizeOrder = (order: Partial<ApiOrder> | null | undefined): ApiOrder =
   discount: Number(order?.discount ?? 0),
   status: order?.status ?? '',
   payment_status: order?.payment_status ?? '',
+  payment_transaction_id: order?.payment_transaction_id ?? null,
+  shipping_deposit_amount: order?.shipping_deposit_amount != null ? Number(order.shipping_deposit_amount) : null,
+  shipping_deposit_transaction_id: order?.shipping_deposit_transaction_id ?? null,
   fulfillment_status: order?.fulfillment_status ?? '',
   tracking_number: order?.tracking_number ?? null,
   carrier: order?.carrier ?? null,

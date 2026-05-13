@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { couponApi } from "@/services/couponApi";
 import storefrontSettingsApi from "@/services/storefrontSettingsApi";
+import { api } from "@/lib/api";
 import heroBanner from "@/assets/hero-banner.jpg";
 import catHealth from "@/assets/cat-health.jpg";
 import catGrocery from "@/assets/cat-grocery.jpg";
@@ -53,6 +54,12 @@ export default function HeroSection() {
     queryKey: ['coupons-active'],
     queryFn: couponApi.getActive,
     staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: storeStats } = useQuery({
+    queryKey: ["store-stats"],
+    queryFn: () => api.get("/stats").then((r) => r.data.data as { totalOrders: number; totalCustomers: number; todayOrders: number }),
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: heroSettings } = useQuery({
@@ -330,8 +337,12 @@ export default function HeroSection() {
             {/* Quick stat */}
             <div className="rounded-2xl gradient-primary p-5 text-primary-foreground">
               <p className="text-xs opacity-80 mb-1">Today's orders</p>
-              <p className="font-display font-bold text-2xl">2,847+</p>
-              <p className="text-xs opacity-70 mt-1">Happy customers shopping now</p>
+              <p className="font-display font-bold text-2xl">
+                {storeStats ? (storeStats.todayOrders > 0 ? `${storeStats.todayOrders}+` : "0") : "—"}
+              </p>
+              <p className="text-xs opacity-70 mt-1">
+                {storeStats ? `${storeStats.totalCustomers}+ customers shopping` : "Happy customers shopping now"}
+              </p>
             </div>
           </div>
         </div>

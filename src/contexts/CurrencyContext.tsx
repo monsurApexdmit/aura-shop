@@ -18,6 +18,12 @@ interface CompanySettings {
   currencyDecimalPlaces?: 0 | 1 | 2;
   taxRate: number;
   timezone: string;
+  storeName?: string;
+  paymentMethods?: string[];
+  storePhone?: string;
+  storeEmail?: string;
+  storeAddress?: string;
+  storeHours?: Record<string, { open: string; close: string; isOpen: boolean }>;
 }
 
 interface CurrencyContextType {
@@ -25,6 +31,12 @@ interface CurrencyContextType {
   currencySymbol: string;
   taxRate: number;
   settings: CompanySettings | null;
+  storeName: string;
+  paymentMethods: string[];
+  storePhone: string;
+  storeEmail: string;
+  storeAddress: string;
+  storeHours: Record<string, { open: string; close: string; isOpen: boolean }>;
 }
 
 const CurrencyContext = createContext<CurrencyContextType>({
@@ -32,6 +44,12 @@ const CurrencyContext = createContext<CurrencyContextType>({
   currencySymbol: "$",
   taxRate: 0,
   settings: null,
+  storeName: "StoreFront",
+  paymentMethods: [],
+  storePhone: "",
+  storeEmail: "",
+  storeAddress: "",
+  storeHours: {},
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
@@ -43,6 +61,16 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       .then((res) => {
         const data = res.data?.data ?? res.data;
         setSettings(data);
+        const name = data?.storeName;
+        if (name) {
+          document.title = name;
+          const initial = name.charAt(0).toUpperCase();
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><text x="32" y="46" font-family="system-ui,sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">${initial}</text></svg>`;
+          const url = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+          let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+          if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+          link.href = url;
+        }
       })
       .catch(() => {});
   }, []);
@@ -72,6 +100,12 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         currencySymbol: symbol,
         taxRate: settings?.taxRate ?? 0,
         settings,
+        storeName: settings?.storeName ?? "StoreFront",
+        paymentMethods: settings?.paymentMethods ?? [],
+        storePhone: settings?.storePhone ?? "",
+        storeEmail: settings?.storeEmail ?? "",
+        storeAddress: settings?.storeAddress ?? "",
+        storeHours: settings?.storeHours ?? {},
       }}
     >
       {children}

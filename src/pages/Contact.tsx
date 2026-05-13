@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare, Headphones, FileQuestion } from "lucide-react";
 import { z } from "zod";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supportApi, type SupportTicket, type TicketCategory } from "@/services/supportApi";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -16,12 +17,6 @@ const contactSchema = z.object({
 
 type ContactData = z.infer<typeof contactSchema>;
 
-const contactInfo = [
-  { icon: Phone, label: "Phone", value: "+1 234-567-890", href: "tel:+1234567890", detail: "Mon-Fri, 9am-6pm EST" },
-  { icon: Mail, label: "Email", value: "support@shopvibe.com", href: "mailto:support@shopvibe.com", detail: "We reply within 24 hours" },
-  { icon: MapPin, label: "Address", value: "123 Commerce Street, New York, NY 10001", href: "#", detail: "Visit our office" },
-  { icon: Clock, label: "Business Hours", value: "Mon-Fri: 9AM-6PM EST", href: "#", detail: "Weekends: 10AM-4PM" },
-];
 
 const topics = [
   { icon: Headphones, label: "Order Support", description: "Track, modify, or return your orders" },
@@ -33,6 +28,13 @@ const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0
 
 export default function Contact() {
   const { isLoggedIn } = useAuth();
+  const { storePhone, storeEmail, storeAddress, storeHours } = useCurrency();
+
+  const contactInfo = [
+    storePhone && { icon: Phone, label: "Phone", value: storePhone, href: `tel:${storePhone}`, detail: "Call us anytime" },
+    storeEmail && { icon: Mail, label: "Email", value: storeEmail, href: `mailto:${storeEmail}`, detail: "We reply within 24 hours" },
+    storeAddress && { icon: MapPin, label: "Address", value: storeAddress, href: "#", detail: "Visit our office" },
+  ].filter(Boolean) as { icon: React.ElementType; label: string; value: string; href: string; detail: string }[];
   const [form, setForm] = useState<ContactData>({ name: "", email: "", subject: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
@@ -211,6 +213,33 @@ export default function Contact() {
                 </div>
               </a>
             ))}
+
+            {Object.keys(storeHours).length > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-5 flex items-start gap-4 hover:border-primary/30 transition-colors">
+                <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center shrink-0">
+                  <Clock className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Business Hours</p>
+                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
+                    {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map((day) => {
+                      const h = storeHours[day];
+                      if (!h) return null;
+                      return (
+                        <React.Fragment key={day}>
+                          <span className={`text-sm font-medium capitalize ${h.isOpen ? "text-foreground" : "text-muted-foreground/50"}`}>
+                            {day.charAt(0).toUpperCase() + day.slice(1, 3)}
+                          </span>
+                          <span className={`text-sm ${h.isOpen ? "text-muted-foreground" : "text-muted-foreground/40 italic"}`}>
+                            {h.isOpen ? `${h.open} – ${h.close}` : "Closed"}
+                          </span>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </section>

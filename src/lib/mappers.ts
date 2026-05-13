@@ -66,6 +66,7 @@ export function mapApiProduct(p: ApiProduct): Product {
     description:   p.description ?? '',
     rating:        p.rating ?? 0,
     reviews:       p.reviews_count ?? 0,
+    totalSold:     p.total_sold ?? 0,
     variants,
   }
 }

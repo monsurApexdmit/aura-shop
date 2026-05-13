@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useOrder } from "@/hooks/useOrders";
 import { mapFulfillmentStatus } from "@/services/orderApi";
-import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft } from "lucide-react";
+import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft, Banknote } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -189,12 +189,66 @@ export default function OrderDetail() {
                 )}
 
                 {/* Payment */}
-                <div className="bg-card border border-border rounded-2xl p-5">
-                  <h3 className="font-display font-bold text-sm mb-2 flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" />Payment</h3>
-                  <p className="text-sm text-muted-foreground capitalize">{order.method}</p>
-                  <p className={`text-xs mt-1 font-medium ${order.payment_status === "paid" ? "text-green-600" : "text-yellow-600"}`}>
-                    {order.payment_status === "paid" ? "Paid" : "Pending"}
-                  </p>
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+                  <h3 className="font-display font-bold text-sm flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" />Payment</h3>
+
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-medium text-foreground">{order.method}</p>
+
+                    {/* Overall payment status */}
+                    {(() => {
+                      const ps = order.payment_status
+                      const isPaid = ps === "paid"
+                      const isDeposit = ps === "shipping_deposit_paid"
+                      const isFailed = ps === "failed"
+                      const isCancelled = ps === "cancelled"
+                      const label = isPaid ? "✓ Paid"
+                        : isDeposit ? "⏳ Shipping Deposit Paid — COD balance on delivery"
+                        : isFailed ? "✗ Payment Failed"
+                        : isCancelled ? "✗ Cancelled"
+                        : "⏳ Awaiting Payment"
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          isPaid ? "bg-green-100 text-green-700"
+                          : isDeposit ? "bg-amber-100 text-amber-700"
+                          : isFailed || isCancelled ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                        }`}>
+                          {label}
+                        </span>
+                      )
+                    })()}
+
+                    {/* Full payment transaction */}
+                    {order.payment_transaction_id && (
+                      <div className="pt-1">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Transaction ID</p>
+                        <p className="text-xs font-mono text-foreground break-all">{order.payment_transaction_id}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Shipping deposit section — only when > 0 */}
+                  {order.shipping_deposit_amount != null && order.shipping_deposit_amount > 0 && (
+                    <div className="border-t border-border pt-3 space-y-1.5">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Banknote className="h-3 w-3" /> Shipping Deposit
+                      </p>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Amount paid</span>
+                        <span className="font-bold text-amber-600">{formatCurrency(order.shipping_deposit_amount)}</span>
+                      </div>
+                      {order.shipping_deposit_transaction_id && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Deposit Txn ID</p>
+                          <p className="text-xs font-mono text-foreground break-all">{order.shipping_deposit_transaction_id}</p>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Shipping cost paid upfront. Remaining order amount ({formatCurrency(Number(order.amount) - order.shipping_deposit_amount)}) payable on delivery.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

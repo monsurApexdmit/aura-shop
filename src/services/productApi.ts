@@ -29,6 +29,7 @@ export interface ApiProduct {
   category_name: string | null
   rating: number
   reviews_count: number
+  total_sold: number
   is_featured: boolean
   is_hot_deal: boolean
   is_best_seller: boolean

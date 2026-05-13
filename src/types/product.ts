@@ -34,6 +34,7 @@ export interface Product {
   reviews: number
   sku?: string
   stock?: number
+  totalSold?: number
   attributes?: ProductAttribute[]
   variants?: ProductVariant[]
   description?: string

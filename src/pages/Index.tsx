@@ -58,7 +58,7 @@ const Index = () => {
               Handpicked products loved by thousands. Find your daily essentials with exclusive deals.
             </motion.p>
           </div>
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {popularLoading
               ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)
               : popularProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
@@ -98,7 +98,7 @@ const Index = () => {
               Grab these deals before they're gone — special discounts with free shipping.
             </motion.p>
           </div>
-          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {saleLoading
               ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)
               : saleProducts.length > 0

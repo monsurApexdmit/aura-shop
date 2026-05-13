@@ -23,7 +23,7 @@ export default function Shop() {
   const [expandedCats, setExpandedCats]     = useState<string[]>(activeCatSlug ? [activeCatSlug] : []);
   const [priceRange, setPriceRange]         = useState<[number, number]>([0, 1500]);
   const [sortBy, setSortBy]                 = useState<SortOption>("default");
-  const [gridCols, setGridCols]             = useState<3 | 4>(4);
+  const [gridCols, setGridCols]             = useState<3 | 4>(4); // 4=6col, 3=4col
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage]                     = useState(1);
 
@@ -179,7 +179,7 @@ export default function Shop() {
 
             {/* Product Grid */}
             {isLoading ? (
-              <div className={`grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
+              <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3"} gap-3 md:gap-4`}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className="h-72 rounded-2xl" />
                 ))}
@@ -194,7 +194,7 @@ export default function Shop() {
               </div>
             ) : (
               <>
-                <div className={`grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
+                <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3"} gap-3 md:gap-4`}>
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product.id} product={product} index={i} />
                   ))}
