@@ -158,7 +158,7 @@ const Login = () => {
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-primary font-medium hover:underline">
+            <Link to="/signup" state={{ from }} className="text-primary font-medium hover:underline">
               Create one
             </Link>
           </p>

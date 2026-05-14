@@ -136,7 +136,7 @@ export default function Header() {
               </Button>
             </Link>
             {/* User Menu */}
-            <div ref={userMenuRef} className="relative hidden sm:block">
+            <div ref={userMenuRef} className="relative block">
               <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
                 {isLoggedIn ? (
                   <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center cursor-pointer text-primary-foreground text-xs font-bold">
@@ -399,6 +399,28 @@ export default function Header() {
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </button>
+              <div className="border-t border-border my-2" />
+              {isLoggedIn ? (
+                <>
+                  <Link to="/account" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg">
+                    <User className="h-4 w-4 text-primary" />
+                    My Account
+                  </Link>
+                  <Link to="/account/orders" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg">
+                    <Package className="h-4 w-4 text-primary" />
+                    My Orders
+                  </Link>
+                  <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-muted rounded-lg">
+                    <LogOut className="h-4 w-4" />
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-primary hover:bg-muted rounded-lg">
+                  <User className="h-4 w-4" />
+                  Login / Sign Up
+                </Link>
+              )}
             </nav>
           </motion.div>
         )}

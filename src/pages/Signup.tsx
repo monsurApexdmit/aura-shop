@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ const passwordChecks = [
 
 const Signup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useAuth();
+  const from = (location.state as any)?.from || "/account";
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,7 +46,7 @@ const Signup = () => {
     try {
       await register(name, email, password);
       toast.success("Account created! Welcome!");
-      navigate("/account");
+      navigate(from, { replace: true });
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Registration failed. Please try again.");
     } finally {

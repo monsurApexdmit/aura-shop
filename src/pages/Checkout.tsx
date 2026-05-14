@@ -75,6 +75,28 @@ export default function Checkout() {
   const [couponCode, setCouponCode] = useState("");
   const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
   const [couponApplying, setCouponApplying] = useState(false);
+  const [form, setForm] = useState<ShippingData>({
+    fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
+  });
+
+  const CHECKOUT_STORAGE_KEY = "checkout_saved_state";
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(CHECKOUT_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.form) setForm(parsed.form);
+        if (parsed.step && parsed.step < 4) setStep(parsed.step);
+        if (parsed.paymentMethodId) setPaymentMethodId(parsed.paymentMethodId);
+        if (parsed.shippingMethodId) setShippingMethodId(parsed.shippingMethodId);
+        if (parsed.couponCode) setCouponCode(parsed.couponCode);
+        setRestoredFromSession(true);
+        sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     if (shippingMethods.length > 0 && shippingMethodId === null) {
@@ -96,10 +118,6 @@ export default function Checkout() {
 
   const defaultAddress = savedAddresses.find((a) => a.is_default) ?? savedAddresses[0] ?? null;
 
-  const [form, setForm] = useState<ShippingData>({
-    fullName: "", email: "", phone: "", address: "", city: "", state: "", zip: "", note: "",
-  });
-
   const fillFromAddress = (addr: ApiAddress | null) => {
     if (!addr) return;
     setForm((f) => ({
@@ -115,7 +133,7 @@ export default function Checkout() {
   };
 
   useEffect(() => {
-    if (addressMode === "saved" && defaultAddress) {
+    if (!restoredFromSession && addressMode === "saved" && defaultAddress) {
       fillFromAddress(defaultAddress);
     }
   }, [defaultAddress]);
@@ -174,11 +192,17 @@ export default function Checkout() {
     return Math.round((subtotal * couponResult.discount) / 100 * 100) / 100;
   };
 
+  const saveCheckoutState = () => {
+    sessionStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify({
+      form, step, paymentMethodId, shippingMethodId, couponCode,
+    }));
+  };
+
   const nextStep = async () => {
     if (step === 1 && !validateShipping()) return;
     if (step === 3) {
       if (!isLoggedIn) {
-        toast.error("Please log in to place an order");
+        saveCheckoutState();
         navigate("/login", { state: { from: "/checkout" } });
         return;
       }
