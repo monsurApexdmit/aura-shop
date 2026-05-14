@@ -40,7 +40,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-3">
             <div className="flex items-center gap-2.5 mb-5">
               {displayLogo ? (
-                <img src={displayLogo} alt={storeName} className="h-10 w-auto max-w-[120px] object-contain brightness-0 invert" />
+                <img src={displayLogo} alt={storeName} className="h-12 w-auto max-w-[160px] object-contain" />
               ) : (
                 <>
                   <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
