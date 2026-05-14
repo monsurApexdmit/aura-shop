@@ -24,6 +24,8 @@ interface CompanySettings {
   storeEmail?: string;
   storeAddress?: string;
   storeHours?: Record<string, { open: string; close: string; isOpen: boolean }>;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
 }
 
 interface CurrencyContextType {
@@ -37,6 +39,8 @@ interface CurrencyContextType {
   storeEmail: string;
   storeAddress: string;
   storeHours: Record<string, { open: string; close: string; isOpen: boolean }>;
+  logoUrl: string | null;
+  faviconUrl: string | null;
 }
 
 const CurrencyContext = createContext<CurrencyContextType>({
@@ -50,6 +54,8 @@ const CurrencyContext = createContext<CurrencyContextType>({
   storeEmail: "",
   storeAddress: "",
   storeHours: {},
+  logoUrl: null,
+  faviconUrl: null,
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
@@ -62,14 +68,19 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         const data = res.data?.data ?? res.data;
         setSettings(data);
         const name = data?.storeName;
-        if (name) {
-          document.title = name;
+        if (name) document.title = name;
+
+        const faviconUrl = data?.faviconUrl ?? data?.logoUrl;
+        let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+        if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+        if (faviconUrl) {
+          link.type = "image/png";
+          link.href = faviconUrl;
+        } else if (name) {
           const initial = name.charAt(0).toUpperCase();
           const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><text x="32" y="46" font-family="system-ui,sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">${initial}</text></svg>`;
-          const url = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-          let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-          if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
-          link.href = url;
+          link.type = "image/svg+xml";
+          link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
         }
       })
       .catch(() => {});
@@ -106,6 +117,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         storeEmail: settings?.storeEmail ?? "",
         storeAddress: settings?.storeAddress ?? "",
         storeHours: settings?.storeHours ?? {},
+        logoUrl: settings?.logoUrl ?? null,
+        faviconUrl: settings?.faviconUrl ?? null,
       }}
     >
       {children}

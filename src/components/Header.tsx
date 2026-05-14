@@ -40,7 +40,7 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
-  const { formatCurrency, storePhone } = useCurrency();
+  const { formatCurrency, storePhone, storeName, logoUrl } = useCurrency();
   const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -99,13 +99,19 @@ export default function Header() {
         <div className="container flex items-center justify-between h-16 gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-              <span className="text-primary-foreground font-display font-bold text-xl">S</span>
-            </div>
-            <div className="hidden sm:block">
-              <span className="font-display font-bold text-xl text-foreground leading-none tracking-tight">StoreFront</span>
-              <p className="text-[10px] text-muted-foreground leading-none mt-0.5 tracking-wide">MARKETPLACE</p>
-            </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={storeName} className="h-10 w-auto max-w-[120px] object-contain" />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
+                  <span className="text-primary-foreground font-display font-bold text-xl">{storeName.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="hidden sm:block">
+                  <span className="font-display font-bold text-xl text-foreground leading-none tracking-tight">{storeName}</span>
+                  <p className="text-[10px] text-muted-foreground leading-none mt-0.5 tracking-wide">MARKETPLACE</p>
+                </div>
+              </>
+            )}
           </Link>
 
           {/* Desktop Search */}

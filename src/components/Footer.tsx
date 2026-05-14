@@ -26,7 +26,7 @@ const footerLinks = {
 
 export default function Footer() {
   const { data: categories = [] } = useCategories();
-  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress } = useCurrency();
+  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, logoUrl } = useCurrency();
   const displayPaymentMethods = paymentMethods.length > 0
     ? paymentMethods
     : ["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"];
@@ -38,13 +38,19 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-3">
             <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-lg">{storeName.charAt(0).toUpperCase()}</span>
-              </div>
-              <div>
-                <span className="font-display font-bold text-lg text-background leading-none">{storeName}</span>
-                <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
-              </div>
+              {logoUrl ? (
+                <img src={logoUrl} alt={storeName} className="h-10 w-auto max-w-[120px] object-contain brightness-0 invert" />
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-display font-bold text-lg">{storeName.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <span className="font-display font-bold text-lg text-background leading-none">{storeName}</span>
+                    <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
+                  </div>
+                </>
+              )}
             </div>
             <p className="text-sm text-background/50 leading-relaxed mb-5 max-w-xs">
               Your universal marketplace for health, fashion, electronics, grocery & beyond. Quality products, fast delivery.
