@@ -36,6 +36,9 @@ import AccountOrders from "./pages/AccountOrders";
 import OrderDetail from "./pages/OrderDetail";
 import AccountProfile from "./pages/AccountProfile";
 import AccountAddresses from "./pages/AccountAddresses";
+import AccountReturns from "./pages/AccountReturns";
+import NewReturnRequest from "./pages/NewReturnRequest";
+import ReturnDetail from "./pages/ReturnDetail";
 import Support from "./pages/Support";
 import GuestSupport from "./pages/GuestSupport";
 import OrderResult from "./pages/OrderResult";
@@ -81,6 +84,9 @@ function AnimatedRoutes() {
           <Route path="/account/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
           <Route path="/account/profile" element={<RequireAuth><AccountProfile /></RequireAuth>} />
           <Route path="/account/addresses" element={<RequireAuth><AccountAddresses /></RequireAuth>} />
+          <Route path="/account/returns" element={<RequireAuth><AccountReturns /></RequireAuth>} />
+          <Route path="/account/returns/new" element={<RequireAuth><NewReturnRequest /></RequireAuth>} />
+          <Route path="/account/returns/:id" element={<RequireAuth><ReturnDetail /></RequireAuth>} />
           <Route path="/support" element={<Support />} />
           <Route path="/support/guest/:ticketNumber" element={<GuestSupport />} />
           <Route path="/order/result" element={<OrderResult />} />

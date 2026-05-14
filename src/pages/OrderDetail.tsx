@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useOrder } from "@/hooks/useOrders";
 import { mapFulfillmentStatus } from "@/services/orderApi";
-import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft, Banknote } from "lucide-react";
+import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft, Banknote, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -253,9 +253,20 @@ export default function OrderDetail() {
               </div>
             </div>
 
-            <button onClick={() => navigate("/account/orders")} className="mt-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
-              <ArrowLeft className="h-4 w-4" /> Back to Orders
-            </button>
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <button onClick={() => navigate("/account/orders")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
+                <ArrowLeft className="h-4 w-4" /> Back to Orders
+              </button>
+              {statusLabel === "Delivered" && (
+                <Link
+                  to={`/account/returns/new?order_id=${order.id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-semibold text-foreground hover:border-primary/40 transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4 text-primary" />
+                  Return Items
+                </Link>
+              )}
+            </div>
           </motion.div>
         </div>
       </div>

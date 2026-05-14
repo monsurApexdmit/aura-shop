@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders } from "@/hooks/useOrders";
 import { mapFulfillmentStatus } from "@/services/orderApi";
-import { Package, MapPin, User, LogOut, ChevronRight, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, Headphones } from "lucide-react";
+import { Package, MapPin, User, LogOut, ChevronRight, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, Headphones, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -66,6 +66,7 @@ export default function Account() {
             <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="lg:col-span-1 space-y-3">
               {[
                 { label: "My Orders", desc: "View order history & status", icon: Package, to: "/account/orders" },
+                { label: "My Returns", desc: "Track return requests & refunds", icon: RotateCcw, to: "/account/returns" },
                 { label: "Addresses", desc: "Manage shipping addresses", icon: MapPin, to: "/account/addresses" },
                 { label: "Support", desc: "Get help with your orders", icon: Headphones, to: "/support" },
                 { label: "Profile Settings", desc: "Edit your personal info", icon: User, to: "/account/profile" },
