@@ -26,6 +26,7 @@ interface CompanySettings {
   storeHours?: Record<string, { open: string; close: string; isOpen: boolean }>;
   logoUrl?: string | null;
   faviconUrl?: string | null;
+  bannerUrl?: string | null;
 }
 
 interface CurrencyContextType {
@@ -41,6 +42,7 @@ interface CurrencyContextType {
   storeHours: Record<string, { open: string; close: string; isOpen: boolean }>;
   logoUrl: string | null;
   faviconUrl: string | null;
+  bannerUrl: string | null;
 }
 
 const CurrencyContext = createContext<CurrencyContextType>({
@@ -56,6 +58,7 @@ const CurrencyContext = createContext<CurrencyContextType>({
   storeHours: {},
   logoUrl: null,
   faviconUrl: null,
+  bannerUrl: null,
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
@@ -119,6 +122,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         storeHours: settings?.storeHours ?? {},
         logoUrl: settings?.logoUrl ?? null,
         faviconUrl: settings?.faviconUrl ?? null,
+        bannerUrl: settings?.bannerUrl ?? null,
       }}
     >
       {children}

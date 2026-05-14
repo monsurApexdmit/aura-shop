@@ -48,7 +48,7 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, bannerUrl, storeName } = useCurrency();
 
   const { data: activeCoupons = [] } = useQuery({
     queryKey: ['coupons-active'],
@@ -72,7 +72,7 @@ export default function HeroSection() {
     const remoteSlides = (heroSettings?.slides ?? [])
       .filter((slide) => slide.enabled && slide.title && slide.cta)
       .map((slide) => ({
-        image: slide.imagePath ? getImageUrl(slide.imagePath) : heroBanner,
+        image: slide.imagePath ? getImageUrl(slide.imagePath) : (bannerUrl ?? heroBanner),
         tag: slide.tag,
         title: slide.title,
         subtitle: slide.subtitle,
@@ -81,8 +81,13 @@ export default function HeroSection() {
         gradient: slide.gradient || "from-primary/80 via-primary/40 to-transparent",
       }));
 
-    return remoteSlides.length > 0 ? remoteSlides : fallbackSlides;
-  }, [heroSettings]);
+    if (remoteSlides.length > 0) return remoteSlides;
+
+    // Use backend banner as first slide image if available
+    return fallbackSlides.map((s, i) =>
+      i === 0 && bannerUrl ? { ...s, image: bannerUrl } : s
+    );
+  }, [heroSettings, bannerUrl, storeName]);
 
   useEffect(() => {
     const autoplayMs = Math.max(2000, heroSettings?.autoplayMs ?? 6000);
