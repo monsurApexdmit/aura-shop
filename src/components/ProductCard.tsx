@@ -80,7 +80,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center bg-indigo-600 rounded-full shadow-lg py-1 px-1 gap-0.5"
+              className="flex flex-col items-center bg-primary rounded-full shadow-lg py-1 px-1 gap-0.5"
             >
               <button
                 onClick={() =>
@@ -88,7 +88,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                     ? removeItem(String(product.id))
                     : updateQuantity(String(product.id), cartItem.quantity - 1)
                 }
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-indigo-500 transition-colors"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-primary/80 transition-colors"
               >
                 <Minus className="h-3.5 w-3.5" />
               </button>
@@ -97,7 +97,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               </span>
               <button
                 onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-indigo-500 transition-colors"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-primary/80 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
@@ -106,7 +106,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={handleAdd}
-              className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-500 transition-colors"
+              className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/80 transition-colors"
               aria-label="Add to cart"
             >
               <ShoppingCart className="h-4 w-4" />
@@ -119,7 +119,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       <div className="flex flex-col flex-1 px-3.5 pt-3 pb-3.5 gap-1.5">
         {/* Name */}
         <Link to={`/product/${product.slug}`}>
-          <h3 className="font-semibold text-sm leading-snug text-indigo-600 line-clamp-2 group-hover:text-indigo-700 transition-colors duration-200 min-h-[2.4rem]">
+          <h3 className="font-semibold text-sm leading-snug text-primary line-clamp-2 group-hover:text-primary/80 transition-colors duration-200 min-h-[2.4rem]">
             {product.name}
           </h3>
         </Link>
