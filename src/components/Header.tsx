@@ -101,7 +101,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             {displayLogo ? (
-              <img src={displayLogo} alt={storeName} className="h-12 w-auto max-w-[160px] object-contain" />
+              <img src={displayLogo} alt={storeName} className="h-14 w-auto max-w-[280px] object-contain" />
             ) : (
               <>
                 <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
