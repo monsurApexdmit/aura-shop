@@ -40,7 +40,8 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
-  const { formatCurrency, storePhone, storeName, logoUrl } = useCurrency();
+  const { formatCurrency, storePhone, storeName, bannerUrl } = useCurrency();
+  const displayLogo = bannerUrl;
   const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -99,8 +100,8 @@ export default function Header() {
         <div className="container flex items-center justify-between h-16 gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            {logoUrl ? (
-              <img src={logoUrl} alt={storeName} className="h-10 w-auto max-w-[120px] object-contain" />
+            {displayLogo ? (
+              <img src={displayLogo} alt={storeName} className="h-12 w-auto max-w-[160px] object-contain" />
             ) : (
               <>
                 <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">

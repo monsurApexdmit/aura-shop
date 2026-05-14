@@ -26,7 +26,8 @@ const footerLinks = {
 
 export default function Footer() {
   const { data: categories = [] } = useCategories();
-  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, logoUrl } = useCurrency();
+  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl } = useCurrency();
+  const displayLogo = bannerUrl;
   const displayPaymentMethods = paymentMethods.length > 0
     ? paymentMethods
     : ["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"];
@@ -38,8 +39,8 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-3">
             <div className="flex items-center gap-2.5 mb-5">
-              {logoUrl ? (
-                <img src={logoUrl} alt={storeName} className="h-10 w-auto max-w-[120px] object-contain brightness-0 invert" />
+              {displayLogo ? (
+                <img src={displayLogo} alt={storeName} className="h-10 w-auto max-w-[120px] object-contain brightness-0 invert" />
               ) : (
                 <>
                   <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">

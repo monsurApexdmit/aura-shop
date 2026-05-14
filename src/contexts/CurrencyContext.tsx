@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { API_BASE_URL, COMPANY_ID } from "@/lib/api";
+import { API_BASE_URL, COMPANY_ID, getImageUrl } from "@/lib/api";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$", EUR: "€", GBP: "£", INR: "₹", AUD: "A$", CAD: "C$",
@@ -68,12 +68,18 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     axios
       .get(`${API_BASE_URL}/store/settings/company`, { params: { company_id: COMPANY_ID } })
       .then((res) => {
-        const data = res.data?.data ?? res.data;
+        const raw = res.data?.data ?? res.data;
+        const data = {
+          ...raw,
+          logoUrl:    raw?.logoUrl    ? getImageUrl(raw.logoUrl)    : null,
+          bannerUrl:  raw?.bannerUrl  ? getImageUrl(raw.bannerUrl)  : null,
+          faviconUrl: raw?.faviconUrl ? getImageUrl(raw.faviconUrl) : null,
+        };
         setSettings(data);
         const name = data?.storeName;
         if (name) document.title = name;
 
-        const faviconUrl = data?.faviconUrl ?? data?.logoUrl;
+        const faviconUrl = data?.faviconUrl ?? data?.logoUrl ?? data?.bannerUrl;
         let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
         if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
         if (faviconUrl) {
