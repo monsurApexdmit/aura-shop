@@ -16,9 +16,21 @@ export interface AuraShopHeroSettings {
   slides: AuraShopHeroSlide[];
 }
 
+export interface PromoBannerSettings {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  cta: string;
+  link: string;
+}
+
 export const storefrontSettingsApi = {
   getHomepageHero: async (): Promise<AuraShopHeroSettings> => {
     const response = await api.get("/settings/homepage-hero");
+    return response.data.data;
+  },
+  getPromoBanner: async (): Promise<PromoBannerSettings> => {
+    const response = await api.get("/settings/promo-banner");
     return response.data.data;
   },
 };
