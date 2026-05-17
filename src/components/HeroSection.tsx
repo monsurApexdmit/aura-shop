@@ -234,7 +234,7 @@ export default function HeroSection() {
                 transition={{ duration: 0.45 }}
                 className="absolute inset-0 overflow-hidden"
               >
-                <img src={slides[current].image} alt="" className="w-full h-full object-cover object-center" />
+                <img src={slides[current].image} alt="" className="w-full h-full object-cover object-left-top sm:object-center" />
                 <div className={`absolute inset-0 bg-gradient-to-r ${slides[current].gradient}`} />
                 <div className="absolute inset-0 flex max-w-full flex-col justify-center p-5 sm:max-w-xl sm:p-8 md:p-14">
                   <motion.span

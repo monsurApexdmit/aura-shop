@@ -97,11 +97,11 @@ export default function Header() {
 
       {/* Main Header */}
       <div className="bg-background/95 backdrop-blur-md border-b border-border relative z-50">
-        <div className="container flex items-center justify-between h-16 gap-3">
+        <div className="container flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             {displayLogo ? (
-              <img src={displayLogo} alt={storeName} className="h-16 w-auto max-w-[260px] object-contain" />
+              <img src={displayLogo} alt={storeName} className="h-10 sm:h-14 w-auto max-w-[140px] sm:max-w-[200px] object-contain" />
             ) : (
               <>
                 <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
