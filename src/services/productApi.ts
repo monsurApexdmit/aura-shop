@@ -12,6 +12,15 @@ export interface ApiProductVariant {
   attributes: string | Record<string, string>
 }
 
+export interface ApiBundleItem {
+  product_id: number
+  product_name: string
+  variant_id: number | null
+  quantity: number
+  sku: string | null
+  image: string | null
+}
+
 export interface ApiProduct {
   id: number
   slug: string
@@ -35,6 +44,9 @@ export interface ApiProduct {
   is_best_seller: boolean
   deal_label: string | null
   variants: ApiProductVariant[]
+  is_bundle: boolean
+  bundle_price_override: number | null
+  bundle_items: ApiBundleItem[]
 }
 
 export interface ApiProductReview {

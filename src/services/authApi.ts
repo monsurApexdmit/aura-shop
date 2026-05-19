@@ -1,4 +1,4 @@
-import { api, COMPANY_ID } from '@/lib/api'
+import { api, COMPANY_ID, USE_SUBDOMAIN } from '@/lib/api'
 
 export interface ApiCustomer {
   id: number
@@ -35,7 +35,7 @@ export const authApi = {
   login: async (payload: LoginPayload): Promise<AuthResponse> => {
     const res = await api.post('/customer/login', {
       ...payload,
-      company_id: Number(COMPANY_ID),
+      ...(!USE_SUBDOMAIN && COMPANY_ID ? { company_id: Number(COMPANY_ID) } : {}),
     })
     return res.data
   },
@@ -43,7 +43,7 @@ export const authApi = {
   register: async (payload: RegisterPayload): Promise<AuthResponse> => {
     const res = await api.post('/customer/register', {
       ...payload,
-      company_id: Number(COMPANY_ID),
+      ...(!USE_SUBDOMAIN && COMPANY_ID ? { company_id: Number(COMPANY_ID) } : {}),
     })
     return res.data
   },

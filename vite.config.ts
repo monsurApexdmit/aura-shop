@@ -23,12 +23,12 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "/api": {
           target: apiOrigin,
-          changeOrigin: true,
+          changeOrigin: false, // preserve Host header so backend can resolve subdomain
           secure: false,
         },
         "/storage": {
           target: apiOrigin,
-          changeOrigin: true,
+          changeOrigin: false,
           secure: false,
         },
       },

@@ -17,6 +17,15 @@ export interface ProductAttribute {
   values: string[]
 }
 
+export interface BundleItem {
+  productId: number
+  productName: string
+  variantId: number | null
+  quantity: number
+  sku: string | null
+  image: string | null
+}
+
 export interface Product {
   id: string
   slug: string
@@ -38,6 +47,8 @@ export interface Product {
   attributes?: ProductAttribute[]
   variants?: ProductVariant[]
   description?: string
+  isBundle?: boolean
+  bundleItems?: BundleItem[]
 }
 
 export interface ProductReviewReply {

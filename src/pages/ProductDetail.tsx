@@ -441,6 +441,39 @@ export default function ProductDetail() {
           </motion.div>
         </div>
 
+        {/* Bundle Contents */}
+        {product.isBundle && product.bundleItems && product.bundleItems.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1 h-5 bg-primary rounded-full" />
+              <h3 className="text-base font-semibold text-foreground">What's in this bundle</h3>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{product.bundleItems.length} items</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {product.bundleItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/40">
+                    {item.image ? (
+                      <img src={item.image} alt={item.productName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                        <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{item.productName}</p>
+                    {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">×{item.quantity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Product Tabs */}
         <div className="mt-16">
           <Tabs defaultValue="description" className="w-full">

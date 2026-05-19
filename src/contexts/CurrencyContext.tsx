@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { API_BASE_URL, COMPANY_ID, getImageUrl } from "@/lib/api";
+import { API_BASE_URL, COMPANY_ID, USE_SUBDOMAIN, getImageUrl } from "@/lib/api";
 
 function hexToHsl(hex: string): string | null {
   const m = hex.replace("#", "").match(/.{2}/g);
@@ -167,7 +167,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     axios
-      .get(`${API_BASE_URL}/store/settings/company`, { params: { company_id: COMPANY_ID } })
+      .get(`${API_BASE_URL}/store/settings/company`, {
+        params: !USE_SUBDOMAIN && COMPANY_ID ? { company_id: COMPANY_ID } : {},
+      })
       .then((res) => {
         const raw = res.data?.data ?? res.data;
         const data = {

@@ -1,6 +1,6 @@
 import { getImageUrl } from '@/lib/api'
 import type { ApiProduct } from '@/services/productApi'
-import type { Product, ProductVariant } from '@/types/product'
+import type { Product, ProductVariant, BundleItem } from '@/types/product'
 
 export function mapApiProduct(p: ApiProduct): Product {
   const basePrice = (p.sale_price && p.sale_price > 0) ? p.sale_price : p.price
@@ -48,6 +48,15 @@ export function mapApiProduct(p: ApiProduct): Product {
   const badge = p.deal_label
     ?? (p.is_hot_deal ? 'Hot Deal' : p.is_best_seller ? 'Best Seller' : p.is_featured ? 'Featured' : undefined)
 
+  const bundleItems: BundleItem[] = (p.bundle_items ?? []).map(bi => ({
+    productId:   bi.product_id,
+    productName: bi.product_name,
+    variantId:   bi.variant_id,
+    quantity:    bi.quantity,
+    sku:         bi.sku,
+    image:       bi.image ? getImageUrl(bi.image) : null,
+  }))
+
   return {
     id:            String(p.id),
     slug:          p.slug,
@@ -68,5 +77,7 @@ export function mapApiProduct(p: ApiProduct): Product {
     reviews:       p.reviews_count ?? 0,
     totalSold:     p.total_sold ?? 0,
     variants,
+    isBundle:      p.is_bundle ?? false,
+    bundleItems:   bundleItems.length > 0 ? bundleItems : undefined,
   }
 }

@@ -1,6 +1,6 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
-import { COMPANY_ID } from "@/lib/api";
+import { COMPANY_ID, USE_SUBDOMAIN } from "@/lib/api";
 import type { SupportMessage, SupportTicket, TicketStatus } from "@/services/supportApi";
 
 const REVERB_ENABLED = (import.meta.env.VITE_REVERB_ENABLED as string) === "true";
@@ -37,7 +37,7 @@ export function getSupportEcho(options?: EchoOptions) {
   if (!REVERB_ENABLED) return null;
 
   const authParams: Record<string, string> = {
-    company_id: COMPANY_ID,
+    ...(!USE_SUBDOMAIN && COMPANY_ID ? { company_id: COMPANY_ID } : {}),
   };
 
   if (options?.guestToken) {
