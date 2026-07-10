@@ -2,10 +2,12 @@ import { X, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalPrice } = useCart();
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
 
   return (
     <AnimatePresence>
@@ -66,12 +68,24 @@ export default function CartDrawer() {
                       transition={{ delay: i * 0.05 }}
                       className="flex gap-3 p-3 rounded-xl bg-card border border-border"
                     >
-                      <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden shrink-0 flex items-center justify-center">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const t = e.currentTarget;
+                              t.style.display = "none";
+                              t.nextElementSibling?.classList.remove("hidden");
+                            }}
+                          />
+                        ) : null}
+                        <span className={`text-xs text-muted-foreground text-center leading-tight px-1 ${item.image ? "hidden" : ""}`}>No Image</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm text-card-foreground truncate">{item.name}</h3>
-                        <p className="text-primary font-display font-bold mt-1">${item.price.toFixed(2)}</p>
+                        <p className="text-primary font-display font-bold mt-1">{formatCurrency(item.price)}</p>
                         <div className="flex items-center gap-1.5 mt-2">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -99,7 +113,7 @@ export default function CartDrawer() {
                 <div className="border-t border-border p-5 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-sm">Subtotal</span>
-                    <span className="font-display font-bold text-xl">${totalPrice.toFixed(2)}</span>
+                    <span className="font-display font-bold text-xl">{formatCurrency(totalPrice)}</span>
                   </div>
                   <button onClick={() => { setIsOpen(false); navigate("/checkout"); }} className="w-full gradient-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg text-sm flex items-center justify-center gap-2">
                     Proceed to Checkout <ArrowRight className="h-4 w-4" />

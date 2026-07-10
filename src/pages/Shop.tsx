@@ -2,66 +2,75 @@ import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, SlidersHorizontal, X, Grid3X3, LayoutList, ArrowUpDown } from "lucide-react";
-import { categories } from "@/data/categories";
-import { products } from "@/data/products";
+import { useCategories } from "@/hooks/useCategories";
+import { useProducts } from "@/hooks/useProducts";
+import { mapApiProduct } from "@/lib/mappers";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import FilterPanel from "@/components/features/shop/FilterPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type SortOption = "default" | "price-asc" | "price-desc" | "rating" | "newest";
+type SortOption = "default" | "price-asc" | "price-desc" | "newest";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCatSlug = searchParams.get("cat") || null;
   const activeSubSlug = searchParams.get("sub") || null;
+  const searchQuery   = searchParams.get("search") || "";
 
-  const [expandedCats, setExpandedCats] = useState<string[]>(activeCatSlug ? [activeCatSlug] : []);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1500]);
-  const [sortBy, setSortBy] = useState<SortOption>("default");
-  const [gridCols, setGridCols] = useState<3 | 4>(4);
+  const [expandedCats, setExpandedCats]     = useState<string[]>(activeCatSlug ? [activeCatSlug] : []);
+  const [priceRange, setPriceRange]         = useState<[number, number]>([0, 1500]);
+  const [sortBy, setSortBy]                 = useState<SortOption>("default");
+  const [gridCols, setGridCols]             = useState<3 | 4>(4); // 4=6col, 3=4col
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [page, setPage]                     = useState(1);
 
-  const activeCategory = categories.find((c) => c.slug === activeCatSlug);
+  const { data: categories = [] } = useCategories();
+
+  // Find active category/sub by slug
+  const activeCategory    = categories.find((c) => c.slug === activeCatSlug);
   const activeSubCategory = activeCategory?.children.find((s) => s.slug === activeSubSlug);
 
-  const toggleCatExpand = (slug: string) => {
-    setExpandedCats((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+  // Build API filters — use subcategory id when selected, otherwise parent category id
+  const activeCategoryId = activeSubCategory?.id ?? activeCategory?.id;
+
+  const apiFilters = useMemo(() => ({
+    search:      searchQuery || undefined,
+    category_id: activeCategoryId,
+    limit:       24,
+    page,
+  }), [searchQuery, activeCategoryId, page]);
+
+  const { data, isLoading } = useProducts(apiFilters);
+
+  const products = useMemo(() => (data?.data ?? []).map(mapApiProduct), [data]);
+
+  // Client-side sort & price filter
+  const filteredProducts = useMemo(() => {
+    let result = products.filter((p) =>
+      (p.price ?? 0) >= priceRange[0] && (p.price ?? 0) <= priceRange[1]
     );
-  };
+    switch (sortBy) {
+      case "price-asc":  result = [...result].sort((a, b) => a.price - b.price); break;
+      case "price-desc": result = [...result].sort((a, b) => b.price - a.price); break;
+      default: break;
+    }
+    return result;
+  }, [products, priceRange, sortBy]);
+
+  const toggleCatExpand = (slug: string) =>
+    setExpandedCats((prev) => prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]);
 
   const selectCategory = (catSlug: string | null, subSlug: string | null) => {
     const params = new URLSearchParams();
     if (catSlug) params.set("cat", catSlug);
     if (subSlug) params.set("sub", subSlug);
+    if (searchQuery) params.set("search", searchQuery);
     setSearchParams(params);
+    setPage(1);
   };
-
-  const filteredProducts = useMemo(() => {
-    let result = products.filter((p) => {
-      if (activeCatSlug) {
-        const cat = categories.find((c) => c.slug === activeCatSlug);
-        if (cat && p.category !== cat.name) return false;
-      }
-      if (activeSubSlug && activeCategory) {
-        const sub = activeCategory.children.find((s) => s.slug === activeSubSlug);
-        if (sub && p.subcategory !== sub.name) return false;
-      }
-      if (p.price < priceRange[0] || p.price > priceRange[1]) return false;
-      return true;
-    });
-
-    switch (sortBy) {
-      case "price-asc": result.sort((a, b) => a.price - b.price); break;
-      case "price-desc": result.sort((a, b) => b.price - a.price); break;
-      case "rating": result.sort((a, b) => b.rating - a.rating); break;
-      default: break;
-    }
-
-    return result;
-  }, [activeCatSlug, activeSubSlug, activeCategory, priceRange, sortBy]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,19 +83,15 @@ export default function Shop() {
             <span className={!activeCatSlug ? "text-foreground font-medium" : "hover:text-primary cursor-pointer transition-colors"}>
               {activeCatSlug ? (
                 <button onClick={() => selectCategory(null, null)}>Shop</button>
-              ) : (
-                "Shop"
-              )}
+              ) : "Shop"}
             </span>
             {activeCategory && (
               <>
                 <ChevronRight className="h-3 w-3" />
                 <span className={!activeSubSlug ? "text-foreground font-medium" : "hover:text-primary cursor-pointer transition-colors"}>
-                  {activeSubSlug ? (
-                    <button onClick={() => selectCategory(activeCatSlug, null)}>{activeCategory.name}</button>
-                  ) : (
-                    activeCategory.name
-                  )}
+                  {activeSubSlug
+                    ? <button onClick={() => selectCategory(activeCatSlug, null)}>{activeCategory.name}</button>
+                    : activeCategory.name}
                 </span>
               </>
             )}
@@ -98,10 +103,10 @@ export default function Shop() {
             )}
           </div>
           <h1 className="font-display text-xl md:text-2xl font-bold text-foreground mt-2">
-            {activeSubCategory?.name || activeCategory?.name || "All Products"}
+            {activeSubCategory?.name || activeCategory?.name || (searchQuery ? `Results for "${searchQuery}"` : "All Products")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
+            {isLoading ? "Loading..." : `${data?.meta?.total ?? filteredProducts.length} product${(data?.meta?.total ?? filteredProducts.length) !== 1 ? "s" : ""} found`}
           </p>
         </div>
       </div>
@@ -128,30 +133,19 @@ export default function Shop() {
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
               <div className="flex items-center gap-2">
-                {/* Mobile Filter Toggle */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="lg:hidden rounded-xl gap-2"
-                  onClick={() => setMobileFilterOpen(true)}
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Filters
+                <Button variant="outline" size="sm" className="lg:hidden rounded-xl gap-2" onClick={() => setMobileFilterOpen(true)}>
+                  <SlidersHorizontal className="h-4 w-4" /> Filters
                 </Button>
-
-                {/* Active Filters */}
                 {(activeCatSlug || priceRange[0] > 0 || priceRange[1] < 1500) && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {activeCategory && (
                       <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => selectCategory(null, null)}>
-                        {activeCategory.name}
-                        <X className="h-3 w-3" />
+                        {activeCategory.name} <X className="h-3 w-3" />
                       </Badge>
                     )}
                     {activeSubCategory && (
                       <Badge variant="secondary" className="gap-1 cursor-pointer" onClick={() => selectCategory(activeCatSlug, null)}>
-                        {activeSubCategory.name}
-                        <X className="h-3 w-3" />
+                        {activeSubCategory.name} <X className="h-3 w-3" />
                       </Badge>
                     )}
                   </div>
@@ -159,7 +153,6 @@ export default function Shop() {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Sort */}
                 <div className="relative">
                   <select
                     value={sortBy}
@@ -169,23 +162,15 @@ export default function Shop() {
                     <option value="default">Default</option>
                     <option value="price-asc">Price: Low → High</option>
                     <option value="price-desc">Price: High → Low</option>
-                    <option value="rating">Top Rated</option>
+                    <option value="newest">Newest</option>
                   </select>
                   <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 </div>
-
-                {/* Grid Toggle - Desktop */}
                 <div className="hidden md:flex items-center border border-border rounded-xl overflow-hidden">
-                  <button
-                    onClick={() => setGridCols(3)}
-                    className={`p-2 transition-colors ${gridCols === 3 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
-                  >
+                  <button onClick={() => setGridCols(3)} className={`p-2 transition-colors ${gridCols === 3 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
                     <LayoutList className="h-4 w-4" />
                   </button>
-                  <button
-                    onClick={() => setGridCols(4)}
-                    className={`p-2 transition-colors ${gridCols === 4 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
-                  >
+                  <button onClick={() => setGridCols(4)} className={`p-2 transition-colors ${gridCols === 4 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
                     <Grid3X3 className="h-4 w-4" />
                   </button>
                 </div>
@@ -193,7 +178,13 @@ export default function Shop() {
             </div>
 
             {/* Product Grid */}
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3"} gap-3 md:gap-4`}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} className="h-72 rounded-2xl" />
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-muted-foreground text-lg">No products found</p>
                 <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
@@ -202,11 +193,28 @@ export default function Shop() {
                 </Button>
               </div>
             ) : (
-              <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-3 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3"} gap-3 md:gap-4`}>
-                {filteredProducts.map((product, i) => (
-                  <ProductCard key={product.id} product={product} index={i} />
-                ))}
-              </div>
+              <>
+                <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3"} gap-3 md:gap-4`}>
+                  {filteredProducts.map((product, i) => (
+                    <ProductCard key={product.id} product={product} index={i} />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {data && data.meta.last_page > 1 && (
+                  <div className="flex justify-center gap-2 mt-8">
+                    <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="rounded-xl">
+                      Previous
+                    </Button>
+                    <span className="flex items-center px-4 text-sm text-muted-foreground">
+                      Page {data.meta.current_page} of {data.meta.last_page}
+                    </span>
+                    <Button variant="outline" disabled={page === data.meta.last_page} onClick={() => setPage((p) => p + 1)} className="rounded-xl">
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -216,20 +224,11 @@ export default function Shop() {
       <AnimatePresence>
         {mobileFilterOpen && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-              onClick={() => setMobileFilterOpen(false)}
-            />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50 lg:hidden" onClick={() => setMobileFilterOpen(false)} />
+            <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background z-50 lg:hidden overflow-y-auto"
-            >
+              className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background z-50 lg:hidden overflow-y-auto">
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <h2 className="font-display font-bold text-lg">Filters</h2>
                 <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setMobileFilterOpen(false)}>
@@ -237,7 +236,15 @@ export default function Shop() {
                 </Button>
               </div>
               <div className="p-4">
-                <SidebarContent />
+                <FilterPanel
+                  activeCatSlug={activeCatSlug}
+                  activeSubSlug={activeSubSlug}
+                  priceRange={priceRange}
+                  expandedCats={expandedCats}
+                  onSelectCategory={selectCategory}
+                  onPriceChange={setPriceRange}
+                  onToggleCatExpand={toggleCatExpand}
+                />
               </div>
             </motion.div>
           </>

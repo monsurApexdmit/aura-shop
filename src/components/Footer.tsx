@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useCategories";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const footerLinks = {
   Company: [
@@ -24,6 +25,13 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const { data: categories = [] } = useCategories();
+  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl } = useCurrency();
+  const displayLogo = bannerUrl;
+  const displayPaymentMethods = paymentMethods.length > 0
+    ? paymentMethods
+    : ["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"];
+  const year = new Date().getFullYear();
   return (
     <footer className="bg-foreground text-background">
       <div className="container py-14 md:py-16">
@@ -31,30 +39,42 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-3">
             <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-display font-bold text-lg">S</span>
-              </div>
-              <div>
-                <span className="font-display font-bold text-lg text-background leading-none">StoreFront</span>
-                <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
-              </div>
+              {displayLogo ? (
+                <img src={displayLogo} alt={storeName} className="h-16 w-auto max-w-[220px] object-contain rounded-xl" />
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-display font-bold text-lg">{storeName.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <span className="font-display font-bold text-lg text-background leading-none">{storeName}</span>
+                    <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
+                  </div>
+                </>
+              )}
             </div>
             <p className="text-sm text-background/50 leading-relaxed mb-5 max-w-xs">
               Your universal marketplace for health, fashion, electronics, grocery & beyond. Quality products, fast delivery.
             </p>
             <div className="space-y-2.5">
-              <a href="tel:+1234567890" className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
-                <Phone className="h-4 w-4 text-primary shrink-0" />
-                +1 234-567-890
-              </a>
-              <a href="mailto:hello@storefront.com" className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
-                <Mail className="h-4 w-4 text-primary shrink-0" />
-                hello@storefront.com
-              </a>
-              <p className="flex items-center gap-2.5 text-sm text-background/50">
-                <MapPin className="h-4 w-4 text-primary shrink-0" />
-                123 Commerce St, NY
-              </p>
+              {storePhone && (
+                <a href={`tel:${storePhone}`} className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
+                  <Phone className="h-4 w-4 text-primary shrink-0" />
+                  {storePhone}
+                </a>
+              )}
+              {storeEmail && (
+                <a href={`mailto:${storeEmail}`} className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
+                  <Mail className="h-4 w-4 text-primary shrink-0" />
+                  {storeEmail}
+                </a>
+              )}
+              {storeAddress && (
+                <p className="flex items-center gap-2.5 text-sm text-background/50">
+                  <MapPin className="h-4 w-4 text-primary shrink-0" />
+                  {storeAddress}
+                </p>
+              )}
             </div>
           </div>
 
@@ -95,10 +115,10 @@ export default function Footer() {
       <div className="border-t border-background/10">
         <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-background/30">
-            © 2026 StoreFront. All rights reserved. Built with ❤️
+            © {year} {storeName}. All rights reserved. Built with ❤️
           </p>
-          <div className="flex items-center gap-2">
-            {["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"].map((m) => (
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {displayPaymentMethods.map((m) => (
               <span key={m} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-background/8 text-background/40 font-medium border border-background/5">
                 {m}
               </span>

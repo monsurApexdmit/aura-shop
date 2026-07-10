@@ -53,7 +53,7 @@ describe("OrderCard", () => {
 
   it("displays order total", () => {
     render(<OrderCard order={mockOrder} />);
-    expect(screen.getByText("225.96")).toBeInTheDocument();
+    expect(screen.getByText("$225.96")).toBeInTheDocument();
   });
 
   it("renders view details button when onView provided", () => {

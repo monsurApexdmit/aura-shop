@@ -1,17 +1,21 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Check, Package, Tag } from "lucide-react";
-import { products } from "@/data/products";
+import { useProduct, useProducts } from "@/hooks/useProducts";
+import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo, useEffect } from "react";
+import type { ProductAttribute } from "@/types/product";
 
 // Color map for visual swatches
 const COLOR_MAP: Record<string, string> = {
@@ -20,29 +24,67 @@ const COLOR_MAP: Record<string, string> = {
   "blue": "#3182ce",
 };
 
+function deriveAttributes(variants: NonNullable<ReturnType<typeof mapApiProduct>["variants"]>): ProductAttribute[] {
+  const attrMap = new Map<string, Set<string>>();
+  for (const v of variants) {
+    for (const [key, val] of Object.entries(v.attributes)) {
+      if (!attrMap.has(key)) attrMap.set(key, new Set());
+      attrMap.get(key)!.add(val);
+    }
+  }
+  return Array.from(attrMap.entries()).map(([name, valSet]) => ({
+    name,
+    displayName: name.charAt(0).toUpperCase() + name.slice(1),
+    values: Array.from(valSet),
+  }));
+}
+
 export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { formatCurrency } = useCurrency();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
-  const product = products.find((p) => p.id === id);
+  const { data: apiProduct, isLoading } = useProduct(slug ?? null);
+  const product = useMemo(() => (apiProduct ? mapApiProduct(apiProduct) : null), [apiProduct]);
 
-  // Initialize attributes on product change
+  const attributes = useMemo(() => {
+    if (!product?.variants?.length) return [];
+    return deriveAttributes(product.variants);
+  }, [product]);
+
+  // Related products — only fetch once we know the category
+  const { data: relatedData } = useProducts(
+    product ? { category_id: apiProduct?.category_id ?? undefined, limit: 5 } : {}
+  );
+  const relatedProducts = useMemo(() => {
+    if (!product || !relatedData) return [];
+    return relatedData.data
+      .map(mapApiProduct)
+      .filter((p) => p.id !== product.id)
+      .slice(0, 4);
+  }, [relatedData, product]);
+
+  // Initialize attribute selections when product loads
   useEffect(() => {
-    if (product?.attributes?.length) {
+    if (product?.slug && slug && product.slug !== slug) {
+      navigate(`/product/${product.slug}`, { replace: true });
+    }
+  }, [navigate, product?.slug, slug]);
+
+  useEffect(() => {
+    if (attributes.length) {
       const initial: Record<string, string> = {};
-      product.attributes.forEach((attr) => {
-        initial[attr.displayName] = attr.values[0];
-      });
+      attributes.forEach((attr) => { initial[attr.name] = attr.values[0]; });
       setSelectedAttributes(initial);
     } else {
       setSelectedAttributes({});
     }
     setSelectedImage(0);
-  }, [product?.id]);
+  }, [product?.id, attributes.length]);
 
   const selectedVariant = useMemo(() => {
     if (!product?.variants?.length) return null;
@@ -51,12 +93,37 @@ export default function ProductDetail() {
     ) || product.variants[0];
   }, [product, selectedAttributes]);
 
-  const cartItem = items.find((i) => i.id === (selectedVariant?.id || product?.id));
+  const cartItem = items.find((i) => i.id === String(selectedVariant?.id ?? product?.id));
 
-  const relatedProducts = useMemo(() => {
-    if (!product) return [];
-    return products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
-  }, [product]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-muted/40 border-b border-border">
+          <div className="container py-4">
+            <Skeleton className="h-4 w-48 rounded" />
+            <Skeleton className="h-6 w-64 rounded mt-2" />
+          </div>
+        </div>
+        <div className="container py-8 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+            <div className="space-y-4">
+              <Skeleton className="aspect-square rounded-2xl" />
+              <div className="flex gap-3">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-20 h-20 rounded-xl" />)}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-3/4 rounded" />
+              <Skeleton className="h-6 w-1/2 rounded" />
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <Skeleton className="h-12 w-48 rounded-xl" />
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -70,19 +137,43 @@ export default function ProductDetail() {
     );
   }
 
-  const currentPrice = selectedVariant?.salePrice ?? selectedVariant?.price ?? product.price;
-  const originalPrice = selectedVariant ? selectedVariant.price : product.originalPrice;
+  const currentPrice = (() => {
+    if (!selectedVariant) return product.price
+    // variant base price (sale_price or price)
+    const vBase = selectedVariant.salePrice && selectedVariant.salePrice > 0 ? selectedVariant.salePrice : selectedVariant.price
+    // use variant's own offer if set, else fall back to product-level offer
+    const offerPrice = selectedVariant.offerPrice ?? product.offerPrice
+    const offerType = selectedVariant.offerType ?? product.offerType ?? 'percentage'
+    if (offerPrice && offerPrice > 0) {
+      const final = offerType === 'percentage' ? vBase * (1 - offerPrice / 100) : vBase - offerPrice
+      if (final > 0 && final < vBase) return final
+    }
+    return vBase
+  })()
+  const originalPrice = (() => {
+    if (!selectedVariant) return product.originalPrice
+    const vBase = selectedVariant.salePrice && selectedVariant.salePrice > 0 ? selectedVariant.salePrice : selectedVariant.price
+    const offerPrice = selectedVariant.offerPrice ?? product.offerPrice
+    const offerType = selectedVariant.offerType ?? product.offerType ?? 'percentage'
+    if (offerPrice && offerPrice > 0) {
+      const final = offerType === 'percentage' ? vBase * (1 - offerPrice / 100) : vBase - offerPrice
+      if (final > 0 && final < vBase) return vBase
+    }
+    return undefined
+  })()
   const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
   const currentSku = selectedVariant?.sku ?? product.sku ?? "N/A";
   const discount = originalPrice && originalPrice > currentPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-    : product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
+    : 0;
 
   const images = product.images?.length ? product.images : [product.image];
 
   const handleAdd = () => {
     addItem({
-      id: selectedVariant?.id || product.id,
+      id: String(selectedVariant?.id ?? product.id),
+      productId: Number(product.id),
+      variantId: selectedVariant ? Number(selectedVariant.id) : null,
       name: selectedVariant ? `${product.name} - ${selectedVariant.name}` : product.name,
       price: currentPrice,
       image: product.image,
@@ -121,6 +212,7 @@ export default function ProductDetail() {
                   src={images[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-contain p-8"
+                  onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.05 }}
@@ -168,7 +260,7 @@ export default function ProductDetail() {
                     selectedImage === i ? "border-primary ring-2 ring-primary/20 shadow-md" : "border-border hover:border-primary/40"
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-contain p-2" />
+                  <img src={img} alt="" className="w-full h-full object-contain p-2" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }} />
                 </motion.button>
               ))}
             </div>
@@ -202,18 +294,18 @@ export default function ProductDetail() {
 
             {/* Price Block */}
             <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 mb-6">
-              <div className="flex items-baseline gap-3">
-                <span className="font-display text-3xl font-bold text-foreground">${currentPrice.toFixed(2)}</span>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-display text-3xl font-bold text-foreground">{formatCurrency(currentPrice)}</span>
                 {originalPrice && originalPrice > currentPrice && (
-                  <span className="text-lg text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>
+                  <span className="text-lg text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
                 )}
                 {discount > 0 && (
                   <Badge className="gradient-accent text-accent-foreground border-0 text-xs">
-                    Save ${(originalPrice! - currentPrice).toFixed(2)}
+                    Save {formatCurrency(originalPrice! - currentPrice)}
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> SKU: {currentSku}</span>
                 <span className="flex items-center gap-1">
                   <Package className="h-3 w-3" />
@@ -227,24 +319,24 @@ export default function ProductDetail() {
             </div>
 
             {/* Variant Selectors */}
-            {product.attributes && product.attributes.length > 0 && (
+            {attributes.length > 0 && (
               <div className="space-y-5 mb-6">
-                {product.attributes.map((attr) => (
+                {attributes.map((attr) => (
                   <div key={attr.name}>
                     <label className="text-sm font-semibold text-foreground mb-2.5 block">
-                      {attr.displayName}: <span className="text-primary font-bold">{selectedAttributes[attr.displayName]}</span>
+                      {attr.displayName}: <span className="text-primary font-bold">{selectedAttributes[attr.name]}</span>
                     </label>
                     {isColorAttribute(attr.displayName) ? (
                       <div className="flex flex-wrap gap-2.5">
                         {attr.values.map((val) => {
                           const hex = COLOR_MAP[val.toLowerCase()] || "#888";
-                          const selected = selectedAttributes[attr.displayName] === val;
+                          const selected = selectedAttributes[attr.name] === val;
                           return (
                             <motion.button
                               key={val}
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.displayName]: val }))}
+                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
                               className={`relative w-10 h-10 rounded-full border-2 transition-all ${
                                 selected ? "border-primary ring-2 ring-primary/30 shadow-lg" : "border-border hover:border-primary/50"
                               }`}
@@ -263,13 +355,13 @@ export default function ProductDetail() {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {attr.values.map((val) => {
-                          const selected = selectedAttributes[attr.displayName] === val;
+                          const selected = selectedAttributes[attr.name] === val;
                           return (
                             <motion.button
                               key={val}
                               whileHover={{ scale: 1.03 }}
                               whileTap={{ scale: 0.97 }}
-                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.displayName]: val }))}
+                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
                               className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                                 selected
                                   ? "border-primary bg-primary/10 text-primary shadow-sm"
@@ -284,13 +376,23 @@ export default function ProductDetail() {
                     )}
                   </div>
                 ))}
+                <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-foreground">Available stock</span>
+                    {currentStock > 0 ? (
+                      <span className="font-semibold text-primary">{currentStock} unit{currentStock === 1 ? "" : "s"}</span>
+                    ) : (
+                      <span className="font-semibold text-destructive">Out of stock</span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
             <Separator className="mb-6" />
 
             {/* Add to Cart */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex flex-col gap-3 mb-6 min-[420px]:flex-row min-[420px]:items-center">
               {cartItem ? (
                 <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 border border-border rounded-xl p-1 bg-muted/30">
                   <button
@@ -312,7 +414,7 @@ export default function ProductDetail() {
                   onClick={handleAdd}
                   size="lg"
                   disabled={currentStock === 0}
-                  className="rounded-xl gap-2 flex-1 max-w-xs h-12 text-base"
+                  className="rounded-xl gap-2 flex-1 h-12 text-base min-[420px]:max-w-xs"
                 >
                   <ShoppingCart className="h-5 w-5" />
                   {currentStock === 0 ? "Out of Stock" : "Add to Cart"}
@@ -323,9 +425,9 @@ export default function ProductDetail() {
             <Separator className="mb-6" />
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
               {[
-                { icon: Truck, title: "Free Shipping", sub: "Orders $50+" },
+                { icon: Truck, title: "Free Shipping", sub: `Orders ${formatCurrency(50)}+` },
                 { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
                 { icon: RotateCcw, title: "Easy Returns", sub: "30-Day Policy" },
               ].map(({ icon: Icon, title, sub }) => (
@@ -339,10 +441,43 @@ export default function ProductDetail() {
           </motion.div>
         </div>
 
+        {/* Bundle Contents */}
+        {product.isBundle && product.bundleItems && product.bundleItems.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1 h-5 bg-primary rounded-full" />
+              <h3 className="text-base font-semibold text-foreground">What's in this bundle</h3>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{product.bundleItems.length} items</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {product.bundleItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/40">
+                    {item.image ? (
+                      <img src={item.image} alt={item.productName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                        <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{item.productName}</p>
+                    {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">×{item.quantity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Product Tabs */}
         <div className="mt-16">
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="w-full justify-start rounded-xl bg-muted/50 p-1 h-auto">
+            <TabsList className="w-full justify-start overflow-x-auto rounded-xl bg-muted/50 p-1 h-auto">
               <TabsTrigger value="description" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Description</TabsTrigger>
               <TabsTrigger value="specifications" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Specifications</TabsTrigger>
               <TabsTrigger value="reviews" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Reviews ({product.reviews})</TabsTrigger>
@@ -356,26 +491,22 @@ export default function ProductDetail() {
             </TabsContent>
             <TabsContent value="specifications" className="mt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                   <span className="text-muted-foreground">Category</span>
                   <span className="font-medium text-foreground">{product.category}</span>
                 </div>
-                <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">Subcategory</span>
-                  <span className="font-medium text-foreground">{product.subcategory}</span>
-                </div>
-                <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                   <span className="text-muted-foreground">SKU</span>
                   <span className="font-medium text-foreground">{currentSku}</span>
                 </div>
-                {product.attributes?.map((attr) => (
-                  <div key={attr.name} className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                {attributes.map((attr) => (
+                  <div key={attr.name} className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                     <span className="text-muted-foreground">{attr.displayName}</span>
-                    <span className="font-medium text-foreground">{attr.values.join(", ")}</span>
+                    <span className="font-medium text-foreground text-right">{attr.values.join(", ")}</span>
                   </div>
                 ))}
-                {product.variants && (
-                  <div className="flex justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                {product.variants && product.variants.length > 0 && (
+                  <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
                     <span className="text-muted-foreground">Variants</span>
                     <span className="font-medium text-foreground">{product.variants.length} options</span>
                   </div>
@@ -383,7 +514,7 @@ export default function ProductDetail() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <ProductReviews productRating={product.rating} reviewCount={product.reviews} />
+            <ProductReviews productSlug={product.slug} productRating={product.rating} reviewCount={product.reviews} />
             </TabsContent>
           </Tabs>
         </div>
@@ -399,7 +530,7 @@ export default function ProductDetail() {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {relatedProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} index={i} />
               ))}

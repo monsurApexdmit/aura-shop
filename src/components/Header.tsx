@@ -1,13 +1,30 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin, LogOut, Package, Settings } from "lucide-react";
+import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin, LogOut, Package, Settings, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { categories } from "@/data/categories";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCategories } from "@/hooks/useCategories";
+import { Monitor, Shirt, Pill, ShoppingBasket, Home, Sparkles, Dumbbell, BookOpen, Baby, Coffee, Wrench, Gamepad2, Tag } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  "electronics": Monitor, "fashion": Shirt, "fashion-apparel": Shirt,
+  "health": Pill, "health-medicine": Pill, "grocery": ShoppingBasket, "grocery-food": ShoppingBasket,
+  "home": Home, "home-kitchen": Home, "beauty": Sparkles, "beauty-skincare": Sparkles,
+  "sports": Dumbbell, "sports-outdoors": Dumbbell, "books": BookOpen, "books-stationery": BookOpen,
+  "baby": Baby, "baby-kids": Baby, "beverages": Coffee, "tools": Wrench, "tools-hardware": Wrench,
+  "gaming": Gamepad2,
+};
+function getCatIcon(slug: string): LucideIcon {
+  if (ICON_MAP[slug]) return ICON_MAP[slug];
+  const key = Object.keys(ICON_MAP).find((k) => slug.includes(k) || k.includes(slug));
+  return key ? ICON_MAP[key] : Tag;
+}
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 
 const navLinks = [
@@ -23,6 +40,9 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
+  const { formatCurrency, storePhone, storeName, bannerUrl } = useCurrency();
+  const displayLogo = bannerUrl;
+  const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
@@ -52,11 +72,13 @@ export default function Header() {
       <div className="gradient-primary text-primary-foreground">
         <div className="container flex items-center justify-between h-9 text-xs">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <Phone className="h-3 w-3" />
-              <span className="hidden sm:inline">Need help? Call us:</span>
-              <a href="tel:+1234567890" className="font-semibold hover:underline">+1 234-567-890</a>
-            </div>
+            {storePhone && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="h-3 w-3" />
+                <span className="hidden sm:inline">Need help? Call us:</span>
+                <a href={`tel:${storePhone}`} className="font-semibold hover:underline">{storePhone}</a>
+              </div>
+            )}
             <Link to="/track-order" className="hidden md:flex items-center gap-1.5 hover:underline">
               <MapPin className="h-3 w-3" />
               <span>Track your order</span>
@@ -75,16 +97,22 @@ export default function Header() {
 
       {/* Main Header */}
       <div className="bg-background/95 backdrop-blur-md border-b border-border relative z-50">
-        <div className="container flex items-center justify-between h-16 gap-3">
+        <div className="container flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-              <span className="text-primary-foreground font-display font-bold text-xl">S</span>
-            </div>
-            <div className="hidden sm:block">
-              <span className="font-display font-bold text-xl text-foreground leading-none tracking-tight">StoreFront</span>
-              <p className="text-[10px] text-muted-foreground leading-none mt-0.5 tracking-wide">MARKETPLACE</p>
-            </div>
+            {displayLogo ? (
+              <img src={displayLogo} alt={storeName} className="h-10 sm:h-14 w-auto max-w-[140px] sm:max-w-[200px] object-contain" />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
+                  <span className="text-primary-foreground font-display font-bold text-xl">{storeName.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="hidden sm:block">
+                  <span className="font-display font-bold text-xl text-foreground leading-none tracking-tight">{storeName}</span>
+                  <p className="text-[10px] text-muted-foreground leading-none mt-0.5 tracking-wide">MARKETPLACE</p>
+                </div>
+              </>
+            )}
           </Link>
 
           {/* Desktop Search */}
@@ -108,7 +136,7 @@ export default function Header() {
               </Button>
             </Link>
             {/* User Menu */}
-            <div ref={userMenuRef} className="relative hidden sm:block">
+            <div ref={userMenuRef} className="relative block">
               <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
                 {isLoggedIn ? (
                   <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center cursor-pointer text-primary-foreground text-xs font-bold">
@@ -156,7 +184,7 @@ export default function Header() {
             {/* Cart */}
             <button
               onClick={() => setIsOpen(true)}
-              className="flex items-center gap-2.5 gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+              className="flex items-center gap-2.5 gradient-primary text-primary-foreground px-3 sm:px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg"
             >
               <div className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -168,7 +196,7 @@ export default function Header() {
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-[10px] opacity-80 leading-none">{totalItems} Items</p>
-                <p className="text-sm font-bold leading-none mt-0.5">${totalPrice.toFixed(2)}</p>
+                <p className="text-sm font-bold leading-none mt-0.5">{formatCurrency(totalPrice)}</p>
               </div>
             </button>
 
@@ -203,21 +231,24 @@ export default function Header() {
                 >
                   {/* Parent Categories */}
                   <div className="w-64 border-r border-border py-2 max-h-[420px] overflow-y-auto">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat.slug}
-                        onMouseEnter={() => setActiveCat(cat.slug)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                          activeCat === cat.slug
-                            ? "bg-primary/5 text-primary font-medium"
-                            : "text-popover-foreground hover:bg-muted"
-                        }`}
-                      >
-                        <cat.icon className="h-4 w-4 shrink-0" />
-                        <span className="flex-1 text-left">{cat.name}</span>
-                        <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-                      </button>
-                    ))}
+                    {categories.map((cat) => {
+                      const Icon = getCatIcon(cat.slug);
+                      return (
+                        <button
+                          key={cat.slug}
+                          onMouseEnter={() => setActiveCat(cat.slug)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                            activeCat === cat.slug
+                              ? "bg-primary/5 text-primary font-medium"
+                              : "text-popover-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 text-left">{cat.name}</span>
+                          <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Child Categories */}
@@ -270,7 +301,7 @@ export default function Header() {
 
           <div className="ml-auto text-sm text-muted-foreground flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-soft" />
-            Free shipping on orders $50+
+            Free shipping on orders {formatCurrency(50)}+
           </div>
         </div>
       </div>
@@ -302,13 +333,15 @@ export default function Header() {
           >
             <nav className="container py-3 space-y-0.5">
               <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categories</p>
-              {categories.map((cat) => (
+              {categories.map((cat) => {
+                const Icon = getCatIcon(cat.slug);
+                return (
                 <div key={cat.slug}>
                   <button
                     onClick={() => setMobileExpandedCat(mobileExpandedCat === cat.slug ? null : cat.slug)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
                   >
-                    <cat.icon className="h-4 w-4 text-primary" />
+                    <Icon className="h-4 w-4 text-primary" />
                     <span className="flex-1 text-left">{cat.name}</span>
                     <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${mobileExpandedCat === cat.slug ? "rotate-180" : ""}`} />
                   </button>
@@ -336,9 +369,18 @@ export default function Header() {
                     )}
                   </AnimatePresence>
                 </div>
-              ))}
+                );
+              })}
 
               <div className="border-t border-border my-2" />
+              <Link
+                to="/track-order"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
+              >
+                <Truck className="h-4 w-4 text-primary" />
+                Track your order
+              </Link>
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
@@ -357,6 +399,28 @@ export default function Header() {
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </button>
+              <div className="border-t border-border my-2" />
+              {isLoggedIn ? (
+                <>
+                  <Link to="/account" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg">
+                    <User className="h-4 w-4 text-primary" />
+                    My Account
+                  </Link>
+                  <Link to="/account/orders" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg">
+                    <Package className="h-4 w-4 text-primary" />
+                    My Orders
+                  </Link>
+                  <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-muted rounded-lg">
+                    <LogOut className="h-4 w-4" />
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-primary hover:bg-muted rounded-lg">
+                  <User className="h-4 w-4" />
+                  Login / Sign Up
+                </Link>
+              )}
             </nav>
           </motion.div>
         )}

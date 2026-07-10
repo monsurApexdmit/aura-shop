@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,14 +18,17 @@ const passwordChecks = [
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { register } = useAuth();
+  const from = (location.state as any)?.from || "/account";
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) {
       toast.error("Please fill in all fields");
@@ -39,9 +42,16 @@ const Signup = () => {
       toast.error("Please meet all password requirements");
       return;
     }
-    login(email, name);
-    toast.success("Account created! Welcome!");
-    navigate("/account");
+    setLoading(true);
+    try {
+      await register(name, email, password);
+      toast.success("Account created! Welcome!");
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -174,14 +184,15 @@ const Signup = () => {
               />
               <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-snug">
                 I agree to the{" "}
-                <span className="text-primary hover:underline cursor-pointer">Terms of Service</span> and{" "}
-                <span className="text-primary hover:underline cursor-pointer">Privacy Policy</span>
+                <Link to="/privacy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
               </Label>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base font-semibold gap-2" style={{ background: "var(--gradient-primary)" }}>
-              Create Account
-              <ArrowRight className="h-4 w-4" />
+            <Button type="submit" disabled={loading} className="w-full h-12 text-base font-semibold gap-2" style={{ background: "var(--gradient-primary)" }}>
+              {loading ? "Creating account..." : "Create Account"}
+              {!loading && <ArrowRight className="h-4 w-4" />}
             </Button>
           </form>
 

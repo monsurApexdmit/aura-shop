@@ -1,8 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
 
 export interface CartItem {
   id: string;
+  productId: number;
+  variantId: number | null;
   name: string;
   price: number;
   image: string;
@@ -21,20 +23,35 @@ interface CartContextType {
   setIsOpen: (open: boolean) => void;
 }
 
+const CART_KEY = "aura_cart";
+
+function loadCart(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(loadCart);
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(CART_KEY, JSON.stringify(items));
+  }, [items]);
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
-        toast.success(`Updated quantity`, { description: `${item.name} — now ${existing.quantity + 1} in cart` });
+        toast.success(`Updated quantity`, { description: `${item.name} — now ${existing.quantity + 1} in cart`, closeButton: true });
         return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
       }
-      toast.success("Added to cart", { description: item.name });
+      toast.success("Added to cart", { description: item.name, closeButton: true });
       return [...prev, { ...item, quantity: 1 }];
     });
     setIsOpen(true);
@@ -42,7 +59,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = (id: string) => {
     const item = items.find((i) => i.id === id);
-    if (item) toast.info("Removed from cart", { description: item.name });
+    if (item) toast.info("Removed from cart", { description: item.name, closeButton: true });
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 

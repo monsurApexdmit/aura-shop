@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { Clock } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface ShippingOptionData {
   id: string;
@@ -54,6 +55,7 @@ export default function ShippingOption({
   className = "",
 }: ShippingOptionProps) {
   const Icon = option.icon;
+  const { formatCurrency } = useCurrency();
 
   return (
     <button
@@ -85,7 +87,7 @@ export default function ShippingOption({
       {/* Price & Timeline */}
       <div className="text-right shrink-0">
         <p className="font-display font-bold text-sm text-foreground">
-          ${option.price.toFixed(2)}
+          {formatCurrency(option.price)}
         </p>
         <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
           <Clock className="h-3 w-3" />

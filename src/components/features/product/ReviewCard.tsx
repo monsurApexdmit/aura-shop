@@ -15,6 +15,11 @@ export interface Review {
   helpful: number;
   notHelpful: number;
   verified?: boolean;
+  reply?: {
+    body: string;
+    authorName: string;
+    repliedAt?: string | null;
+  } | null;
 }
 
 interface ReviewCardProps {
@@ -131,6 +136,18 @@ export default function ReviewCard({
 
       {/* Comment */}
       <p className="text-sm text-foreground leading-relaxed">{review.comment}</p>
+
+      {review.reply && (
+        <div className="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-foreground">{review.reply.authorName}</p>
+            {review.reply.repliedAt && (
+              <span className="text-xs text-muted-foreground">{formatDate(review.reply.repliedAt)}</span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">{review.reply.body}</p>
+        </div>
+      )}
 
       {/* Helpful Buttons */}
       <div className="flex items-center gap-3 pt-2 border-t border-border/50">

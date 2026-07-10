@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import FilterPanel from "./FilterPanel";
 
+vi.mock("@/hooks/useCategories", () => ({
+  useCategories: () => ({ data: [] }),
+}));
+
 describe("FilterPanel", () => {
   const mockProps = {
     activeCatSlug: null,

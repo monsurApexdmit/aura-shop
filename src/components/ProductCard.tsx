@@ -1,11 +1,10 @@
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Star } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { Product } from "@/data/products";
+import { Product } from "@/types/product";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import QuickActionButtons from "@/components/common/QuickActionButtons";
-import RatingDisplay from "@/components/common/RatingDisplay";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ProductCardProps {
   product: Product;
@@ -15,108 +14,162 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { formatCurrency } = useCurrency();
 
   const liked = isInWishlist(product.id);
-  const cartItem = items.find((i) => i.id === product.id);
+  const cartItem = items.find((i) => i.id === String(product.id));
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
+  const stock = product.stock ?? 0;
+  const sold = product.totalSold ?? 0;
+  const stockMax = stock + sold;
+  const stockPct = stockMax > 0 ? Math.min(Math.round((sold / stockMax) * 100), 100) : 0;
+
   const handleAdd = () => {
-    addItem({ id: product.id, name: product.name, price: product.price, image: product.image });
+    addItem({
+      id: String(product.id),
+      productId: Number(product.id),
+      variantId: null,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: index * 0.05 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
       viewport={{ once: true }}
-      className="group relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-500 hover:shadow-[var(--card-shadow-hover)] hover:border-primary/40"
+      className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col"
     >
-      {/* Image Container */}
-      <Link
-        to={`/product/${product.id}`}
-        className="block relative aspect-[4/4.2] overflow-hidden bg-muted/20"
-      >
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.08),transparent_70%)]" />
+      {/* Image Area */}
+      <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-gray-50">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-contain p-5 group-hover:scale-110 transition-transform duration-700 ease-out"
+          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-400 ease-out"
           loading="lazy"
+          onError={(e) => {
+            const t = e.target as HTMLImageElement;
+            if (!t.src.includes("placeholder.svg")) t.src = "/placeholder.svg";
+          }}
         />
+
+        {/* Discount badge — top right */}
         {discount > 0 && (
-          <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent text-accent-foreground shadow-lg">
-            {discount}% OFF
-          </motion.span>
+          <span className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-400 text-white shadow">
+            {discount}% Off
+          </span>
         )}
         {!discount && product.badge && (
-          <motion.span initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg">
+          <span className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full text-[11px] font-bold bg-primary text-primary-foreground shadow">
             {product.badge}
-          </motion.span>
+          </span>
         )}
 
-        {/* Hover Action Buttons */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-3 group-hover:translate-x-0">
-          <QuickActionButtons
-            liked={liked}
-            onWishlist={() => toggleWishlist(product.id)}
-            onView={() => {}}
-            onAddCart={handleAdd}
-            hideAddCart={!!cartItem}
-          />
-        </div>
-
-        {/* Quick Add to Cart */}
-        {!cartItem && (
-          <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-full group-hover:translate-y-0">
-            <button
-              onClick={(e) => { e.preventDefault(); handleAdd(); }}
-              className="w-full py-3 bg-primary/95 backdrop-blur-sm text-primary-foreground flex items-center justify-center gap-2 text-sm font-semibold hover:bg-primary transition-colors"
+        {/* Cart controls — bottom right, vertical pill */}
+        <div
+          className="absolute bottom-3 right-3 z-20"
+          onClick={(e) => e.preventDefault()}
+        >
+          {cartItem ? (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center bg-primary rounded-full shadow-lg py-1 px-1 gap-0.5"
             >
-              <ShoppingCart className="h-4 w-4" /> Add to Cart
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() =>
+                  cartItem.quantity <= 1
+                    ? removeItem(String(product.id))
+                    : updateQuantity(String(product.id), cartItem.quantity - 1)
+                }
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-primary/80 transition-colors"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-sm font-bold text-white min-w-[1.25rem] text-center leading-none py-0.5">
+                {cartItem.quantity}
+              </span>
+              <button
+                onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-primary/80 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+          ) : (
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={handleAdd}
+              className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/80 transition-colors"
+              aria-label="Add to cart"
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </motion.button>
+          )}
+        </div>
       </Link>
 
       {/* Content */}
-      <div className="p-4 space-y-2.5">
-        <p className="text-[11px] text-primary font-bold uppercase tracking-[0.15em]">{product.category}</p>
-        <Link to={`/product/${product.id}`}>
-          <h3 className="font-display font-semibold text-sm text-card-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
+      <div className="flex flex-col flex-1 px-3.5 pt-3 pb-3.5 gap-1.5">
+        {/* Name */}
+        <Link to={`/product/${product.slug}`}>
+          <h3 className="font-semibold text-sm leading-snug text-primary line-clamp-2 group-hover:text-primary/80 transition-colors duration-200 min-h-[2.4rem]">
             {product.name}
           </h3>
         </Link>
-        <RatingDisplay rating={product.rating} reviewCount={product.reviews} size="sm" />
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display font-bold text-lg text-foreground">${product.price.toFixed(2)}</span>
-            {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
-            )}
+
+        {/* Rating */}
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star
+                key={s}
+                className={`h-2.5 w-2.5 ${
+                  s <= Math.round(product.rating)
+                    ? "fill-amber-400 text-amber-400"
+                    : "fill-gray-200 text-gray-200"
+                }`}
+              />
+            ))}
           </div>
-          {cartItem && (
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-1">
-              <button
-                onClick={() => cartItem.quantity <= 1 ? removeItem(product.id) : updateQuantity(product.id, cartItem.quantity - 1)}
-                className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
-              <span className="w-8 text-center text-sm font-bold text-foreground">{cartItem.quantity}</span>
-              <button
-                onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
-            </motion.div>
+          <span className="text-[10px] text-gray-500">
+            {product.rating.toFixed(1)}({product.reviews} reviews)
+          </span>
+        </div>
+
+        {/* Prices */}
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="font-bold text-base text-gray-900 leading-none">
+            {formatCurrency(product.price)}
+          </span>
+          {product.originalPrice && (
+            <span className="text-xs text-gray-400 line-through leading-none">
+              {formatCurrency(product.originalPrice)}
+            </span>
           )}
         </div>
+
+        {/* Stock progress bar — only shown when sold data exists */}
+        {sold > 0 && stockMax > 0 && (
+          <div className="mt-1.5">
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-orange-400 rounded-full transition-all duration-500"
+                style={{ width: `${stockPct}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-[10px] text-gray-400 font-medium">{sold} Sold</span>
+              <span className="text-[10px] text-gray-400 font-medium">{stock}/{stockMax}</span>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );

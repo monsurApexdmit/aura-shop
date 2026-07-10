@@ -58,7 +58,8 @@ export default function StepIndicator({
   className = "",
 }: StepIndicatorProps) {
   return (
-    <div className={`flex items-center justify-center gap-0 ${className}`}>
+    <div className={`w-full overflow-x-auto pb-2 ${className}`}>
+      <div className="flex min-w-max items-center justify-start gap-0 px-1 sm:justify-center">
       {steps.map((step, index) => {
         const isCompleted = currentStep > step.id;
         const isCurrent = currentStep === step.id;
@@ -76,23 +77,23 @@ export default function StepIndicator({
                 }
               }}
               disabled={!isClickable}
-              className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+              className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
                 isCurrent || isCompleted
                   ? "gradient-primary text-primary-foreground shadow-lg"
                   : "bg-muted text-muted-foreground"
               } ${isClickable ? "cursor-pointer hover:shadow-md" : ""}`}
             >
               {isCompleted ? (
-                <CheckCircle2 className="h-5 w-5" />
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
-                <StepIcon className="h-5 w-5" />
+                <StepIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
             </button>
 
             {/* Step Label */}
-            <div className="flex flex-col items-center gap-1.5 ml-2 mr-2">
+            <div className="flex flex-col items-center gap-1.5 ml-1.5 mr-1.5 sm:ml-2 sm:mr-2">
               <span
-                className={`text-xs font-semibold ${
+                className={`whitespace-nowrap text-[10px] sm:text-xs font-semibold ${
                   isCurrent || isCompleted
                     ? "text-primary"
                     : "text-muted-foreground"
@@ -105,7 +106,7 @@ export default function StepIndicator({
             {/* Connector Line */}
             {index < steps.length - 1 && (
               <div
-                className={`w-16 sm:w-24 h-0.5 mx-2 mb-5 rounded-full transition-colors duration-300 ${
+                className={`w-8 sm:w-16 md:w-24 h-0.5 mx-1 sm:mx-2 mb-5 rounded-full transition-colors duration-300 ${
                   currentStep > step.id ? "bg-primary" : "bg-border"
                 }`}
               />
@@ -113,6 +114,7 @@ export default function StepIndicator({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

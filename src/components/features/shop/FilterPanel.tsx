@@ -1,10 +1,9 @@
-import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { categories } from "@/data/categories";
-import { products } from "@/data/products";
+import { useCategories } from "@/hooks/useCategories";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface FilterPanelProps {
   /**
@@ -77,23 +76,8 @@ export default function FilterPanel({
   onToggleCatExpand,
   className = "",
 }: FilterPanelProps) {
-  // Calculate product counts per category/subcategory
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    products.forEach((p) => {
-      categories.forEach((cat) => {
-        if (p.category === cat.name) {
-          counts[cat.slug] = (counts[cat.slug] || 0) + 1;
-          cat.children.forEach((sub) => {
-            if (p.subcategory === sub.name) {
-              counts[`${cat.slug}__${sub.slug}`] = (counts[`${cat.slug}__${sub.slug}`] || 0) + 1;
-            }
-          });
-        }
-      });
-    });
-    return counts;
-  }, []);
+  const { data: categories = [] } = useCategories();
+  const { formatCurrency } = useCurrency();
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -113,7 +97,6 @@ export default function FilterPanel({
           }`}
         >
           All Products
-          <span className="float-right text-xs opacity-60">{products.length}</span>
         </button>
 
         {/* Category List */}
@@ -121,7 +104,6 @@ export default function FilterPanel({
           {categories.map((cat) => {
             const isExpanded = expandedCats.includes(cat.slug);
             const isActive = activeCatSlug === cat.slug && !activeSubSlug;
-            const count = categoryCounts[cat.slug] || 0;
 
             return (
               <div key={cat.slug}>
@@ -135,11 +117,7 @@ export default function FilterPanel({
                         : "text-foreground hover:bg-muted"
                     }`}
                   >
-                    <cat.icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1 text-left truncate">{cat.name}</span>
-                    {count > 0 && (
-                      <span className="text-[10px] text-muted-foreground">{count}</span>
-                    )}
                   </button>
 
                   {/* Expand/Collapse Button */}
@@ -167,7 +145,6 @@ export default function FilterPanel({
                     >
                       <div className="pl-9 pr-2 pb-1 space-y-0.5">
                         {cat.children.map((sub) => {
-                          const subCount = categoryCounts[`${cat.slug}__${sub.slug}`] || 0;
                           const isSubActive =
                             activeCatSlug === cat.slug && activeSubSlug === sub.slug;
 
@@ -175,19 +152,14 @@ export default function FilterPanel({
                             <button
                               key={sub.slug}
                               onClick={() => onSelectCategory(cat.slug, sub.slug)}
-                              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition-colors ${
+                              className={`w-full flex items-center px-3 py-1.5 rounded-md text-xs transition-colors ${
                                 isSubActive
                                   ? "bg-primary/10 text-primary font-semibold"
                                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
                               }`}
                             >
-                              <span className="flex items-center gap-1.5">
-                                <ChevronRight className="h-3 w-3 opacity-40" />
-                                {sub.name}
-                              </span>
-                              {subCount > 0 && (
-                                <span className="text-[10px] opacity-50">{subCount}</span>
-                              )}
+                              <ChevronRight className="h-3 w-3 opacity-40 mr-1.5 shrink-0" />
+                              {sub.name}
                             </button>
                           );
                         })}
@@ -217,11 +189,11 @@ export default function FilterPanel({
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span className="px-2 py-1 rounded-md bg-muted font-mono">
-            ${priceRange[0]}
+            {formatCurrency(priceRange[0])}
           </span>
           <span className="text-border">—</span>
           <span className="px-2 py-1 rounded-md bg-muted font-mono">
-            ${priceRange[1]}
+            {formatCurrency(priceRange[1])}
           </span>
         </div>
       </div>

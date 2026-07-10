@@ -1,35 +1,60 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth, DemoOrder } from "@/contexts/AuthContext";
-import { products } from "@/data/products";
-import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft } from "lucide-react";
+import { useOrder } from "@/hooks/useOrders";
+import { mapFulfillmentStatus } from "@/services/orderApi";
+import { Package, ChevronRight, Clock, Truck, CheckCircle2, XCircle, MapPin, CreditCard, ArrowLeft, Banknote, RotateCcw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
-const statusConfig = {
-  processing: { label: "Processing", color: "bg-yellow-500/10 text-yellow-600", icon: Clock },
-  shipped: { label: "Shipped", color: "bg-blue-500/10 text-blue-600", icon: Truck },
-  delivered: { label: "Delivered", color: "bg-green-500/10 text-green-600", icon: CheckCircle2 },
-  cancelled: { label: "Cancelled", color: "bg-red-500/10 text-red-600", icon: XCircle },
+const STATUS_ICON: Record<string, React.ElementType> = {
+  Processing: Clock,
+  Shipped: Truck,
+  Delivered: CheckCircle2,
+  Cancelled: XCircle,
 };
 
-const timelineSteps = (status: DemoOrder["status"]) => {
-  const all = [
-    { label: "Order Placed", icon: Package },
-    { label: "Processing", icon: Clock },
-    { label: "Shipped", icon: Truck },
-    { label: "Delivered", icon: CheckCircle2 },
-  ];
-  const idx = { processing: 1, shipped: 2, delivered: 3, cancelled: 0 }[status];
-  return all.map((s, i) => ({ ...s, done: status !== "cancelled" && i <= idx }));
+const STATUS_COLOR: Record<string, string> = {
+  Processing: "bg-yellow-500/10 text-yellow-600",
+  Shipped: "bg-blue-500/10 text-blue-600",
+  Delivered: "bg-green-500/10 text-green-600",
+  Cancelled: "bg-red-500/10 text-red-600",
+};
+
+const TIMELINE = [
+  { label: "Order Placed", icon: Package },
+  { label: "Processing", icon: Clock },
+  { label: "Shipped", icon: Truck },
+  { label: "Delivered", icon: CheckCircle2 },
+];
+
+const TIMELINE_IDX: Record<string, number> = {
+  Processing: 1,
+  Shipped: 2,
+  Delivered: 3,
+  Cancelled: -1,
 };
 
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { orders } = useAuth();
-  const order = orders.find((o) => o.id === id);
+  const { formatCurrency } = useCurrency();
+  const numericId = id ? Number(id) : null;
+  const { data: order, isLoading, isError } = useOrder(numericId);
 
-  if (!order) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pt-40 flex flex-col items-center gap-4">
+        <div className="container max-w-4xl space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !order) {
     return (
       <div className="min-h-screen bg-background pt-40 flex flex-col items-center gap-4">
         <Package className="h-16 w-16 text-muted-foreground/30" />
@@ -41,8 +66,18 @@ export default function OrderDetail() {
     );
   }
 
-  const cfg = statusConfig[order.status];
-  const steps = timelineSteps(order.status);
+  const { label: statusLabel } = mapFulfillmentStatus(order.fulfillment_status);
+  const StatusIcon = STATUS_ICON[statusLabel] ?? Clock;
+  const statusColor = STATUS_COLOR[statusLabel] ?? "bg-muted text-muted-foreground";
+  const timelineIdx = TIMELINE_IDX[statusLabel] ?? 0;
+  const isCancelled = statusLabel === "Cancelled";
+  const items = Array.isArray(order.items) ? order.items : [];
+  const subtotal = items.reduce((s, i) => s + Number(i.total_price ?? 0), 0);
+  const tax = Number(order.amount ?? 0) - subtotal - Number(order.shipping_cost ?? 0);
+  const orderDate = order.order_time ? new Date(order.order_time) : null;
+  const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
+    ? orderDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "Date unavailable";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -55,43 +90,45 @@ export default function OrderDetail() {
               <ChevronRight className="h-3 w-3" />
               <Link to="/account/orders" className="hover:text-primary">Orders</Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-foreground font-medium">{order.id}</span>
+              <span className="text-foreground font-medium">{order.invoice_no}</span>
             </div>
 
             {/* Header */}
             <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
               <div>
-                <h1 className="font-display font-bold text-2xl text-foreground mb-1">{order.id}</h1>
+                <h1 className="font-display font-bold text-2xl text-foreground mb-1">{order.invoice_no}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Placed on {new Date(order.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  Placed on {orderDateLabel}
                 </p>
               </div>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${cfg.color}`}>
-                <cfg.icon className="h-3.5 w-3.5" />
-                {cfg.label}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
+                <StatusIcon className="h-3.5 w-3.5" />
+                {statusLabel}
               </span>
             </div>
 
             {/* Timeline */}
-            {order.status !== "cancelled" && (
+            {!isCancelled && (
               <div className="bg-card border border-border rounded-2xl p-6 mb-6">
                 <h2 className="font-display font-bold text-sm mb-5">Order Progress</h2>
-                <div className="flex items-center justify-between">
-                  {steps.map((step, i) => (
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex min-w-[560px] items-center justify-between">
+                  {TIMELINE.map((step, i) => (
                     <div key={step.label} className="flex items-center flex-1">
                       <div className="flex flex-col items-center gap-1.5">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                          step.done ? "gradient-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground"
+                          i <= timelineIdx ? "gradient-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground"
                         }`}>
                           <step.icon className="h-5 w-5" />
                         </div>
-                        <span className={`text-[10px] font-semibold ${step.done ? "text-primary" : "text-muted-foreground"}`}>{step.label}</span>
+                        <span className={`text-[10px] font-semibold ${i <= timelineIdx ? "text-primary" : "text-muted-foreground"}`}>{step.label}</span>
                       </div>
-                      {i < steps.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-2 mb-5 rounded-full ${step.done && steps[i + 1]?.done ? "bg-primary" : "bg-border"}`} />
+                      {i < TIMELINE.length - 1 && (
+                        <div className={`flex-1 h-0.5 mx-2 mb-5 rounded-full ${i < timelineIdx ? "bg-primary" : "bg-border"}`} />
                       )}
                     </div>
                   ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -99,66 +136,137 @@ export default function OrderDetail() {
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Items */}
               <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6">
-                <h2 className="font-display font-bold text-sm mb-4">Order Items ({order.items.length})</h2>
+                <h2 className="font-display font-bold text-sm mb-4">Order Items ({items.length})</h2>
                 <div className="space-y-3">
-                  {order.items.map((item) => {
-                    const product = products.find((p) => p.id === item.id);
-                    const image = product?.image || item.image;
-                    return (
-                      <div key={item.id} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
-                        {image && (
-                          <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted">
-                            <img src={image} alt={item.name} className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
-                        </div>
-                        <p className="font-display font-bold text-sm text-foreground shrink-0">${(item.price * item.quantity).toFixed(2)}</p>
+                  {items.map((item) => (
+                    <div key={item.id} className="flex flex-col gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-4">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-muted flex items-center justify-center">
+                        <span className="text-[10px] text-muted-foreground text-center leading-tight px-1">No Image</span>
                       </div>
-                    );
-                  })}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-foreground truncate">{item.product_name}</p>
+                        {item.variant_name && <p className="text-xs text-muted-foreground">{item.variant_name}</p>}
+                        <p className="text-xs text-muted-foreground">Qty: {item.quantity} × {formatCurrency(item.unit_price)}</p>
+                      </div>
+                      <p className="font-display font-bold text-sm text-foreground shrink-0 min-[420px]:text-right">{formatCurrency(item.total_price)}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Summary Sidebar */}
+              {/* Sidebar */}
               <div className="space-y-4">
                 {/* Price Summary */}
                 <div className="bg-card border border-border rounded-2xl p-5">
                   <h3 className="font-display font-bold text-sm mb-4">Order Summary</h3>
                   <div className="space-y-2 text-sm border-b border-border pb-3 mb-3">
-                    <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>${order.subtotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>${order.shipping.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>${order.tax.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{formatCurrency(order.shipping_cost)}</span></div>
+                    {tax > 0 && <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>{formatCurrency(tax)}</span></div>}
+                    {order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatCurrency(order.discount)}</span></div>}
                   </div>
                   <div className="flex justify-between font-display font-bold text-base">
-                    <span>Total</span><span className="text-primary">${order.total.toFixed(2)}</span>
+                    <span>Total</span><span className="text-primary">{formatCurrency(order.amount)}</span>
                   </div>
                 </div>
 
-                {/* Shipping Info */}
-                <div className="bg-card border border-border rounded-2xl p-5">
-                  <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />Shipping</h3>
-                  <div className="text-sm text-muted-foreground space-y-0.5">
-                    <p className="font-medium text-foreground">{order.shippingAddress.fullName}</p>
-                    <p>{order.shippingAddress.address}</p>
-                    <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}</p>
-                    <p className="pt-1 text-xs">{order.shippingMethod}</p>
+                {/* Shipping Address */}
+                {order.shipping_address && (
+                  <div className="bg-card border border-border rounded-2xl p-5">
+                    <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />Shipping</h3>
+                    <div className="text-sm text-muted-foreground space-y-0.5">
+                      <p className="font-medium text-foreground">{order.shipping_address.name}</p>
+                      {order.shipping_address.address && <p>{order.shipping_address.address}</p>}
+                      {(order.shipping_address.city || order.shipping_address.state) && (
+                        <p>{[order.shipping_address.city, order.shipping_address.state, order.shipping_address.zip].filter(Boolean).join(", ")}</p>
+                      )}
+                      {order.shipping_address.phone && <p className="pt-1 text-xs">{order.shipping_address.phone}</p>}
+                      {order.tracking_number && (
+                        <p className="pt-1 text-xs">Tracking: <span className="font-mono text-primary">{order.tracking_number}</span></p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Payment */}
-                <div className="bg-card border border-border rounded-2xl p-5">
-                  <h3 className="font-display font-bold text-sm mb-2 flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" />Payment</h3>
-                  <p className="text-sm text-muted-foreground">{order.paymentMethod}</p>
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+                  <h3 className="font-display font-bold text-sm flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" />Payment</h3>
+
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-medium text-foreground">{order.method}</p>
+
+                    {/* Overall payment status */}
+                    {(() => {
+                      const ps = order.payment_status
+                      const isPaid = ps === "paid"
+                      const isDeposit = ps === "shipping_deposit_paid"
+                      const isFailed = ps === "failed"
+                      const isCancelled = ps === "cancelled"
+                      const label = isPaid ? "✓ Paid"
+                        : isDeposit ? "⏳ Shipping Deposit Paid — COD balance on delivery"
+                        : isFailed ? "✗ Payment Failed"
+                        : isCancelled ? "✗ Cancelled"
+                        : "⏳ Awaiting Payment"
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          isPaid ? "bg-green-100 text-green-700"
+                          : isDeposit ? "bg-amber-100 text-amber-700"
+                          : isFailed || isCancelled ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                        }`}>
+                          {label}
+                        </span>
+                      )
+                    })()}
+
+                    {/* Full payment transaction */}
+                    {order.payment_transaction_id && (
+                      <div className="pt-1">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Transaction ID</p>
+                        <p className="text-xs font-mono text-foreground break-all">{order.payment_transaction_id}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Shipping deposit section — only when > 0 */}
+                  {order.shipping_deposit_amount != null && order.shipping_deposit_amount > 0 && (
+                    <div className="border-t border-border pt-3 space-y-1.5">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Banknote className="h-3 w-3" /> Shipping Deposit
+                      </p>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Amount paid</span>
+                        <span className="font-bold text-amber-600">{formatCurrency(order.shipping_deposit_amount)}</span>
+                      </div>
+                      {order.shipping_deposit_transaction_id && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Deposit Txn ID</p>
+                          <p className="text-xs font-mono text-foreground break-all">{order.shipping_deposit_transaction_id}</p>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Shipping cost paid upfront. Remaining order amount ({formatCurrency(Number(order.amount) - order.shipping_deposit_amount)}) payable on delivery.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <button onClick={() => navigate("/account/orders")} className="mt-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
-              <ArrowLeft className="h-4 w-4" /> Back to Orders
-            </button>
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <button onClick={() => navigate("/account/orders")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
+                <ArrowLeft className="h-4 w-4" /> Back to Orders
+              </button>
+              {statusLabel === "Delivered" && (
+                <Link
+                  to={`/account/returns/new?order_id=${order.id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-semibold text-foreground hover:border-primary/40 transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4 text-primary" />
+                  Return Items
+                </Link>
+              )}
+            </div>
           </motion.div>
         </div>
       </div>
