@@ -40,7 +40,7 @@ export default function Header() {
   const { totalItems, totalPrice, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
   const { isLoggedIn, user, logout } = useAuth();
-  const { formatCurrency, storePhone, storeName, bannerUrl } = useCurrency();
+  const { formatCurrency, storePhone, storeName, bannerUrl, freeShippingThreshold } = useCurrency();
   const displayLogo = bannerUrl;
   const { data: categories = [] } = useCategories();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -299,10 +299,12 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="ml-auto text-sm text-muted-foreground flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-soft" />
-            Free shipping on orders {formatCurrency(50)}+
-          </div>
+          {freeShippingThreshold != null && (
+            <div className="ml-auto text-sm text-muted-foreground flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-soft" />
+              Free shipping on orders {formatCurrency(freeShippingThreshold)}+
+            </div>
+          )}
         </div>
       </div>
 

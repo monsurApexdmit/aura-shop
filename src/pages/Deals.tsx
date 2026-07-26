@@ -18,11 +18,13 @@ const dealFilters: { label: string; value: DealFilter; icon: React.ElementType }
 
 export default function Deals() {
   const [activeFilter, setActiveFilter] = useState<DealFilter>("all");
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, freeShippingThreshold } = useCurrency();
 
   const banners = [
     { title: "Flash Sale — Up to 40% Off", subtitle: "Limited time deals on electronics & fashion", icon: Zap,  color: "from-primary to-accent"  },
-    { title: `Free Shipping on Orders ${formatCurrency(50)}+`, subtitle: "Use code FREESHIP at checkout",             icon: Gift, color: "from-accent to-primary" },
+    ...(freeShippingThreshold != null
+      ? [{ title: `Free Shipping on Orders ${formatCurrency(freeShippingThreshold)}+`, subtitle: "Use code FREESHIP at checkout", icon: Gift, color: "from-accent to-primary" }]
+      : []),
   ];
 
   const { data, isLoading } = useDeals(activeFilter, 48);

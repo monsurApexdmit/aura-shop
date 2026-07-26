@@ -3,10 +3,10 @@ import { Truck, Shield, RotateCcw, Headphones } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function FeaturesBar() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, freeShippingThreshold } = useCurrency();
 
   const features = [
-    { icon: Truck, title: "Free Shipping", desc: `On orders over ${formatCurrency(50)}`, color: "from-primary/10 to-primary/5" },
+    { icon: Truck, title: "Free Shipping", desc: freeShippingThreshold != null ? `On orders over ${formatCurrency(freeShippingThreshold)}` : "Fast & reliable delivery", color: "from-primary/10 to-primary/5" },
     { icon: Shield, title: "Secure Payment", desc: "SSL encrypted", color: "from-accent/10 to-accent/5" },
     { icon: RotateCcw, title: "Easy Returns", desc: "30-day guarantee", color: "from-primary/10 to-primary/5" },
     { icon: Headphones, title: "24/7 Support", desc: "Expert assistance", color: "from-accent/10 to-accent/5" },

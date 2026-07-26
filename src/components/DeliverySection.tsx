@@ -46,7 +46,7 @@ export default function DeliverySection() {
   ];
 
   return (
-    <section className="py-16 md:py-24 relative overflow-hidden">
+    <section className="hidden md:block py-16 md:py-24 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-1/2 h-full hero-gradient opacity-50" />
 
       <div className="container relative z-10">
