@@ -226,8 +226,12 @@ export default function Checkout() {
         }
         setPlacedOrderId(order.invoice_no ?? String(order.id));
         setStep(4);
-      } catch {
-        toast.error("Failed to place order. Please try again.");
+      } catch (err: any) {
+        toast.error(
+          err?.response?.data?.message ??
+          err?.response?.data?.errors?.["shipping_address.phone"]?.[0] ??
+          "Failed to place order. Please try again."
+        );
       }
       return;
     }
