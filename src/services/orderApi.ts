@@ -25,6 +25,11 @@ export interface PlaceOrderPayload {
   discount?: number
   shipping_cost?: number
   shipping_method?: string
+  guest?: {
+    name: string
+    phone: string
+    email?: string
+  }
 }
 
 export interface ApiOrderItem {

@@ -56,12 +56,6 @@ export default function HeroSection() {
     staleTime: 1000 * 60 * 10,
   });
 
-  const { data: storeStats } = useQuery({
-    queryKey: ["store-stats"],
-    queryFn: () => api.get("/stats").then((r) => r.data.data as { totalOrders: number; totalCustomers: number; todayOrders: number }),
-    staleTime: 1000 * 60 * 5,
-  });
-
   const { data: heroSettings } = useQuery({
     queryKey: ["homepage-hero-settings"],
     queryFn: storefrontSettingsApi.getHomepageHero,
@@ -222,7 +216,7 @@ export default function HeroSection() {
   return (
     <section className="hero-gradient">
       <div className="container py-5 md:py-8">
-        <div className="grid w-full min-w-0 grid-cols-1 gap-5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_340px] lg:overflow-visible">
+        <div className={`grid w-full min-w-0 grid-cols-1 gap-5 overflow-hidden lg:overflow-visible ${activeCoupons.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "lg:grid-cols-1"}`}>
           {/* Slider */}
           <div className="relative isolate w-full min-w-0 rounded-2xl overflow-hidden min-h-[330px] sm:aspect-[16/9] sm:min-h-[340px] lg:aspect-[16/7] lg:min-h-[300px] group">
             <AnimatePresence mode="wait">
@@ -326,6 +320,7 @@ export default function HeroSection() {
           )}
 
           {/* Coupon Sidebar */}
+          {activeCoupons.length > 0 && (
           <div className="hidden lg:flex flex-col gap-3">
             <div className="rounded-2xl border border-border bg-card p-5 flex-1">
               <h3 className="font-display font-bold text-sm text-card-foreground mb-4 flex items-center gap-2">
@@ -338,18 +333,8 @@ export default function HeroSection() {
                 {activeCoupons.map((coupon) => renderCouponCard(coupon))}
               </div>
             </div>
-
-            {/* Quick stat */}
-            <div className="rounded-2xl gradient-primary p-5 text-primary-foreground">
-              <p className="text-xs opacity-80 mb-1">Today's orders</p>
-              <p className="font-display font-bold text-2xl">
-                {storeStats ? (storeStats.todayOrders > 0 ? `${storeStats.todayOrders}+` : "0") : "—"}
-              </p>
-              <p className="text-xs opacity-70 mt-1">
-                {storeStats ? `${storeStats.totalCustomers}+ customers shopping` : "Happy customers shopping now"}
-              </p>
-            </div>
           </div>
+          )}
         </div>
       </div>
     </section>

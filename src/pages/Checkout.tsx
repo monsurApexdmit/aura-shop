@@ -23,12 +23,12 @@ import { Textarea } from "@/components/ui/textarea";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "Name is required").max(100),
-  email: z.string().trim().email("Invalid email").max(255),
+  email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
   phone: z.string().trim().min(7, "Phone is required").max(20),
   address: z.string().trim().min(5, "Address is required").max(300),
-  city: z.string().trim().min(2, "City is required").max(100),
-  state: z.string().trim().min(2, "State is required").max(100),
-  zip: z.string().trim().min(3, "ZIP code is required").max(20),
+  city: z.string().trim().max(100).optional().or(z.literal("")),
+  state: z.string().trim().max(100).optional().or(z.literal("")),
+  zip: z.string().trim().max(20).optional().or(z.literal("")),
   note: z.string().max(500).optional(),
 });
 
@@ -61,7 +61,7 @@ const steps = [
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { isLoggedIn, user } = useAuth();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const placeOrder = usePlaceOrder();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -192,20 +192,9 @@ export default function Checkout() {
     return Math.round((subtotal * couponResult.discount) / 100 * 100) / 100;
   };
 
-  const saveCheckoutState = () => {
-    sessionStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify({
-      form, step, paymentMethodId, shippingMethodId, couponCode,
-    }));
-  };
-
   const nextStep = async () => {
     if (step === 1 && !validateShipping()) return;
     if (step === 3) {
-      if (!isLoggedIn) {
-        saveCheckoutState();
-        navigate("/login", { state: { from: "/checkout" } });
-        return;
-      }
       try {
         const orderItems = items.map((i) => ({
           product_id: i.productId,
@@ -228,6 +217,7 @@ export default function Checkout() {
           discount: discount > 0 ? discount : undefined,
           shipping_cost: shippingCost,
           shipping_method: selectedShipping?.name,
+          guest: isLoggedIn ? undefined : { name: form.fullName, phone: form.phone, email: form.email || undefined },
         });
         clearCart();
         if (payment_url) {
@@ -236,8 +226,12 @@ export default function Checkout() {
         }
         setPlacedOrderId(order.invoice_no ?? String(order.id));
         setStep(4);
-      } catch {
-        toast.error("Failed to place order. Please try again.");
+      } catch (err: any) {
+        toast.error(
+          err?.response?.data?.message ??
+          err?.response?.data?.errors?.["shipping_address.phone"]?.[0] ??
+          "Failed to place order. Please try again."
+        );
       }
       return;
     }
@@ -355,7 +349,7 @@ export default function Checkout() {
                       />
                     </FormField>
 
-                    <FormField label="Email" error={errors.email} required>
+                    <FormField label="Email" error={errors.email} required={isLoggedIn}>
                       <Input
                         name="email"
                         type="email"
@@ -381,33 +375,6 @@ export default function Checkout() {
                         value={form.address}
                         onChange={handleChange}
                         placeholder="123 Main Street"
-                      />
-                    </FormField>
-
-                    <FormField label="City" error={errors.city} required>
-                      <Input
-                        name="city"
-                        value={form.city}
-                        onChange={handleChange}
-                        placeholder="New York"
-                      />
-                    </FormField>
-
-                    <FormField label="State" error={errors.state} required>
-                      <Input
-                        name="state"
-                        value={form.state}
-                        onChange={handleChange}
-                        placeholder="NY"
-                      />
-                    </FormField>
-
-                    <FormField label="ZIP Code" error={errors.zip} required className="sm:col-span-2">
-                      <Input
-                        name="zip"
-                        value={form.zip}
-                        onChange={handleChange}
-                        placeholder="10001"
                       />
                     </FormField>
 
@@ -545,7 +512,7 @@ export default function Checkout() {
                                 <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
                                   <Globe className="h-3 w-3" />
                                   {method.cod_deposit_amount
-                                    ? `Shipping deposit of ৳${method.cod_deposit_amount} required before delivery`
+                                    ? `Shipping deposit of ${currencySymbol}${method.cod_deposit_amount} required before delivery`
                                     : "Shipping charge must be paid upfront via bKash/Nagad/Card"}
                                 </p>
                               )}
@@ -588,8 +555,10 @@ export default function Checkout() {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p className="font-semibold text-foreground">{form.fullName}</p>
                       <p>{form.address}</p>
-                      <p>{form.city}, {form.state} {form.zip}</p>
-                      <p>{form.phone} · {form.email}</p>
+                      {(form.city || form.state || form.zip) && (
+                        <p>{[form.city, form.state, form.zip].filter(Boolean).join(", ")}</p>
+                      )}
+                      <p>{form.phone}{form.email ? ` · ${form.email}` : ""}</p>
                       {form.note && <p className="mt-2 italic text-xs">Note: {form.note}</p>}
                     </div>
                   </div>
@@ -727,9 +696,15 @@ export default function Checkout() {
                   <button onClick={() => navigate("/")} className="flex-1 gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">
                     Continue Shopping
                   </button>
-                  <button onClick={() => navigate("/shop")} className="flex-1 border border-border text-foreground px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
-                    Browse More
-                  </button>
+                  {!isLoggedIn && placedOrderId ? (
+                    <button onClick={() => navigate(`/track-order?invoice=${encodeURIComponent(placedOrderId)}`)} className="flex-1 border border-border text-foreground px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
+                      Track Order
+                    </button>
+                  ) : (
+                    <button onClick={() => navigate("/shop")} className="flex-1 border border-border text-foreground px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
+                      Browse More
+                    </button>
+                  )}
                 </motion.div>
               </div>
             </motion.div>

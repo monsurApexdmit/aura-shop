@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Package, Truck, CheckCircle2, Clock, MapPin,
@@ -60,6 +61,36 @@ export default function TrackOrder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { formatCurrency } = useCurrency();
+  const [searchParams] = useSearchParams();
+
+  const runTrack = async (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setError("Please enter a valid invoice number");
+      setOrder(null);
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const data = await orderApi.trackByInvoice(trimmed);
+      setOrder(data);
+    } catch {
+      setError("Order not found. Please check your invoice number and try again.");
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const inv = searchParams.get("invoice");
+    if (inv) {
+      setOrderId(inv);
+      runTrack(inv);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();

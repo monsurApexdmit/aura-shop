@@ -44,7 +44,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, freeShippingThreshold } = useCurrency();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
@@ -427,7 +427,7 @@ export default function ProductDetail() {
             {/* Trust Badges */}
             <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
               {[
-                { icon: Truck, title: "Free Shipping", sub: `Orders ${formatCurrency(50)}+` },
+                { icon: Truck, title: "Free Shipping", sub: freeShippingThreshold != null ? `Orders ${formatCurrency(freeShippingThreshold)}+` : "Fast delivery" },
                 { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
                 { icon: RotateCcw, title: "Easy Returns", sub: "30-Day Policy" },
               ].map(({ icon: Icon, title, sub }) => (

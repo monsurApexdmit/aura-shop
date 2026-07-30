@@ -115,6 +115,7 @@ interface CompanySettings {
   currencyThousandsSeparator?: "," | "." | " " | "";
   currencyDecimalPlaces?: 0 | 1 | 2;
   taxRate: number;
+  freeShippingThreshold?: number | null;
   timezone: string;
   storeName?: string;
   paymentMethods?: string[];
@@ -134,6 +135,7 @@ interface CurrencyContextType {
   formatCurrency: (amount: number) => string;
   currencySymbol: string;
   taxRate: number;
+  freeShippingThreshold: number | null;
   settings: CompanySettings | null;
   storeName: string;
   paymentMethods: string[];
@@ -150,6 +152,7 @@ const CurrencyContext = createContext<CurrencyContextType>({
   formatCurrency: (n) => `$${n.toFixed(2)}`,
   currencySymbol: "$",
   taxRate: 0,
+  freeShippingThreshold: null,
   settings: null,
   storeName: "StoreFront",
   paymentMethods: [],
@@ -231,6 +234,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         formatCurrency: buildFormatter(settings),
         currencySymbol: symbol,
         taxRate: settings?.taxRate ?? 0,
+        freeShippingThreshold: settings?.freeShippingThreshold ?? null,
         settings,
         storeName: settings?.storeName ?? "StoreFront",
         paymentMethods: settings?.paymentMethods ?? [],
