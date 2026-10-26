@@ -10,14 +10,13 @@ import { couponApi, type CouponResult } from "@/services/couponApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X, Store, Package, Zap, Box } from "lucide-react";
 import { useShippingMethods, usePickupPoints } from "@/hooks/useShippingMethods";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { LucideIcon } from "lucide-react";
 import { z } from "zod";
 import FormField from "@/components/forms/FormField";
-import ShippingOption from "@/components/features/checkout/ShippingOption";
 import StepIndicator from "@/components/features/checkout/StepIndicator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,6 +52,7 @@ const SHIPPING_ICON_MAP: Record<string, LucideIcon> = {
   zap:     Zap,
   box:     Box,
   globe:   Globe,
+  store:   Store,
 };
 
 const PAYMENT_ICON_MAP: Record<string, LucideIcon> = {
@@ -80,13 +80,12 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
-  const [district, setDistrict] = useState("");
-  const { data: shippingMethods = [], isLoading: methodsLoading } = useShippingMethods(district || undefined);
+  const { data: shippingMethods = [], isLoading: methodsLoading } = useShippingMethods();
+  const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
   const [pickupPointId, setPickupPointId] = useState<number | null>(null);
   const { data: paymentData, isLoading: paymentMethodsLoading } = usePaymentMethods();
   const paymentMethods = useMemo(() => paymentData?.methods ?? [], [paymentData]);
   const [paymentMethodId, setPaymentMethodId] = useState<number | string | null>(null);
-  const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
   const [addressMode, setAddressMode] = useState<"saved" | "new">(isLoggedIn ? "saved" : "new");
   const [couponCode, setCouponCode] = useState("");
   const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
@@ -113,12 +112,6 @@ export default function Checkout() {
       } catch {}
     }
   }, []);
-
-  useEffect(() => {
-    if (shippingMethods.length > 0 && (shippingMethodId === null || !shippingMethods.some((m) => m.id === shippingMethodId))) {
-      setShippingMethodId(shippingMethods[0].id);
-    }
-  }, [shippingMethods]);
 
   useEffect(() => {
     if (paymentMethods.length > 0 && (paymentMethodId === null || !paymentMethods.some((m) => m.id === paymentMethodId))) {
@@ -175,6 +168,10 @@ export default function Checkout() {
       setErrors({ pickup: "Please choose a pickup point" });
       return false;
     }
+    if (!selectedShipping) {
+      setErrors({ delivery: "Choose a delivery option" });
+      return false;
+    }
     const result = (isPickup ? shippingSchema.extend({ address: z.string().optional() }) : shippingSchema).safeParse(form);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -227,8 +224,8 @@ export default function Checkout() {
           shipping_address: {
             name: form.fullName,
             address: isPickup && pickupPoint ? `Pickup: ${pickupPoint.name}${pickupPoint.address ? `, ${pickupPoint.address}` : ""}` : form.address,
-            city: isPickup && pickupPoint ? (pickupPoint.district ?? "") : (form.city || district),
-            state: form.state,
+            city: isPickup && pickupPoint ? (pickupPoint.district ?? "") : form.city,
+            state: isPickup ? undefined : form.state,
             zip: form.zip,
             phone: form.phone,
             email: form.email,
@@ -236,6 +233,7 @@ export default function Checkout() {
           payment_method: selectedPayment?.slug ?? selectedPayment?.name ?? "cod",
           coupon_code: couponResult ? couponResult.code : undefined,
           discount: discount > 0 ? discount : undefined,
+          // informational only: the server charges the chosen method's price
           shipping_cost: shippingCost,
           shipping_method: selectedShipping?.name,
           shipping_method_id: selectedShipping?.id,
@@ -259,15 +257,25 @@ export default function Checkout() {
     setStep((s) => Math.min(s + 1, 4));
   };
 
-  const selectedShipping = shippingMethods.find((m) => m.id === shippingMethodId) ?? null;
+  // Customer picks one of the store's delivery options (fixed charge each); pickup only if the store offers it
+  const deliveryMethods = shippingMethods.filter((m) => m.type !== "pickup");
+  const pickupMethods = shippingMethods.filter((m) => m.type === "pickup");
+  const shippingOptions = [...deliveryMethods, ...pickupMethods];
+  const selectedShipping = shippingOptions.find((m) => m.id === shippingMethodId) ?? null;
   const isPickup = selectedShipping?.type === "pickup";
+  useEffect(() => {
+    // preselect the first delivery option (or keep a still-valid choice)
+    if (shippingOptions.length > 0 && !selectedShipping) setShippingMethodId(shippingOptions[0].id);
+  }, [shippingMethods]);
   const { data: pickupPoints = [] } = usePickupPoints(isPickup);
   const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? null;
   const selectedPayment = paymentMethods.find((m) => m.id === paymentMethodId) ?? null;
-  const shippingCost = couponResult?.free_shipping ? 0 : (selectedShipping?.price ?? 0);
+  const shippingCost = couponResult?.free_shipping || isPickup ? 0 : (selectedShipping?.price ?? 0);
+  const shippingLabel = selectedShipping?.name ?? "—";
+  const shippingTime = selectedShipping?.estimated_days ?? null;
   const discount = calcDiscount(totalPrice);
-  const tax = (totalPrice - discount) * 0.08;
-  const grandTotal = totalPrice - discount + shippingCost + tax;
+  // No tax on storefront orders (the server doesn't charge any either).
+  const grandTotal = totalPrice - discount + shippingCost;
 
 
   if (items.length === 0 && step < 4) {
@@ -378,15 +386,6 @@ export default function Checkout() {
                             placeholder="123 Main Street"
                           />
                         </FormField>
-                        <FormField label="District / City" helperText="Used to match delivery zones" className="sm:col-span-2">
-                          <Input
-                            name="city"
-                            value={form.city}
-                            onChange={handleChange}
-                            onBlur={(e) => setDistrict(e.target.value.trim())}
-                            placeholder="e.g. Dhaka"
-                          />
-                        </FormField>
                       </>
                     )}
 
@@ -401,39 +400,48 @@ export default function Checkout() {
                     </FormField>
                   </div>
 
-                  {/* Shipping Method Selection */}
+                  {/* Delivery option: one of the store's active shipping methods */}
                   <Separator className="mt-6" />
                   <div className="pt-6">
                     <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-primary" /> Shipping Method
+                      <Truck className="h-4 w-4 text-primary" /> Delivery
                     </h3>
-                    <div role="radiogroup" aria-label="Shipping method" className="space-y-3">
-                      {methodsLoading ? (
-                        <>
-                          <Skeleton className="h-[72px]" />
-                          <Skeleton className="h-[72px]" />
-                          <Skeleton className="h-[72px]" />
-                        </>
-                      ) : shippingMethods.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">No shipping options available.</p>
-                      ) : (
-                        shippingMethods.map((method) => (
-                          <ShippingOption
-                            key={method.id}
-                            option={{
-                              id: String(method.id),
-                              label: method.name,
-                              price: method.price,
-                              days: method.estimated_days ?? "",
-                              icon: SHIPPING_ICON_MAP[method.icon ?? ""] ?? Package,
-                              description: method.description ?? "",
-                            }}
-                            selected={shippingMethodId === method.id}
-                            onChange={(idStr) => setShippingMethodId(Number(idStr))}
-                          />
-                        ))
-                      )}
-                    </div>
+                    {methodsLoading ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Skeleton className="h-[84px]" />
+                        <Skeleton className="h-[84px]" />
+                      </div>
+                    ) : shippingOptions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">No delivery options available.</p>
+                    ) : (
+                      <ChoiceCardGroup
+                        value={shippingMethodId != null ? String(shippingMethodId) : undefined}
+                        onValueChange={(v) => { setShippingMethodId(Number(v)); setErrors({}); }}
+                        className="grid-cols-1 sm:grid-cols-2 gap-3"
+                        aria-label="Delivery option"
+                      >
+                        {shippingOptions.map((m) => {
+                          const pickup = m.type === "pickup";
+                          const Icon = SHIPPING_ICON_MAP[m.icon ?? ""] ?? (pickup ? Store : Truck);
+                          return (
+                            <ChoiceCard
+                              key={m.id}
+                              value={String(m.id)}
+                              icon={<Icon />}
+                              title={
+                                <span className="flex flex-1 items-center justify-between gap-3">
+                                  <span>{m.name}</span>
+                                  <span className="font-semibold tabular-nums">{pickup || !m.price ? "Free" : formatCurrency(m.price)}</span>
+                                </span>
+                              }
+                              description={[pickup ? (m.description || "Pick up from store · no delivery address needed") : m.description, m.estimated_days].filter(Boolean).join(" · ") || undefined}
+                              className="[&>span:first-child]:w-full"
+                            />
+                          );
+                        })}
+                      </ChoiceCardGroup>
+                    )}
+                    {errors.delivery && <p className="text-xs text-destructive mt-2">{errors.delivery}</p>}
                     {isPickup && (
                       <div className="mt-4">
                         <SectionTitle as="p" className="mb-3">Pickup point</SectionTitle>
@@ -463,7 +471,7 @@ export default function Checkout() {
 
                 {/* Order Summary Sidebar */}
                 <div className="lg:col-span-2">
-                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                 </div>
               </div>
 
@@ -570,7 +578,7 @@ export default function Checkout() {
                   </div>
                 </Card>
                 <div className="lg:col-span-2">
-                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                 </div>
               </div>
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
@@ -593,7 +601,7 @@ export default function Checkout() {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p className="font-semibold text-foreground">{form.fullName}</p>
                       <p>{isPickup && pickupPoint ? `${pickupPoint.name}${pickupPoint.address ? `, ${pickupPoint.address}` : ""}${pickupPoint.district ? `, ${pickupPoint.district}` : ""}` : form.address}</p>
-                      {(form.city || form.state || form.zip) && (
+                      {!isPickup && (form.city || form.state || form.zip) && (
                         <p>{[form.city, form.state, form.zip].filter(Boolean).join(", ")}</p>
                       )}
                       <p>{form.phone}{form.email ? ` · ${form.email}` : ""}</p>
@@ -601,19 +609,14 @@ export default function Checkout() {
                     </div>
                   </SectionCard>
 
-                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> Shipping Method</span>}>
-                    {selectedShipping && (() => {
-                      const Icon = SHIPPING_ICON_MAP[selectedShipping.icon ?? ""] ?? Package;
-                      return (
-                        <div className="flex items-center gap-3">
-                          <Icon className="h-5 w-5 text-primary" />
-                          <div>
-                            <span className="text-sm font-medium text-foreground">{selectedShipping.name}</span>
-                            <p className="text-xs text-muted-foreground">{selectedShipping.estimated_days} · {formatCurrency(selectedShipping.price)}</p>
-                          </div>
-                        </div>
-                      );
-                    })()}
+                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> Delivery</span>}>
+                    <div className="flex items-center gap-3">
+                      {isPickup ? <Store className="h-5 w-5 text-primary" /> : <Truck className="h-5 w-5 text-primary" />}
+                      <div>
+                        <span className="text-sm font-medium text-foreground">{shippingLabel}</span>
+                        <p className="text-xs text-muted-foreground">{[shippingTime, shippingCost > 0 ? formatCurrency(shippingCost) : "Free"].filter(Boolean).join(" · ")}</p>
+                      </div>
+                    </div>
                   </SectionCard>
 
                   <SectionCard title={<span className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> Payment Method</span>}>
@@ -661,7 +664,7 @@ export default function Checkout() {
                 </div>
 
                 <div className="lg:col-span-2">
-                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
+                  <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                   <Alert className="mt-4">
                     <ShieldCheck className="h-4 w-4" />
                     <AlertDescription className="text-xs text-muted-foreground">Your order information is secure. We'll send a confirmation to your email.</AlertDescription>
@@ -706,8 +709,8 @@ export default function Checkout() {
                       <InfoRow label="Order ID" value={<span className="font-mono font-bold text-primary">{placedOrderId ?? "—"}</span>} />
                       <InfoRow label="Payment" value={selectedPayment?.name ?? "—"} />
                       <InfoRow label="Delivery To" value={form.fullName} />
-                      <InfoRow label="Shipping" value={selectedShipping?.name ?? "—"} />
-                      <InfoRow label="Estimated Delivery" value={selectedShipping?.estimated_days ?? "—"} />
+                      <InfoRow label="Shipping" value={shippingLabel} />
+                      <InfoRow label="Estimated Delivery" value={shippingTime ?? "—"} />
                     </InfoList>
                   </Card>
                 </motion.div>
@@ -735,12 +738,11 @@ export default function Checkout() {
   );
 }
 
-function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, couponResult, couponCode, onCouponCodeChange, onApplyCoupon, onRemoveCoupon, couponApplying }: {
+function OrderSummary({ items, totalPrice, shipping, discount, grandTotal, couponResult, couponCode, onCouponCodeChange, onApplyCoupon, onRemoveCoupon, couponApplying }: {
   items: { id: string; name: string; quantity: number; price: number }[];
   totalPrice: number;
   shipping: number;
   discount: number;
-  tax: number;
   grandTotal: number;
   couponResult: CouponResult | null;
   couponCode: string;
@@ -762,7 +764,6 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
             value={<span className="text-green-600">-{formatCurrency(discount)}</span>}
           />
         )}
-        <InfoRow label="Tax" value={formatCurrency(tax)} />
       </InfoList>
       <Separator className="mb-4" />
 

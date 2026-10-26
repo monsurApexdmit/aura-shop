@@ -9,7 +9,6 @@ export interface ShippingMethod {
   icon: string | null
   type?: 'delivery' | 'pickup' | string
   requires_address?: boolean
-  areas_covered?: string | null
 }
 
 export interface PickupPoint {
@@ -21,9 +20,9 @@ export interface PickupPoint {
 }
 
 export const shippingMethodApi = {
-  getActive: async (district?: string): Promise<ShippingMethod[]> => {
-    const res = await api.get('/shipping-methods', { params: district ? { district } : undefined })
-    return res.data.data ?? []
+  getActive: async (): Promise<ShippingMethod[]> => {
+    const res = await api.get('/shipping-methods')
+    return (res.data.data ?? []).map((m: ShippingMethod) => ({ ...m, price: Number(m.price) || 0 }))
   },
   getPickupPoints: async (): Promise<PickupPoint[]> => {
     const res = await api.get('/pickup-points')

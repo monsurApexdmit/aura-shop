@@ -63,7 +63,9 @@ export function ChoiceCard({ value, title, description, icon, className, childre
       onClick={(e) => { onClick?.(e); if (!e.defaultPrevented) ctx.onValueChange?.(value) }}
       className={cn(
         "h-auto w-full flex-col items-start justify-start gap-1 whitespace-normal p-4 text-left",
-        "data-[state=checked]:border-primary data-[state=checked]:bg-primary/5 data-[state=checked]:ring-1 data-[state=checked]:ring-primary",
+        // Own hover instead of the outline variant's accent fill (gold bg + white text, unreadable on the checked card)
+        "hover:border-primary/50 hover:bg-primary/5 hover:text-foreground",
+        "data-[state=checked]:border-primary data-[state=checked]:bg-primary/5 data-[state=checked]:ring-1 data-[state=checked]:ring-primary data-[state=checked]:hover:bg-primary/10",
         className,
       )}
       {...props}

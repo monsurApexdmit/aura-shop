@@ -31,11 +31,12 @@ export function SegmentedControl({ value, onValueChange, options, size = "sm", d
       value={value}
       disabled={disabled}
       onValueChange={(v) => { if (v) onValueChange(v) }}
-      className={cn("flex-wrap", className)}
+      className={cn("w-fit max-w-full flex-wrap", className)}
       {...props}
     >
       {options.map((o) => (
-        <ToggleGroupItem key={o.value} value={o.value} disabled={o.disabled} aria-label={o["aria-label"]}>
+        <ToggleGroupItem key={o.value} value={o.value} disabled={o.disabled} aria-label={o["aria-label"]}
+          className="flex-auto shrink-0 whitespace-nowrap px-3">
           {o.label}
         </ToggleGroupItem>
       ))}

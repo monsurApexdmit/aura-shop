@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { shippingMethodApi, storeHoursApi } from '@/services/shippingMethodApi'
 
-export function useShippingMethods(district?: string) {
+export function useShippingMethods() {
   return useQuery({
-    queryKey: ['shipping-methods', district ?? ''],
-    queryFn: () => shippingMethodApi.getActive(district),
+    queryKey: ['shipping-methods'],
+    queryFn: shippingMethodApi.getActive,
     staleTime: 1000 * 60 * 10,
   })
 }
