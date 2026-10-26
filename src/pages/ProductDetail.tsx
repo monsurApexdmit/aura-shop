@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Check, Package, Tag } from "lucide-react";
+import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Check, Package, Tag, Sparkles } from "lucide-react";
+import { TryOnDialog } from "@/components/TryOnDialog";
 import { useProduct, useProducts } from "@/hooks/useProducts";
 import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
@@ -46,6 +47,7 @@ export default function ProductDetail() {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { formatCurrency, freeShippingThreshold } = useCurrency();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [tryOnOpen, setTryOnOpen] = useState(false);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
   const { data: apiProduct, isLoading } = useProduct(slug ?? null);
@@ -168,6 +170,9 @@ export default function ProductDetail() {
     : 0;
 
   const images = product.images?.length ? product.images : [product.image];
+  // Show try-on only for wearable products.
+  const WEARABLE = ["shirt", "pant", "trouser", "jean", "dress", "fashion", "clothing", "apparel", "top", "jacket", "t-shirt"];
+  const isWearable = WEARABLE.some((c) => (product.category || "").toLowerCase().includes(c));
 
   const handleAdd = () => {
     addItem({
@@ -420,7 +425,29 @@ export default function ProductDetail() {
                   {currentStock === 0 ? "Out of Stock" : "Add to Cart"}
                 </Button>
               )}
+
+              {isWearable && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setTryOnOpen(true)}
+                  className="rounded-xl gap-2 h-12 text-base"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Try On
+                </Button>
+              )}
             </div>
+
+            {isWearable && (
+              <TryOnDialog
+                open={tryOnOpen}
+                onOpenChange={setTryOnOpen}
+                garmentUrl={images[selectedImage]}
+                garmentName={product.name}
+                category={product.category}
+              />
+            )}
 
             <Separator className="mb-6" />
 
