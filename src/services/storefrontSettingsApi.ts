@@ -36,3 +36,17 @@ export const storefrontSettingsApi = {
 };
 
 export default storefrontSettingsApi;
+
+export interface OnlineStoreSettings {
+  name: string;
+  slug: string;
+  theme: string;
+  published: boolean;
+  policies: { returns: string; shipping: string; privacy: string };
+  social: { facebook: string; instagram: string; whatsapp: string; youtube: string; twitter: string };
+}
+
+export const getOnlineStore = async (): Promise<OnlineStoreSettings> => {
+  const response = await api.get("/settings/online-store");
+  return response.data.data;
+};

@@ -25,6 +25,8 @@ function getCatIcon(slug: string): LucideIcon {
   const key = Object.keys(ICON_MAP).find((k) => slug.includes(k) || k.includes(slug));
   return key ? ICON_MAP[key] : Tag;
 }
+import { useStorefrontPages, BUILT_IN_PAGE_SLUGS, pageHref } from "@/hooks/useStorefrontPages";
+import { StoreClosureBanner } from "@/components/StoreHours";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 
 const navLinks = [
@@ -43,6 +45,11 @@ export default function Header() {
   const { formatCurrency, storePhone, storeName, bannerUrl, freeShippingThreshold } = useCurrency();
   const displayLogo = bannerUrl;
   const { data: categories = [] } = useCategories();
+  const { data: pages = [] } = useStorefrontPages();
+  const allNavLinks = [
+    ...navLinks,
+    ...pages.filter((p) => p.place === 'header' && !BUILT_IN_PAGE_SLUGS.includes(p.slug)).map((p) => ({ label: p.title, to: pageHref(p.slug), badge: false })),
+  ];
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
@@ -68,6 +75,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50">
+      <StoreClosureBanner />
       {/* Top Bar */}
       <div className="gradient-primary text-primary-foreground">
         <div className="container flex items-center justify-between h-9 text-xs">
@@ -283,7 +291,7 @@ export default function Header() {
 
           {/* Nav Links */}
           <nav className="flex items-center ml-1">
-            {navLinks.map((link) => (
+            {allNavLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -383,7 +391,7 @@ export default function Header() {
                 <Truck className="h-4 w-4 text-primary" />
                 Track your order
               </Link>
-              {navLinks.map((link) => (
+              {allNavLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}

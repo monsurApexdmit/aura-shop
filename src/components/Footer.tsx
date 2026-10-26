@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useStorefrontPages, BUILT_IN_PAGE_SLUGS, pageHref } from "@/hooks/useStorefrontPages";
+import { StoreHoursList } from "@/components/StoreHours";
+import { Facebook, Instagram, Youtube, MessageCircle } from "lucide-react";
 
 const footerLinks = {
   Company: [
@@ -26,7 +29,21 @@ const footerLinks = {
 
 export default function Footer() {
   const { data: categories = [] } = useCategories();
-  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl } = useCurrency();
+  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl, onlineStore } = useCurrency();
+  const { data: pages = [] } = useStorefrontPages();
+  const extraLinks = pages
+    .filter((p) => p.place === 'footer' && !BUILT_IN_PAGE_SLUGS.includes(p.slug))
+    .map((p) => ({ label: p.title, to: pageHref(p.slug) }));
+  const sections = Object.entries(footerLinks).map(([title, links]) => [title, title === 'Company' ? [...links, ...extraLinks] : links] as const);
+  const rawSocial = onlineStore?.social;
+  const waRaw = rawSocial?.whatsapp?.trim() ?? '';
+  const waHref = waRaw && (/^https?:\/\//i.test(waRaw) ? waRaw : `https://wa.me/${waRaw.replace(/[^0-9]/g, '')}`);
+  const socials = [
+    { label: 'Facebook', href: rawSocial?.facebook, Icon: Facebook },
+    { label: 'Instagram', href: rawSocial?.instagram, Icon: Instagram },
+    { label: 'YouTube', href: rawSocial?.youtube, Icon: Youtube },
+    { label: 'WhatsApp', href: waHref, Icon: MessageCircle },
+  ].filter((x): x is { label: string; href: string; Icon: typeof Facebook } => !!x.href && /^https?:\/\//i.test(x.href));
   const displayLogo = bannerUrl;
   const displayPaymentMethods = paymentMethods.length > 0
     ? paymentMethods
@@ -56,6 +73,16 @@ export default function Footer() {
             <p className="text-sm text-background/50 leading-relaxed mb-5 max-w-xs">
               Your universal marketplace for health, fashion, electronics, grocery & beyond. Quality products, fast delivery.
             </p>
+            {socials.length > 0 && (
+              <div className="flex items-center gap-2 mb-5">
+                {socials.map(({ label, href, Icon }) => (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                    className="w-9 h-9 rounded-lg bg-background/10 flex items-center justify-center text-background/60 hover:text-primary transition-colors">
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            )}
             <div className="space-y-2.5">
               {storePhone && (
                 <a href={`tel:${storePhone}`} className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
@@ -75,6 +102,7 @@ export default function Footer() {
                   {storeAddress}
                 </p>
               )}
+              <StoreHoursList />
             </div>
           </div>
 
@@ -93,7 +121,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {Object.entries(footerLinks).map(([title, links]) => (
+          {sections.map(([title, links]) => (
             <div key={title} className="col-span-1 md:col-span-2">
               <h3 className="font-display font-semibold text-sm text-background mb-4">{title}</h3>
               <ul className="space-y-2.5">

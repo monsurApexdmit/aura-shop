@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X, Loader2 } from "lucide-react";
-import { useShippingMethods } from "@/hooks/useShippingMethods";
+import { useShippingMethods, usePickupPoints } from "@/hooks/useShippingMethods";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { LucideIcon } from "lucide-react";
@@ -67,9 +67,12 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
-  const { data: shippingMethods = [], isLoading: methodsLoading } = useShippingMethods();
-  const { data: paymentMethods = [], isLoading: paymentMethodsLoading } = usePaymentMethods();
-  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
+  const [district, setDistrict] = useState("");
+  const { data: shippingMethods = [], isLoading: methodsLoading } = useShippingMethods(district || undefined);
+  const [pickupPointId, setPickupPointId] = useState<number | null>(null);
+  const { data: paymentData, isLoading: paymentMethodsLoading } = usePaymentMethods();
+  const paymentMethods = useMemo(() => paymentData?.methods ?? [], [paymentData]);
+  const [paymentMethodId, setPaymentMethodId] = useState<number | string | null>(null);
   const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
   const [addressMode, setAddressMode] = useState<"saved" | "new">(isLoggedIn ? "saved" : "new");
   const [couponCode, setCouponCode] = useState("");
@@ -99,14 +102,15 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
-    if (shippingMethods.length > 0 && shippingMethodId === null) {
+    if (shippingMethods.length > 0 && (shippingMethodId === null || !shippingMethods.some((m) => m.id === shippingMethodId))) {
       setShippingMethodId(shippingMethods[0].id);
     }
   }, [shippingMethods]);
 
   useEffect(() => {
-    if (paymentMethods.length > 0 && paymentMethodId === null) {
-      setPaymentMethodId(paymentMethods[0].id);
+    if (paymentMethods.length > 0 && (paymentMethodId === null || !paymentMethods.some((m) => m.id === paymentMethodId))) {
+      const preferred = paymentMethods.find((m) => m.slug && m.slug === paymentData?.default);
+      setPaymentMethodId((preferred ?? paymentMethods[0]).id);
     }
   }, [paymentMethods]);
 
@@ -154,7 +158,11 @@ export default function Checkout() {
   };
 
   const validateShipping = () => {
-    const result = shippingSchema.safeParse(form);
+    if (isPickup && !pickupPoint) {
+      setErrors({ pickup: "Please choose a pickup point" });
+      return false;
+    }
+    const result = (isPickup ? shippingSchema.extend({ address: z.string().optional() }) : shippingSchema).safeParse(form);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((e) => { fieldErrors[e.path[0] as string] = e.message; });
@@ -205,18 +213,20 @@ export default function Checkout() {
           items: orderItems,
           shipping_address: {
             name: form.fullName,
-            address: form.address,
-            city: form.city,
+            address: isPickup && pickupPoint ? `Pickup: ${pickupPoint.name}${pickupPoint.address ? `, ${pickupPoint.address}` : ""}` : form.address,
+            city: isPickup && pickupPoint ? (pickupPoint.district ?? "") : (form.city || district),
             state: form.state,
             zip: form.zip,
             phone: form.phone,
             email: form.email,
           },
-          payment_method: selectedPayment?.name ?? "cod",
+          payment_method: selectedPayment?.slug ?? selectedPayment?.name ?? "cod",
           coupon_code: couponResult ? couponResult.code : undefined,
           discount: discount > 0 ? discount : undefined,
           shipping_cost: shippingCost,
           shipping_method: selectedShipping?.name,
+          shipping_method_id: selectedShipping?.id,
+          pickup_location_id: isPickup && pickupPoint ? pickupPoint.id : undefined,
           guest: isLoggedIn ? undefined : { name: form.fullName, phone: form.phone, email: form.email || undefined },
         });
         clearCart();
@@ -227,11 +237,9 @@ export default function Checkout() {
         setPlacedOrderId(order.invoice_no ?? String(order.id));
         setStep(4);
       } catch (err: any) {
-        toast.error(
-          err?.response?.data?.message ??
-          err?.response?.data?.errors?.["shipping_address.phone"]?.[0] ??
-          "Failed to place order. Please try again."
-        );
+        const data = err?.response?.data;
+        const firstError = data?.errors ? (Object.values(data.errors).flat()[0] as string | undefined) : undefined;
+        toast.error(data?.message ?? firstError ?? "Failed to place order. Please try again.");
       }
       return;
     }
@@ -239,6 +247,9 @@ export default function Checkout() {
   };
 
   const selectedShipping = shippingMethods.find((m) => m.id === shippingMethodId) ?? null;
+  const isPickup = selectedShipping?.type === "pickup";
+  const { data: pickupPoints = [] } = usePickupPoints(isPickup);
+  const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? null;
   const selectedPayment = paymentMethods.find((m) => m.id === paymentMethodId) ?? null;
   const shippingCost = couponResult?.free_shipping ? 0 : (selectedShipping?.price ?? 0);
   const discount = calcDiscount(totalPrice);
@@ -369,14 +380,27 @@ export default function Checkout() {
                       />
                     </FormField>
 
-                    <FormField label="Address" error={errors.address} required className="sm:col-span-2">
-                      <Input
-                        name="address"
-                        value={form.address}
-                        onChange={handleChange}
-                        placeholder="123 Main Street"
-                      />
-                    </FormField>
+                    {!isPickup && (
+                      <>
+                        <FormField label="Address" error={errors.address} required className="sm:col-span-2">
+                          <Input
+                            name="address"
+                            value={form.address}
+                            onChange={handleChange}
+                            placeholder="123 Main Street"
+                          />
+                        </FormField>
+                        <FormField label="District / City" helperText="Used to match delivery zones" className="sm:col-span-2">
+                          <Input
+                            name="city"
+                            value={form.city}
+                            onChange={handleChange}
+                            onBlur={(e) => setDistrict(e.target.value.trim())}
+                            placeholder="e.g. Dhaka"
+                          />
+                        </FormField>
+                      </>
+                    )}
 
                     <FormField label="Order Note" helperText="Special delivery instructions..." className="sm:col-span-2">
                       <Textarea
@@ -421,6 +445,29 @@ export default function Checkout() {
                         ))
                       )}
                     </div>
+                    {isPickup && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Pickup point</p>
+                        {pickupPoints.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No pickup points available.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {pickupPoints.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => setPickupPointId(p.id)}
+                                className={`w-full text-left p-3 rounded-xl border-2 text-sm transition-colors ${pickupPointId === p.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+                              >
+                                <p className="font-semibold text-foreground">{p.name}</p>
+                                <p className="text-xs text-muted-foreground">{[p.address, p.district].filter(Boolean).join(", ")}{p.phone ? ` · ${p.phone}` : ""}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {errors.pickup && <p className="text-xs text-destructive mt-2">{errors.pickup}</p>}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -508,6 +555,14 @@ export default function Checkout() {
                                   <Globe className="h-3 w-3" /> You'll be redirected to Nagad
                                 </p>
                               )}
+                              {isSelected && method.gateway_type === "manual" && (method.account || method.bank_name) && (
+                                <div className="mt-2 rounded-lg bg-muted/60 p-2.5 text-xs text-foreground space-y-0.5">
+                                  <p className="text-muted-foreground">Send payment to:</p>
+                                  {method.bank_name && <p>Bank: <span className="font-medium">{method.bank_name}</span></p>}
+                                  {method.account_name && <p>Account name: <span className="font-medium">{method.account_name}</span></p>}
+                                  {method.account && <p>Account / number: <span className="font-medium">{method.account}</span></p>}
+                                </div>
+                              )}
                               {method.gateway_type === "cod" && method.cod_deposit_required && (
                                 <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
                                   <Globe className="h-3 w-3" />
@@ -550,11 +605,11 @@ export default function Checkout() {
                 <div className="lg:col-span-3 space-y-5">
                   <div className="bg-background rounded-2xl border border-border p-6">
                     <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" /> Delivery Address
+                      <MapPin className="h-4 w-4 text-primary" /> {isPickup ? "Pickup Point" : "Delivery Address"}
                     </h3>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p className="font-semibold text-foreground">{form.fullName}</p>
-                      <p>{form.address}</p>
+                      <p>{isPickup && pickupPoint ? `${pickupPoint.name}${pickupPoint.address ? `, ${pickupPoint.address}` : ""}${pickupPoint.district ? `, ${pickupPoint.district}` : ""}` : form.address}</p>
                       {(form.city || form.state || form.zip) && (
                         <p>{[form.city, form.state, form.zip].filter(Boolean).join(", ")}</p>
                       )}

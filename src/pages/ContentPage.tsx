@@ -6,6 +6,8 @@ import contentPageApi, {
   type StorefrontPageContent,
   inferPageTemplate,
 } from "@/services/contentPageApi";
+import { Markdown } from "@/lib/markdown";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
@@ -175,6 +177,10 @@ type ContentPageProps = {
 export default function ContentPage({ slug, fallbackContent }: ContentPageProps) {
   const [content, setContent] = useState<StorefrontPageContent>(fallbackContent);
   const [loading, setLoading] = useState(true);
+  const [missing, setMissing] = useState(false);
+  const { onlineStore } = useCurrency();
+  const policyKey = ({ returns: "returns", shipping: "shipping", privacy: "privacy" } as const)[slug as "returns"];
+  const policyText = policyKey ? onlineStore?.policies?.[policyKey]?.trim() : "";
 
   useEffect(() => {
     let active = true;
@@ -183,6 +189,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
       try {
         const page = await contentPageApi.getBySlug(slug);
         if (active && page?.content) {
+          setMissing(false);
           setContent(page.content);
           if (page.content.seo?.title) {
             document.title = page.content.seo.title;
@@ -190,6 +197,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
         }
       } catch {
         if (active) {
+          setMissing(true);
           setContent(fallbackContent);
           if (fallbackContent.seo?.title) {
             document.title = fallbackContent.seo.title;
@@ -210,6 +218,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
   }, [fallbackContent, slug]);
 
   const template = inferPageTemplate(slug, content);
+  const useStorePolicy = !loading && missing && !!policyText;
 
   return (
     <div className="min-h-screen bg-background pt-32 pb-20">
@@ -233,7 +242,13 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
         </motion.p>
       </section>
 
-      {template === "faq" ? (
+      {useStorePolicy ? (
+        <section className="container max-w-4xl">
+          <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
+            <Markdown source={policyText ?? ""} />
+          </div>
+        </section>
+      ) : template === "faq" ? (
         <section className="container max-w-4xl">
           <div className="space-y-8">
             {(content as FaqPageContent).faqCategories.map((category, index) => (

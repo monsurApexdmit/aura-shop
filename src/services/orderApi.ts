@@ -25,6 +25,8 @@ export interface PlaceOrderPayload {
   discount?: number
   shipping_cost?: number
   shipping_method?: string
+  shipping_method_id?: number
+  pickup_location_id?: number
   guest?: {
     name: string
     phone: string
