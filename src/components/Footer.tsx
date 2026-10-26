@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const footerLinks = {
   Company: [
@@ -78,11 +79,11 @@ export default function Footer() {
             {socials.length > 0 && (
               <div className="flex items-center gap-2 mb-5">
                 {socials.map(({ label, href, Icon }) => (
-                  <Button key={label} asChild variant="ghost" size="icon" className="text-background/60 hover:bg-background/10 hover:text-primary">
+                  <WithTooltip key={label} content={label}><Button asChild variant="ghost" size="icon" className="text-background/60 hover:bg-background/10 hover:text-primary">
                     <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
                       <Icon className="h-4 w-4" />
                     </a>
-                  </Button>
+                  </Button></WithTooltip>
                 ))}
               </div>
             )}

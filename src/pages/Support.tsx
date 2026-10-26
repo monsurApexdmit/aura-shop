@@ -25,6 +25,7 @@ import { subscribeToSupportTicket } from "@/lib/reverb";
 import { supportApi, type SupportTicket, type TicketCategory, type SupportMessage } from "@/services/supportApi";
 import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 // ── Sound ─────────────────────────────────────────────────────────
 function playNotificationSound() {
@@ -153,9 +154,9 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 p-4">
-        <Button variant="ghost" size="icon" onClick={onCancel} aria-label="Back">
+        <WithTooltip content="Back"><Button variant="ghost" size="icon" onClick={onCancel} aria-label="Back">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-        </Button>
+        </Button></WithTooltip>
         <h2 className="font-semibold">New Support Ticket</h2>
       </div>
       <Separator />
@@ -408,9 +409,9 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center gap-3 p-4">
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden" aria-label="Back">
+          <WithTooltip content="Back"><Button variant="ghost" size="icon" onClick={onBack} className="md:hidden" aria-label="Back">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          </Button>
+          </Button></WithTooltip>
           <Skeleton className="h-5 w-48" />
         </div>
         <Separator />
@@ -427,9 +428,9 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-start gap-3 p-4 shrink-0">
-        <Button variant="ghost" size="icon" onClick={onBack} className="mt-0.5 md:hidden" aria-label="Back">
+        <WithTooltip content="Back"><Button variant="ghost" size="icon" onClick={onBack} className="mt-0.5 md:hidden" aria-label="Back">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-        </Button>
+        </Button></WithTooltip>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground font-mono">{ticket.ticketNumber}</span>
@@ -480,7 +481,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
           />
           <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
           <div className="flex gap-2 items-end">
-            <Button
+            <WithTooltip content="Attach files"><Button
               type="button"
               variant="outline"
               size="icon"
@@ -489,8 +490,8 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
               aria-label="Attach files"
             >
               <Paperclip className="w-4 h-4" />
-            </Button>
-            <Button
+            </Button></WithTooltip>
+            <WithTooltip content={isRecording ? "Stop recording" : "Record voice note"}><Button
               type="button"
               variant={isRecording ? "destructive" : "outline"}
               size="icon"
@@ -499,7 +500,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
               aria-label={isRecording ? "Stop recording" : "Record voice note"}
             >
               {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </Button>
+            </Button></WithTooltip>
             <Textarea
               ref={textareaRef}
               value={reply}
@@ -510,7 +511,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
               className="flex-1 resize-none max-h-32 overflow-y-auto"
               style={{ minHeight: "42px" }}
             />
-            <Button
+            <WithTooltip content="Send message"><Button
               size="icon"
               onClick={sendReply}
               disabled={sending || (!reply.trim() && attachments.length === 0)}
@@ -518,7 +519,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
               aria-label="Send message"
             >
               {sending ? <Spinner /> : <Send className="w-4 h-4" />}
-            </Button>
+            </Button></WithTooltip>
           </div>
           <p className="text-xs text-muted-foreground/60 mt-1.5 ml-1">Shift+Enter for new line. Attach up to 5 files or record a voice note.</p>
         </div>

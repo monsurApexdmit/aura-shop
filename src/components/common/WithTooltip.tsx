@@ -3,7 +3,7 @@ import * as React from "react"
 import { Info } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface WithTooltipProps {
   /** Tooltip text; when empty the child renders without a tooltip. */
@@ -16,11 +16,14 @@ interface WithTooltipProps {
 /** Wraps one element with a shadcn Tooltip. Replaces native `title="…"` hover hints. */
 export function WithTooltip({ content, side, children }: WithTooltipProps) {
   if (content == null || content === "") return children
+  // Own provider (like the admin's shadcn Tooltip) so it works without an app-level one.
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side}>{content}</TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side={side}>{content}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 

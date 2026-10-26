@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { SectionTitle } from "@/components/common/SectionTitle";
 import { useCategories } from "@/hooks/useCategories";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 export interface FilterPanelProps {
   /**
@@ -117,7 +118,7 @@ export default function FilterPanel({
                   </Button>
 
                   {/* Expand/Collapse Button */}
-                  <Button
+                  <WithTooltip content={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}><Button
                     variant="ghost"
                     size="icon"
                     aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
@@ -127,7 +128,7 @@ export default function FilterPanel({
                     <ChevronDown
                       className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", isExpanded ? "rotate-180" : "")}
                     />
-                  </Button>
+                  </Button></WithTooltip>
                 </div>
 
                 {/* Subcategories */}

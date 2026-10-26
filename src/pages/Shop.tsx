@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 type SortOption = "default" | "price-asc" | "price-desc" | "newest";
 
@@ -175,12 +176,12 @@ export default function Shop() {
                   <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 </div>
                 <ButtonGroup className="hidden md:flex" aria-label="Grid density">
-                  <Button variant={gridCols === 3 ? "default" : "outline"} size="icon" aria-label="Larger cards" aria-pressed={gridCols === 3} onClick={() => setGridCols(3)}>
+                  <WithTooltip content="Larger cards"><Button variant={gridCols === 3 ? "default" : "outline"} size="icon" aria-label="Larger cards" aria-pressed={gridCols === 3} onClick={() => setGridCols(3)}>
                     <LayoutList className="h-4 w-4" />
-                  </Button>
-                  <Button variant={gridCols === 4 ? "default" : "outline"} size="icon" aria-label="Compact grid" aria-pressed={gridCols === 4} onClick={() => setGridCols(4)}>
+                  </Button></WithTooltip>
+                  <WithTooltip content="Compact grid"><Button variant={gridCols === 4 ? "default" : "outline"} size="icon" aria-label="Compact grid" aria-pressed={gridCols === 4} onClick={() => setGridCols(4)}>
                     <Grid3X3 className="h-4 w-4" />
-                  </Button>
+                  </Button></WithTooltip>
                 </ButtonGroup>
               </div>
             </div>
@@ -242,9 +243,9 @@ export default function Shop() {
               className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background z-50 lg:hidden overflow-y-auto">
               <div className="flex items-center justify-between p-4">
                 <h2 className="font-semibold text-lg">Filters</h2>
-                <Button variant="ghost" size="icon" aria-label="Close filters" onClick={() => setMobileFilterOpen(false)}>
+                <WithTooltip content="Close filters"><Button variant="ghost" size="icon" aria-label="Close filters" onClick={() => setMobileFilterOpen(false)}>
                   <X className="h-5 w-5" />
-                </Button>
+                </Button></WithTooltip>
               </div>
               <Separator />
               <div className="p-4">

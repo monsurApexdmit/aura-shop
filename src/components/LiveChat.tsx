@@ -392,7 +392,7 @@ export default function LiveChat() {
       {/* ── Floating button ── */}
       <AnimatePresence>
         {!open && (
-          <Button asChild size="icon" className="fixed bottom-6 right-6 z-[100] size-14 rounded-full shadow-xl [&_svg]:size-6">
+          <WithTooltip content="Open chat"><Button asChild size="icon" className="fixed bottom-6 right-6 z-[100] size-14 rounded-full shadow-xl [&_svg]:size-6">
             <motion.button
               type="button"
               aria-label="Open chat"
@@ -411,7 +411,7 @@ export default function LiveChat() {
               )}
               <span className="absolute inset-0 rounded-full gradient-primary animate-ping opacity-20" />
             </motion.button>
-          </Button>
+          </Button></WithTooltip>
         )}
       </AnimatePresence>
 
@@ -459,22 +459,22 @@ export default function LiveChat() {
                     </Button>
                   </WithTooltip>
                 )}
-                <Button
+                <WithTooltip content="Minimize chat"><Button
                   variant="ghost"
                   size="icon"
                   aria-label="Minimize chat"
                   onClick={e => { e.stopPropagation(); setMinimized(m => !m); }}
                 >
                   <Minus className="h-4 w-4" />
-                </Button>
-                <Button
+                </Button></WithTooltip>
+                <WithTooltip content="Close chat"><Button
                   variant="ghost"
                   size="icon"
                   aria-label="Close chat"
                   onClick={e => { e.stopPropagation(); setOpen(false); }}
                 >
                   <X className="h-4 w-4" />
-                </Button>
+                </Button></WithTooltip>
               </div>
             </div>
 
@@ -590,7 +590,7 @@ export default function LiveChat() {
                         />
                         <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
                         <div className="mt-2 flex items-center gap-2">
-                          <Button
+                          <WithTooltip content="Attach files"><Button
                             size="icon"
                             variant="outline"
                             aria-label="Attach files"
@@ -599,8 +599,8 @@ export default function LiveChat() {
                             className="shrink-0"
                           >
                             <Paperclip className="h-4 w-4" />
-                          </Button>
-                          <Button
+                          </Button></WithTooltip>
+                          <WithTooltip content={isRecording ? "Stop recording" : "Record voice note"}><Button
                             size="icon"
                             variant={isRecording ? "destructive" : "outline"}
                             aria-label={isRecording ? "Stop recording" : "Record voice note"}
@@ -609,7 +609,7 @@ export default function LiveChat() {
                             className="shrink-0"
                           >
                             {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                          </Button>
+                          </Button></WithTooltip>
                         <Input
                           ref={inputRef}
                           value={input}
@@ -619,7 +619,7 @@ export default function LiveChat() {
                           className="flex-1"
                           disabled={isCreating || sending}
                         />
-                        <Button
+                        <WithTooltip content="Send message"><Button
                           size="icon"
                           aria-label="Send message"
                           onClick={handleSend}
@@ -627,7 +627,7 @@ export default function LiveChat() {
                           className="shrink-0"
                         >
                           <Send className="h-4 w-4" />
-                        </Button>
+                        </Button></WithTooltip>
                         </div>
                         <p className="mt-2 text-[11px] text-muted-foreground">Attach up to 5 files or record a voice note.</p>
                       </div>

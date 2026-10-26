@@ -8,6 +8,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { Separator } from "@/components/ui/separator";
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { EmptyState } from "@/components/common/EmptyState";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalPrice } = useCart();
@@ -43,9 +44,9 @@ export default function CartDrawer() {
                   <p className="text-xs text-muted-foreground">{items.length} items</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" aria-label="Close cart" onClick={() => setIsOpen(false)}>
+              <WithTooltip content="Close cart"><Button variant="ghost" size="icon" aria-label="Close cart" onClick={() => setIsOpen(false)}>
                 <X className="h-4 w-4" />
-              </Button>
+              </Button></WithTooltip>
             </div>
             <Separator />
 
@@ -90,29 +91,29 @@ export default function CartDrawer() {
                         <ItemTitle className="block truncate">{item.name}</ItemTitle>
                         <p className="text-primary font-semibold">{formatCurrency(item.price)}</p>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Button
+                          <WithTooltip content="Decrease quantity"><Button
                             variant="outline"
                             size="icon"
                             aria-label="Decrease quantity"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
                             <Minus className="h-3 w-3" />
-                          </Button>
+                          </Button></WithTooltip>
                           <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
-                          <Button
+                          <WithTooltip content="Increase quantity"><Button
                             variant="outline"
                             size="icon"
                             aria-label="Increase quantity"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3" />
-                          </Button>
+                          </Button></WithTooltip>
                         </div>
                       </ItemContent>
                       <ItemActions className="self-start">
-                        <Button variant="ghost" size="icon" aria-label={`Remove ${item.name}`} onClick={() => removeItem(item.id)}>
+                        <WithTooltip content={`Remove ${item.name}`}><Button variant="ghost" size="icon" aria-label={`Remove ${item.name}`} onClick={() => removeItem(item.id)}>
                           <X className="h-4 w-4" />
-                        </Button>
+                        </Button></WithTooltip>
                       </ItemActions>
                     </motion.div>
                     </Item>

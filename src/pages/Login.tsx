@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const Login = () => {
   const navigate = useNavigate();
@@ -130,7 +131,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                 />
-                <Button
+                <WithTooltip content={showPassword ? "Hide password" : "Show password"}><Button
                   type="button"
                   variant="ghost"
                   size="icon"
@@ -139,7 +140,7 @@ const Login = () => {
                   className="absolute right-1 top-1/2 -translate-y-1/2"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+                </Button></WithTooltip>
               </div>
             </div>
 

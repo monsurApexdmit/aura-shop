@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const MotionCard = motion.create(Card);
 
@@ -90,7 +91,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               animate={{ scale: 1, opacity: 1 }}
             >
               <ButtonGroup orientation="vertical" aria-label="Quantity in cart">
-              <Button
+              <WithTooltip content="Decrease quantity"><Button
                 size="icon"
                 aria-label="Decrease quantity"
                 onClick={() =>
@@ -100,21 +101,21 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                 }
               >
                 <Minus className="h-3.5 w-3.5" />
-              </Button>
+              </Button></WithTooltip>
               <ButtonGroupText className="justify-center px-0 py-0.5 tabular-nums">
                 {cartItem.quantity}
               </ButtonGroupText>
-              <Button
+              <WithTooltip content="Increase quantity"><Button
                 size="icon"
                 aria-label="Increase quantity"
                 onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
               >
                 <Plus className="h-3.5 w-3.5" />
-              </Button>
+              </Button></WithTooltip>
               </ButtonGroup>
             </motion.div>
           ) : (
-            <Button size="icon" asChild>
+            <WithTooltip content="Add to cart"><Button size="icon" asChild>
               <motion.button
                 whileTap={{ scale: 0.92 }}
                 onClick={handleAdd}
@@ -122,7 +123,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               >
                 <ShoppingCart className="h-4 w-4" />
               </motion.button>
-            </Button>
+            </Button></WithTooltip>
           )}
         </div>
       </Link>

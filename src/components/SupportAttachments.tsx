@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 function formatFileSize(sizeBytes: number): string {
   if (sizeBytes < 1024) return `${sizeBytes} B`;
@@ -61,9 +62,9 @@ export function SelectedAttachments({
       {attachments.map((file, index) => (
         <Badge key={`${file.name}-${index}`} variant="outline" className="gap-1 pr-1 font-normal">
           <span className="max-w-40 truncate">{file.name}</span>
-          <Button type="button" variant="ghost" size="icon" className="size-5" aria-label={`Remove ${file.name}`} onClick={() => onRemove(index)}>
+          <WithTooltip content={`Remove ${file.name}`}><Button type="button" variant="ghost" size="icon" className="size-5" aria-label={`Remove ${file.name}`} onClick={() => onRemove(index)}>
             ×
-          </Button>
+          </Button></WithTooltip>
         </Badge>
       ))}
     </div>

@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { SectionCard } from "@/components/common/SectionCard";
 import { EmptyState } from "@/components/common/EmptyState";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 interface ProductReviewsProps {
   productSlug: string;
@@ -142,8 +143,8 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
             const value = index + 1;
 
             return (
-              <Button
-                key={value}
+              <WithTooltip key={value} content={`Rate ${value} star${value > 1 ? "s" : ""}`}><Button
+               
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -154,7 +155,7 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
                 disabled={!isLoggedIn || submitReview.isPending}
               >
                 <Star className={cn("h-6 w-6", value <= selectedRating ? "fill-accent text-accent" : "text-border")} />
-              </Button>
+              </Button></WithTooltip>
             );
           })}
         </div>

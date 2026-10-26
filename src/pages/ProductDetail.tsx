@@ -25,6 +25,7 @@ import { UserAvatar } from "@/components/common/UserAvatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo, useEffect } from "react";
 import type { ProductAttribute } from "@/types/product";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const MotionCard = motion.create(Card);
 
@@ -247,7 +248,7 @@ export default function ProductDetail() {
               )}
               {/* Floating actions */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
+                <WithTooltip content={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}><Button
                   variant={isInWishlist(product.id) ? "default" : "outline"}
                   size="icon"
                   aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
@@ -255,10 +256,10 @@ export default function ProductDetail() {
                   onClick={() => toggleWishlist(product.id)}
                 >
                   <Heart className={cn("h-4 w-4", isInWishlist(product.id) ? "fill-current" : "")} />
-                </Button>
-                <Button variant="outline" size="icon" aria-label="Share">
+                </Button></WithTooltip>
+                <WithTooltip content="Share"><Button variant="outline" size="icon" aria-label="Share">
                   <Share2 className="h-4 w-4" />
-                </Button>
+                </Button></WithTooltip>
               </div>
             </Card>
             {/* Thumbnails */}
@@ -388,22 +389,22 @@ export default function ProductDetail() {
             <div className="flex flex-col gap-3 mb-6 min-[420px]:flex-row min-[420px]:items-center">
               {cartItem ? (
                 <MotionCard initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 p-1">
-                  <Button
+                  <WithTooltip content="Decrease quantity"><Button
                     variant="outline"
                     size="icon"
                     aria-label="Decrease quantity"
                     onClick={() => cartItem.quantity <= 1 ? removeItem(cartItem.id) : updateQuantity(cartItem.id, cartItem.quantity - 1)}
                   >
                     <Minus className="h-4 w-4" />
-                  </Button>
+                  </Button></WithTooltip>
                   <span className="w-14 text-center text-base font-bold text-foreground">{cartItem.quantity}</span>
-                  <Button
+                  <WithTooltip content="Increase quantity"><Button
                     size="icon"
                     aria-label="Increase quantity"
                     onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
                   >
                     <Plus className="h-4 w-4" />
-                  </Button>
+                  </Button></WithTooltip>
                 </MotionCard>
               ) : (
                 <Button

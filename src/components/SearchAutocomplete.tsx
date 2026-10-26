@@ -9,6 +9,7 @@ import { mapApiProduct } from "@/lib/mappers";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const MotionCard = motion.create(Card);
 
@@ -84,9 +85,9 @@ export default function SearchAutocomplete({ mobile, onClose }: SearchAutocomple
           autoFocus={mobile}
         />
         {query && (
-          <Button variant="ghost" size="icon" onClick={() => { setQuery(""); setDebouncedQuery(""); setOpen(false); }} className="absolute right-0 top-1/2 -translate-y-1/2">
+          <WithTooltip content="Clear search"><Button variant="ghost" size="icon" aria-label="Clear search" onClick={() => { setQuery(""); setDebouncedQuery(""); setOpen(false); }} className="absolute right-0 top-1/2 -translate-y-1/2">
             <X className="h-4 w-4" />
-          </Button>
+          </Button></WithTooltip>
         )}
       </div>
 

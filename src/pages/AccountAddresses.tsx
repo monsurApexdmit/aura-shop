@@ -21,6 +21,7 @@ import { SectionCard } from "@/components/common/SectionCard";
 const MotionCard = motion.create(Card);
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const emptyForm: AddressPayload = {
   full_name: "", phone: "", email: "", address_line1: "", address_line2: "",
@@ -150,9 +151,9 @@ export default function AccountAddresses() {
                   <SectionCard
                     title={editingId ? "Edit Address" : "New Address"}
                     actions={
-                      <Button variant="ghost" size="icon" aria-label="Close form" onClick={closeForm}>
+                      <WithTooltip content="Close form"><Button variant="ghost" size="icon" aria-label="Close form" onClick={closeForm}>
                         <X className="h-4 w-4" />
-                      </Button>
+                      </Button></WithTooltip>
                     }
                   >
 

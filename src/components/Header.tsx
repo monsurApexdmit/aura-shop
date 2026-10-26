@@ -36,6 +36,7 @@ function getCatIcon(slug: string): LucideIcon {
 import { useStorefrontPages, BUILT_IN_PAGE_SLUGS, pageHref } from "@/hooks/useStorefrontPages";
 import { StoreClosureBanner } from "@/components/StoreHours";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -136,10 +137,10 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Search" onClick={() => setSearchOpen(!searchOpen)}>
+            <WithTooltip content="Search"><Button variant="ghost" size="icon" className="md:hidden" aria-label="Search" onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-5 w-5" />
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex relative">
+            </Button></WithTooltip>
+            <WithTooltip content="Wishlist"><Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex relative">
               <Link to="/wishlist" aria-label="Wishlist">
                 <Heart className="h-5 w-5" />
                 {totalWishlistItems > 0 && (
@@ -148,16 +149,16 @@ export default function Header() {
                   </Badge>
                 )}
               </Link>
-            </Button>
+            </Button></WithTooltip>
             {/* User Menu */}
             <div ref={userMenuRef} className="relative block">
-              <Button variant="ghost" size="icon" aria-label={isLoggedIn ? "Account menu" : "Login"} onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
+              <WithTooltip content={isLoggedIn ? "Account menu" : "Login"}><Button variant="ghost" size="icon" aria-label={isLoggedIn ? "Account menu" : "Login"} onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
                 {isLoggedIn ? (
                   <UserAvatar className="size-9" name={user?.name} fallback={user?.name?.charAt(0).toUpperCase() || "U"} />
                 ) : (
                   <Link to="/login"><User className="h-5 w-5" /></Link>
                 )}
-              </Button>
+              </Button></WithTooltip>
               <AnimatePresence>
                 {userMenuOpen && isLoggedIn && (
                   <MotionCard
@@ -213,9 +214,9 @@ export default function Header() {
               </div>
             </Button>
 
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
+            <WithTooltip content={mobileOpen ? "Close menu" : "Open menu"}><Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
+            </Button></WithTooltip>
           </div>
         </div>
       </div>

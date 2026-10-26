@@ -18,6 +18,7 @@ import catGrocery from "@/assets/cat-grocery.jpg";
 import { getImageUrl } from "@/lib/api";
 import { useMemo } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const fallbackSlides = [
   {
@@ -247,7 +248,7 @@ export default function HeroSection() {
               </motion.div>
             </AnimatePresence>
 
-            <Button
+            <WithTooltip content="Previous slide"><Button
               variant="outline"
               size="icon"
               aria-label="Previous slide"
@@ -255,8 +256,8 @@ export default function HeroSection() {
               className="absolute left-3 top-1/2 hidden -translate-y-1/2 md:inline-flex opacity-0 group-hover:opacity-100"
             >
               <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button
+            </Button></WithTooltip>
+            <WithTooltip content="Next slide"><Button
               variant="outline"
               size="icon"
               aria-label="Next slide"
@@ -264,7 +265,7 @@ export default function HeroSection() {
               className="absolute right-3 top-1/2 hidden -translate-y-1/2 md:inline-flex opacity-0 group-hover:opacity-100"
             >
               <ChevronRight className="h-5 w-5" />
-            </Button>
+            </Button></WithTooltip>
 
             {/* Progress dots */}
             <SlideDots

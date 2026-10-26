@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 export interface Step {
   id: number;
@@ -71,10 +72,11 @@ export default function StepIndicator({
         return (
           <div key={step.id} className="flex items-center">
             {/* Step Circle */}
-            <Button
+            <WithTooltip content={step.label}><Button
               type="button"
               variant={isCurrent || isCompleted ? "default" : "secondary"}
               size="icon"
+              aria-label={step.label}
               onClick={() => {
                 if (isClickable && onStepClick) {
                   onStepClick(step.id);
@@ -88,7 +90,7 @@ export default function StepIndicator({
               ) : (
                 <StepIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
-            </Button>
+            </Button></WithTooltip>
 
             {/* Step Label */}
             <div className="flex flex-col items-center gap-1.5 ml-1.5 mr-1.5 sm:ml-2 sm:mr-2">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 export default function BackToTop() {
   const [visible, setVisible] = useState(false);
@@ -15,7 +16,7 @@ export default function BackToTop() {
   return (
     <AnimatePresence>
       {visible && (
-        <Button asChild size="icon" className="fixed bottom-24 right-6 z-50 size-12 rounded-full shadow-lg [&_svg]:size-5">
+        <WithTooltip content="Back to top"><Button asChild size="icon" className="fixed bottom-24 right-6 z-50 size-12 rounded-full shadow-lg [&_svg]:size-5">
           <motion.button
             type="button"
             initial={{ opacity: 0, scale: 0.8 }}
@@ -26,7 +27,7 @@ export default function BackToTop() {
           >
             <ArrowUp className="h-5 w-5" />
           </motion.button>
-        </Button>
+        </Button></WithTooltip>
       )}
     </AnimatePresence>
   );

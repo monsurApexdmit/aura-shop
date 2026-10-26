@@ -23,6 +23,7 @@ import { useCreateReturn } from "@/hooks/useReturns"
 import { RETURN_REASONS } from "@/services/returnApi"
 import type { ApiOrder } from "@/services/orderApi"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 interface SelectedItem {
   product_id: number
@@ -194,13 +195,13 @@ export default function NewReturnRequest() {
                             <div className="flex items-center gap-3">
                               <span className="text-xs text-muted-foreground w-16">Qty</span>
                               <div className="flex items-center gap-2">
-                                <Button variant="outline" size="icon" aria-label="Decrease quantity" onClick={() => updateQty(selectedItems.indexOf(sel), -1)}>
+                                <WithTooltip content="Decrease quantity"><Button variant="outline" size="icon" aria-label="Decrease quantity" onClick={() => updateQty(selectedItems.indexOf(sel), -1)}>
                                   <Minus className="h-3 w-3" />
-                                </Button>
+                                </Button></WithTooltip>
                                 <span className="w-8 text-center text-sm font-semibold">{sel.quantity}</span>
-                                <Button variant="outline" size="icon" aria-label="Increase quantity" onClick={() => updateQty(selectedItems.indexOf(sel), 1)}>
+                                <WithTooltip content="Increase quantity"><Button variant="outline" size="icon" aria-label="Increase quantity" onClick={() => updateQty(selectedItems.indexOf(sel), 1)}>
                                   <Plus className="h-3 w-3" />
-                                </Button>
+                                </Button></WithTooltip>
                                 <span className="text-xs text-muted-foreground">/ {sel.max_qty}</span>
                               </div>
                             </div>

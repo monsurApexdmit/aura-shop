@@ -32,6 +32,7 @@ import { SectionCard } from "@/components/common/SectionCard";
 import { SectionTitle } from "@/components/common/SectionTitle";
 import { InfoList, InfoRow } from "@/components/common/InfoList";
 import { EmptyState } from "@/components/common/EmptyState";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "Name is required").max(100),
@@ -776,9 +777,9 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
               <ItemTitle className="text-xs">{couponResult.code} — {couponResult.campaign_name}</ItemTitle>
             </ItemContent>
             <ItemActions>
-              <Button variant="ghost" size="icon" onClick={onRemoveCoupon} aria-label="Remove coupon">
+              <WithTooltip content="Remove coupon"><Button variant="ghost" size="icon" onClick={onRemoveCoupon} aria-label="Remove coupon">
                 <X className="h-3.5 w-3.5" />
-              </Button>
+              </Button></WithTooltip>
             </ItemActions>
           </Item>
         ) : (
