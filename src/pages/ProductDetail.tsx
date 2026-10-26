@@ -1,6 +1,7 @@
+import { cn } from "@/lib/utils"
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Check, Package, Tag } from "lucide-react";
+import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Package, Tag } from "lucide-react";
 import { useProduct, useProducts } from "@/hooks/useProducts";
 import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
@@ -10,12 +11,22 @@ import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ImageThumbButton } from "@/components/common/ImageThumbButton";
+import { InfoList, InfoRow } from "@/components/common/InfoList";
+import { SwatchPicker } from "@/components/common/SwatchPicker";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo, useEffect } from "react";
 import type { ProductAttribute } from "@/types/product";
+
+const MotionCard = motion.create(Card);
 
 // Color map for visual swatches
 const COLOR_MAP: Record<string, string> = {
@@ -100,23 +111,23 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-background">
         <div className="bg-muted/40 border-b border-border">
           <div className="container py-4">
-            <Skeleton className="h-4 w-48 rounded" />
-            <Skeleton className="h-6 w-64 rounded mt-2" />
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-6 w-64 mt-2" />
           </div>
         </div>
         <div className="container py-8 md:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
             <div className="space-y-4">
-              <Skeleton className="aspect-square rounded-2xl" />
+              <Skeleton className="aspect-square" />
               <div className="flex gap-3">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-20 h-20 rounded-xl" />)}
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-20 h-20" />)}
               </div>
             </div>
             <div className="space-y-4">
-              <Skeleton className="h-8 w-3/4 rounded" />
-              <Skeleton className="h-6 w-1/2 rounded" />
-              <Skeleton className="h-24 w-full rounded-2xl" />
-              <Skeleton className="h-12 w-48 rounded-xl" />
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-12 w-48" />
             </div>
           </div>
         </div>
@@ -128,11 +139,12 @@ export default function ProductDetail() {
   if (!product) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Product Not Found</h1>
-          <p className="text-muted-foreground mb-6">The product you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate("/shop")} className="rounded-xl">Back to Shop</Button>
-        </div>
+        <EmptyState
+          icon={Package}
+          title="Product Not Found"
+          description="The product you're looking for doesn't exist."
+          action={<Button onClick={() => navigate("/shop")}>Back to Shop</Button>}
+        />
       </div>
     );
   }
@@ -205,7 +217,7 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
           {/* Image Gallery */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-            <div className="relative aspect-square rounded-2xl border border-border bg-muted/20 overflow-hidden mb-4 group">
+            <Card className="relative aspect-square overflow-hidden mb-4 group">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={selectedImage}
@@ -222,46 +234,46 @@ export default function ProductDetail() {
               {(discount > 0 || product.badge) && (
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
                   {discount > 0 && (
-                    <span className="px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider gradient-accent text-accent-foreground">
+                    <Badge variant="destructive" className="uppercase">
                       {discount}% Off
-                    </span>
+                    </Badge>
                   )}
                   {product.badge && (
-                    <span className="px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider gradient-primary text-primary-foreground">
+                    <Badge className="uppercase">
                       {product.badge}
-                    </span>
+                    </Badge>
                   )}
                 </div>
               )}
               {/* Floating actions */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
-                  variant="outline"
+                  variant={isInWishlist(product.id) ? "default" : "outline"}
                   size="icon"
+                  aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-pressed={isInWishlist(product.id)}
                   onClick={() => toggleWishlist(product.id)}
-                  className={`rounded-full h-10 w-10 backdrop-blur-sm border-border/50 ${isInWishlist(product.id) ? "bg-accent text-accent-foreground" : "bg-background/80"}`}
                 >
-                  <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+                  <Heart className={cn("h-4 w-4", isInWishlist(product.id) ? "fill-current" : "")} />
                 </Button>
-                <Button variant="outline" size="icon" className="rounded-full h-10 w-10 bg-background/80 backdrop-blur-sm border-border/50">
+                <Button variant="outline" size="icon" aria-label="Share">
                   <Share2 className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </Card>
             {/* Thumbnails */}
             <div className="flex gap-3 overflow-x-auto pb-2">
               {images.map((img, i) => (
-                <motion.button
+                <ImageThumbButton
                   key={i}
+                  src={img}
+                  aria-label={`Show image ${i + 1}`}
+                  selected={selectedImage === i}
                   onClick={() => setSelectedImage(i)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-20 h-20 rounded-xl border-2 overflow-hidden bg-muted/20 transition-all shrink-0 ${
-                    selectedImage === i ? "border-primary ring-2 ring-primary/20 shadow-md" : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-contain p-2" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }} />
-                </motion.button>
+                  className="size-20"
+                  imgClassName="object-contain p-2"
+                  onImageError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
+                />
               ))}
             </div>
           </motion.div>
@@ -269,11 +281,11 @@ export default function ProductDetail() {
           {/* Product Info */}
           <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="text-[10px] uppercase tracking-widest font-semibold text-primary border-primary/30">
+              <Badge variant="outline" className="uppercase">
                 {product.category}
               </Badge>
               {currentStock > 0 && currentStock <= 5 && (
-                <Badge variant="destructive" className="text-[10px]">Only {currentStock} left!</Badge>
+                <Badge variant="destructive">Only {currentStock} left!</Badge>
               )}
             </div>
 
@@ -285,7 +297,7 @@ export default function ProductDetail() {
             <div className="flex items-center gap-3 mb-5">
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border"}`} />
+                  <Star key={i} className={cn("h-4 w-4", i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border")} />
                 ))}
               </div>
               <span className="text-sm font-semibold text-foreground">{product.rating}</span>
@@ -293,14 +305,14 @@ export default function ProductDetail() {
             </div>
 
             {/* Price Block */}
-            <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 mb-6">
+            <Card className="p-4 mb-6">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="font-display text-3xl font-bold text-foreground">{formatCurrency(currentPrice)}</span>
                 {originalPrice && originalPrice > currentPrice && (
                   <span className="text-lg text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
                 )}
                 {discount > 0 && (
-                  <Badge className="gradient-accent text-accent-foreground border-0 text-xs">
+                  <Badge variant="secondary">
                     Save {formatCurrency(originalPrice! - currentPrice)}
                   </Badge>
                 )}
@@ -316,76 +328,57 @@ export default function ProductDetail() {
                   )}
                 </span>
               </div>
-            </div>
+            </Card>
 
             {/* Variant Selectors */}
             {attributes.length > 0 && (
               <div className="space-y-5 mb-6">
                 {attributes.map((attr) => (
                   <div key={attr.name}>
-                    <label className="text-sm font-semibold text-foreground mb-2.5 block">
+                    <Label className="mb-2.5 block">
                       {attr.displayName}: <span className="text-primary font-bold">{selectedAttributes[attr.name]}</span>
-                    </label>
+                    </Label>
                     {isColorAttribute(attr.displayName) ? (
-                      <div className="flex flex-wrap gap-2.5">
-                        {attr.values.map((val) => {
-                          const hex = COLOR_MAP[val.toLowerCase()] || "#888";
-                          const selected = selectedAttributes[attr.name] === val;
-                          return (
-                            <motion.button
-                              key={val}
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
-                              className={`relative w-10 h-10 rounded-full border-2 transition-all ${
-                                selected ? "border-primary ring-2 ring-primary/30 shadow-lg" : "border-border hover:border-primary/50"
-                              }`}
-                              title={val}
-                            >
-                              <span className="absolute inset-1 rounded-full" style={{ backgroundColor: hex }} />
-                              {selected && (
-                                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute inset-0 flex items-center justify-center">
-                                  <Check className="h-4 w-4 text-white drop-shadow-md" />
-                                </motion.span>
-                              )}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
+                      <SwatchPicker
+                        aria-label={attr.displayName}
+                        options={attr.values.map((v) => ({ value: v, label: v, color: COLOR_MAP[v.toLowerCase()] || "#888" }))}
+                        value={selectedAttributes[attr.name]}
+                        onValueChange={(val) => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
+                      />
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {attr.values.map((val) => {
                           const selected = selectedAttributes[attr.name] === val;
                           return (
-                            <motion.button
-                              key={val}
-                              whileHover={{ scale: 1.03 }}
-                              whileTap={{ scale: 0.97 }}
-                              onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
-                              className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
-                                selected
-                                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                              }`}
-                            >
-                              {val}
-                            </motion.button>
+                            <Button key={val} variant={selected ? "default" : "outline"} asChild>
+                              <motion.button
+                                type="button"
+                                aria-pressed={selected}
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                onClick={() => setSelectedAttributes((p) => ({ ...p, [attr.name]: val }))}
+                              >
+                                {val}
+                              </motion.button>
+                            </Button>
                           );
                         })}
                       </div>
                     )}
                   </div>
                 ))}
-                <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-medium text-foreground">Available stock</span>
-                    {currentStock > 0 ? (
-                      <span className="font-semibold text-primary">{currentStock} unit{currentStock === 1 ? "" : "s"}</span>
-                    ) : (
-                      <span className="font-semibold text-destructive">Out of stock</span>
-                    )}
-                  </div>
-                </div>
+                <Card className="px-4 py-3">
+                  <InfoList>
+                    <InfoRow
+                      label="Available stock"
+                      value={currentStock > 0 ? (
+                        <span className="text-primary">{currentStock} unit{currentStock === 1 ? "" : "s"}</span>
+                      ) : (
+                        <span className="text-destructive">Out of stock</span>
+                      )}
+                    />
+                  </InfoList>
+                </Card>
               </div>
             )}
 
@@ -394,27 +387,30 @@ export default function ProductDetail() {
             {/* Add to Cart */}
             <div className="flex flex-col gap-3 mb-6 min-[420px]:flex-row min-[420px]:items-center">
               {cartItem ? (
-                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 border border-border rounded-xl p-1 bg-muted/30">
-                  <button
+                <MotionCard initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 p-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Decrease quantity"
                     onClick={() => cartItem.quantity <= 1 ? removeItem(cartItem.id) : updateQuantity(cartItem.id, cartItem.quantity - 1)}
-                    className="w-11 h-11 rounded-lg border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
                   >
                     <Minus className="h-4 w-4" />
-                  </button>
+                  </Button>
                   <span className="w-14 text-center text-base font-bold text-foreground">{cartItem.quantity}</span>
-                  <button
+                  <Button
+                    size="icon"
+                    aria-label="Increase quantity"
                     onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}
-                    className="w-11 h-11 rounded-lg gradient-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
                   >
                     <Plus className="h-4 w-4" />
-                  </button>
-                </motion.div>
+                  </Button>
+                </MotionCard>
               ) : (
                 <Button
                   onClick={handleAdd}
                   size="lg"
                   disabled={currentStock === 0}
-                  className="rounded-xl gap-2 flex-1 h-12 text-base min-[420px]:max-w-xs"
+                  className="gap-2 flex-1 min-[420px]:max-w-xs"
                 >
                   <ShoppingCart className="h-5 w-5" />
                   {currentStock === 0 ? "Out of Stock" : "Add to Cart"}
@@ -431,11 +427,11 @@ export default function ProductDetail() {
                 { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
                 { icon: RotateCcw, title: "Easy Returns", sub: "30-Day Policy" },
               ].map(({ icon: Icon, title, sub }) => (
-                <div key={title} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 text-center border border-border/30">
+                <Card key={title} className="flex flex-col items-center gap-2 p-3 text-center">
                   <Icon className="h-5 w-5 text-primary" />
                   <span className="text-[11px] font-medium text-foreground leading-tight">{title}</span>
                   <span className="text-[10px] text-muted-foreground">{sub}</span>
-                </div>
+                </Card>
               ))}
             </div>
           </motion.div>
@@ -447,28 +443,28 @@ export default function ProductDetail() {
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1 h-5 bg-primary rounded-full" />
               <h3 className="text-base font-semibold text-foreground">What's in this bundle</h3>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{product.bundleItems.length} items</span>
+              <Badge variant="secondary">{product.bundleItems.length} items</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {product.bundleItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/40">
-                    {item.image ? (
-                      <img src={item.image} alt={item.productName} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                        <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{item.productName}</p>
-                    {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">×{item.quantity}</span>
-                  </div>
-                </div>
+                <Item key={i} variant="outline" size="sm" className="flex-nowrap">
+                  <ItemMedia>
+                    <UserAvatar
+                      shape="square"
+                      className="size-12"
+                      src={item.image}
+                      name={item.productName}
+                      fallback={<Package className="h-5 w-5 opacity-40" />}
+                    />
+                  </ItemMedia>
+                  <ItemContent className="min-w-0">
+                    <ItemTitle className="block w-full truncate">{item.productName}</ItemTitle>
+                    {item.sku && <ItemDescription className="text-xs">SKU: {item.sku}</ItemDescription>}
+                  </ItemContent>
+                  <ItemActions>
+                    <Badge variant="secondary">×{item.quantity}</Badge>
+                  </ItemActions>
+                </Item>
               ))}
             </div>
           </div>
@@ -477,10 +473,10 @@ export default function ProductDetail() {
         {/* Product Tabs */}
         <div className="mt-16">
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="w-full justify-start overflow-x-auto rounded-xl bg-muted/50 p-1 h-auto">
-              <TabsTrigger value="description" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Description</TabsTrigger>
-              <TabsTrigger value="specifications" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Specifications</TabsTrigger>
-              <TabsTrigger value="reviews" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm">Reviews ({product.reviews})</TabsTrigger>
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="description">Description</TabsTrigger>
+              <TabsTrigger value="specifications">Specifications</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews ({product.reviews})</TabsTrigger>
             </TabsList>
             <TabsContent value="description" className="mt-6">
               <div className="prose prose-sm max-w-none text-muted-foreground">
@@ -490,28 +486,16 @@ export default function ProductDetail() {
               </div>
             </TabsContent>
             <TabsContent value="specifications" className="mt-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">Category</span>
-                  <span className="font-medium text-foreground">{product.category}</span>
-                </div>
-                <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">SKU</span>
-                  <span className="font-medium text-foreground">{currentSku}</span>
-                </div>
+              <InfoList className="grid-cols-1 gap-3 sm:grid-cols-2">
+                <InfoRow label="Category" value={product.category} />
+                <InfoRow label="SKU" value={currentSku} />
                 {attributes.map((attr) => (
-                  <div key={attr.name} className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
-                    <span className="text-muted-foreground">{attr.displayName}</span>
-                    <span className="font-medium text-foreground text-right">{attr.values.join(", ")}</span>
-                  </div>
+                  <InfoRow key={attr.name} label={attr.displayName} value={attr.values.join(", ")} />
                 ))}
                 {product.variants && product.variants.length > 0 && (
-                  <div className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/30 text-sm">
-                    <span className="text-muted-foreground">Variants</span>
-                    <span className="font-medium text-foreground">{product.variants.length} options</span>
-                  </div>
+                  <InfoRow label="Variants" value={`${product.variants.length} options`} />
                 )}
-              </div>
+              </InfoList>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
             <ProductReviews productSlug={product.slug} productRating={product.rating} reviewCount={product.reviews} />
@@ -524,11 +508,11 @@ export default function ProductDetail() {
           <div className="mt-16">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">Related Products</h2>
-              <Link to={`/shop?cat=${product.category.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-")}`}>
-                <Button variant="ghost" size="sm" className="gap-1 text-primary">
+              <Button asChild variant="ghost" size="sm" className="gap-1">
+                <Link to={`/shop?cat=${product.category.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-")}`}>
                   View All <ChevronRight className="h-4 w-4" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {relatedProducts.map((p, i) => (

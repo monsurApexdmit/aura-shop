@@ -3,8 +3,22 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { addressApi, type AddressPayload } from "@/services/addressApi";
-import { MapPin, ChevronRight, Plus, Trash2, Edit2, X, Check, Loader2 } from "lucide-react";
+import { MapPin, ChevronRight, Plus, Trash2, Edit2, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { EmptyState } from "@/components/common/EmptyState";
+import { FormField } from "@/components/common/FormField";
+import { PageHeader } from "@/components/common/PageHeader";
+import { SectionCard } from "@/components/common/SectionCard";
+
+const MotionCard = motion.create(Card);
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 
@@ -57,7 +71,7 @@ export default function AccountAddresses() {
     onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to delete address"),
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const closeForm = () => {
@@ -111,17 +125,18 @@ export default function AccountAddresses() {
               <span className="text-foreground font-medium">Addresses</span>
             </div>
 
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="font-display font-bold text-2xl text-foreground">Address Book</h1>
-              {!showForm && (
-                <button
+            <PageHeader
+              className="mb-6 items-center"
+              title="Address Book"
+              actions={!showForm && (
+                <Button
+                  size="sm"
                   onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}
-                  className="gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 hover:opacity-90 transition-opacity shadow-lg"
                 >
                   <Plus className="h-3.5 w-3.5" /> Add Address
-                </button>
+                </Button>
               )}
-            </div>
+            />
 
             {/* Form */}
             <AnimatePresence>
@@ -132,13 +147,14 @@ export default function AccountAddresses() {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden mb-6"
                 >
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-5">
-                      <h2 className="font-display font-bold text-sm">{editingId ? "Edit Address" : "New Address"}</h2>
-                      <button onClick={closeForm} className="text-muted-foreground hover:text-foreground">
+                  <SectionCard
+                    title={editingId ? "Edit Address" : "New Address"}
+                    actions={
+                      <Button variant="ghost" size="icon" aria-label="Close form" onClick={closeForm}>
                         <X className="h-4 w-4" />
-                      </button>
-                    </div>
+                      </Button>
+                    }
+                  >
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       {[
@@ -151,57 +167,58 @@ export default function AccountAddresses() {
                         { name: "postal_code", label: "ZIP / Postal Code", placeholder: "10001" },
                         { name: "country", label: "Country", placeholder: "United States" },
                       ].map((f) => (
-                        <div key={f.name} className={(f as any).full ? "sm:col-span-2" : ""}>
-                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">{f.label}</label>
-                          <input
+                        <FormField key={f.name} label={f.label} htmlFor={`address-${f.name}`} className={(f as any).full ? "sm:col-span-2" : ""}>
+                          <Input
+                            id={`address-${f.name}`}
                             name={f.name}
                             value={(form as any)[f.name]}
                             onChange={handleChange}
                             placeholder={f.placeholder}
-                            className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                            className="w-full"
                           />
-                        </div>
+                        </FormField>
                       ))}
 
-                      <div>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Address Type</label>
-                        <select
+                      <FormField label="Address Type" htmlFor="address-address_type">
+                        <Select
                           name="address_type"
                           value={form.address_type}
-                          onChange={handleChange}
-                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                          onValueChange={(v) => setForm((f) => ({ ...f, address_type: v }))}
                         >
-                          <option value="home">Home</option>
-                          <option value="work">Work</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
+                          <SelectTrigger id="address-address_type" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="home">Home</SelectItem>
+                            <SelectItem value="work">Work</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormField>
                     </div>
 
                     <div className="flex items-center gap-2 mt-4">
-                      <button
-                        onClick={() => setForm((f) => ({ ...f, is_default: !f.is_default }))}
-                        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${form.is_default ? "bg-primary border-primary" : "border-border"}`}
-                      >
-                        {form.is_default && <Check className="h-3 w-3 text-primary-foreground" />}
-                      </button>
-                      <span className="text-sm text-muted-foreground">Set as default address</span>
+                      <Checkbox
+                        id="address-is_default"
+                        checked={!!form.is_default}
+                        onCheckedChange={(v) => setForm((f) => ({ ...f, is_default: v === true }))}
+                      />
+                      <Label htmlFor="address-is_default" className="text-muted-foreground">Set as default address</Label>
                     </div>
 
                     <div className="flex gap-3 mt-5">
-                      <button
+                      <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="gradient-primary text-primary-foreground px-6 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2 disabled:opacity-70"
                       >
-                        {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {isSaving && <Spinner />}
                         {editingId ? "Update Address" : "Save Address"}
-                      </button>
-                      <button onClick={closeForm} className="px-5 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                      </Button>
+                      <Button variant="outline" onClick={closeForm}>
                         Cancel
-                      </button>
+                      </Button>
                     </div>
-                  </div>
+                  </SectionCard>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -209,25 +226,26 @@ export default function AccountAddresses() {
             {/* Address Cards */}
             {isLoading ? (
               <div className="grid sm:grid-cols-2 gap-4">
-                {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+                {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-40" />)}
               </div>
             ) : addresses.length === 0 ? (
-              <div className="text-center py-16 bg-card border border-border rounded-2xl">
-                <MapPin className="h-14 w-14 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No addresses saved yet</p>
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="text-sm text-primary font-semibold hover:underline mt-2 inline-block"
-                >
-                  Add your first address
-                </button>
-              </div>
+              <EmptyState
+                bordered
+                className="py-16"
+                icon={MapPin}
+                title="No addresses saved yet"
+                action={
+                  <Button variant="link" onClick={() => setShowForm(true)}>
+                    Add your first address
+                  </Button>
+                }
+              />
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
                 {addresses.map((addr) => (
-                  <motion.div key={addr.id} layout className="bg-card border border-border rounded-2xl p-5 relative">
+                  <MotionCard key={addr.id} layout className="p-5 relative">
                     {addr.is_default && (
-                      <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary">Default</span>
+                      <Badge variant="secondary" className="absolute top-3 right-3">Default</Badge>
                     )}
                     <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 capitalize">{addr.address_type}</p>
                     <p className="font-semibold text-sm text-foreground">{addr.full_name}</p>
@@ -239,21 +257,23 @@ export default function AccountAddresses() {
                     {addr.country && <p className="text-sm text-muted-foreground">{addr.country}</p>}
                     {addr.phone && <p className="text-xs text-muted-foreground mt-1">{addr.phone}</p>}
                     <div className="flex gap-2 mt-4">
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => startEdit(addr)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
                       >
                         <Edit2 className="h-3 w-3" /> Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() => deleteMutation.mutate(addr.id)}
                         disabled={deleteMutation.isPending}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-3 w-3" /> Remove
-                      </button>
+                      </Button>
                     </div>
-                  </motion.div>
+                  </MotionCard>
                 ))}
               </div>
             )}

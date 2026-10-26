@@ -1,14 +1,22 @@
+import { cn } from "@/lib/utils"
 import { useState, useRef, useEffect, useCallback, type ChangeEvent } from "react";
-import { MessageCircle, X, Send, Minus, RefreshCw, ExternalLink, Paperclip, Mic, Square } from "lucide-react";
+import { MessageCircle, X, Send, Minus, ExternalLink, Paperclip, Mic, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { WithTooltip } from "@/components/common/WithTooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { supportApi, type SupportMessage, type TicketCategory } from "@/services/supportApi";
 import { subscribeToSupportTicket, subscribeToGuestSupportTicket } from "@/lib/reverb";
 import { Link } from "react-router-dom";
 import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+
+const MotionCard = motion.create(Card);
 
 // ─── Notification beep via Web Audio API (no sound file needed) ──────────────
 function playNotificationBeep() {
@@ -105,11 +113,11 @@ function GuestForm({ initialText, onSubmit }: GuestFormProps) {
       <p className="text-sm text-muted-foreground">
         Before we connect you, please share your name and email so our team can follow up.
       </p>
-      <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)} className="h-9 text-sm" />
-      <Input placeholder="Your email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="h-9 text-sm" />
+      <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)} aria-label="Your name" />
+      <Input placeholder="Your email" type="email" value={email} onChange={e => setEmail(e.target.value)} aria-label="Your email" />
       <p className="text-xs text-muted-foreground italic truncate">Message: "{initialText}"</p>
       <Button
-        className="w-full gradient-primary text-primary-foreground h-9 text-sm"
+        className="w-full"
         disabled={!name.trim() || !email.trim()}
         onClick={() => onSubmit(name.trim(), email.trim())}
       >
@@ -384,37 +392,40 @@ export default function LiveChat() {
       {/* ── Floating button ── */}
       <AnimatePresence>
         {!open && (
-          <motion.button
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => { setOpen(true); setMinimized(false); }}
-            className="fixed bottom-6 right-6 z-[100] w-14 h-14 rounded-full gradient-primary text-primary-foreground shadow-xl flex items-center justify-center"
-          >
-            <MessageCircle className="h-6 w-6" />
-            {unread > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-            <span className="absolute inset-0 rounded-full gradient-primary animate-ping opacity-20" />
-          </motion.button>
+          <Button asChild size="icon" className="fixed bottom-6 right-6 z-[100] size-14 rounded-full shadow-xl [&_svg]:size-6">
+            <motion.button
+              type="button"
+              aria-label="Open chat"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => { setOpen(true); setMinimized(false); }}
+            >
+              <MessageCircle />
+              {unread > 0 && (
+                <Badge variant="destructive" className="absolute -right-1 -top-1 h-5 min-w-5 justify-center rounded-full px-1">
+                  {unread > 9 ? "9+" : unread}
+                </Badge>
+              )}
+              <span className="absolute inset-0 rounded-full gradient-primary animate-ping opacity-20" />
+            </motion.button>
+          </Button>
         )}
       </AnimatePresence>
 
       {/* ── Chat window ── */}
       <AnimatePresence>
         {open && (
-          <motion.div
+          <MotionCard
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={minimized
               ? { opacity: 1, y: 0, scale: 1 }
               : { opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 right-6 z-[100] w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl border border-border overflow-hidden bg-background flex flex-col"
+            className="fixed bottom-6 right-6 z-[100] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
             style={minimized ? { height: 56 } : { height: 500, maxHeight: "calc(100vh - 6rem)" }}
           >
             {/* Header */}
@@ -423,9 +434,7 @@ export default function LiveChat() {
               onClick={() => minimized && setMinimized(false)}
             >
               <div className="relative">
-                <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                  <MessageCircle className="h-4 w-4" />
-                </div>
+                <UserAvatar className="size-9" fallback={<MessageCircle className="h-4 w-4" />} />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-primary" />
               </div>
               <div className="flex-1 min-w-0">
@@ -436,29 +445,36 @@ export default function LiveChat() {
               </div>
               <div className="flex items-center gap-1">
                 {session && !minimized && (
-                  <Link
-                    to={session.isGuest
-                      ? `/support-guest/${session.ticketNumber}?token=${session.guestToken}`
-                      : `/support`}
-                    onClick={() => setOpen(false)}
-                    className="p-1.5 rounded-lg hover:bg-primary-foreground/10 transition-colors"
-                    title="Open full support page"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Link>
+                  <WithTooltip content="Open full support page">
+                    <Button asChild variant="ghost" size="icon">
+                      <Link
+                        to={session.isGuest
+                          ? `/support-guest/${session.ticketNumber}?token=${session.guestToken}`
+                          : `/support`}
+                        onClick={() => setOpen(false)}
+                        aria-label="Open full support page"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </WithTooltip>
                 )}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Minimize chat"
                   onClick={e => { e.stopPropagation(); setMinimized(m => !m); }}
-                  className="p-1.5 rounded-lg hover:bg-primary-foreground/10 transition-colors"
                 >
                   <Minus className="h-4 w-4" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close chat"
                   onClick={e => { e.stopPropagation(); setOpen(false); }}
-                  className="p-1.5 rounded-lg hover:bg-primary-foreground/10 transition-colors"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -473,7 +489,7 @@ export default function LiveChat() {
                 {/* ── Creating spinner ── */}
                 {phase === "creating" && (
                   <div className="flex-1 flex items-center justify-center">
-                    <RefreshCw className="h-5 w-5 text-primary animate-spin" />
+                    <Spinner className="size-5 text-primary" />
                     <span className="ml-2 text-sm text-muted-foreground">Connecting…</span>
                   </div>
                 )}
@@ -498,22 +514,20 @@ export default function LiveChat() {
                           key={msg.id}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className={`flex ${msg.sender === "user" ? "justify-end" : msg.sender === "system" ? "justify-center" : "justify-start"}`}
+                          className={cn("flex", msg.sender === "user" ? "justify-end" : msg.sender === "system" ? "justify-center" : "justify-start")}
                         >
                           {msg.sender === "system" ? (
-                            <span className="text-[11px] text-muted-foreground bg-muted px-3 py-1 rounded-full">{msg.text}</span>
+                            <Badge variant="secondary" className="font-normal text-muted-foreground">{msg.text}</Badge>
                           ) : (
-                            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                              msg.sender === "user"
+                            <div className={cn("max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed", msg.sender === "user"
                                 ? "gradient-primary text-primary-foreground rounded-br-md"
-                                : "bg-card text-card-foreground border border-border rounded-bl-md shadow-sm"
-                            }`}>
+                                : "bg-card text-card-foreground border border-border rounded-bl-md shadow-sm")}>
                               {msg.sender === "staff" && (
                                 <p className="text-[10px] font-semibold text-primary mb-0.5">Support Agent</p>
                               )}
                               {msg.text ? <p>{msg.text}</p> : null}
                               <MessageAttachments attachments={msg.attachments} />
-                              <p className={`text-[10px] mt-1 ${msg.sender === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                              <p className={cn("text-[10px] mt-1", msg.sender === "user" ? "text-primary-foreground/60" : "text-muted-foreground")}>
                                 {msg.time}
                               </p>
                             </div>
@@ -541,13 +555,14 @@ export default function LiveChat() {
                     {phase === "idle" && (
                       <div className="px-4 py-2 border-t border-border flex flex-wrap gap-1.5 bg-background">
                         {quickReplies.map(q => (
-                          <button
+                          <Button
                             key={q.label}
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleQuickReply(q)}
-                            className="text-xs px-3 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
                           >
                             {q.label}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     )}
@@ -565,7 +580,7 @@ export default function LiveChat() {
                     {/* Input — shown in idle and chatting */}
                     {(phase === "idle" || phase === "chatting") && (
                       <div className="p-3 border-t border-border bg-background shrink-0">
-                        <input
+                        <Input
                           ref={fileInputRef}
                           type="file"
                           multiple
@@ -578,18 +593,20 @@ export default function LiveChat() {
                           <Button
                             size="icon"
                             variant="outline"
+                            aria-label="Attach files"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isCreating || sending}
-                            className="rounded-full h-9 w-9 shrink-0"
+                            className="shrink-0"
                           >
                             <Paperclip className="h-4 w-4" />
                           </Button>
                           <Button
                             size="icon"
                             variant={isRecording ? "destructive" : "outline"}
+                            aria-label={isRecording ? "Stop recording" : "Record voice note"}
                             onClick={handleVoiceToggle}
                             disabled={isCreating || sending}
-                            className="rounded-full h-9 w-9 shrink-0"
+                            className="shrink-0"
                           >
                             {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                           </Button>
@@ -599,14 +616,15 @@ export default function LiveChat() {
                           onChange={e => setInput(e.target.value)}
                           onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
                           placeholder={phase === "idle" ? "Type to start a conversation…" : "Type a message…"}
-                          className="flex-1 rounded-full border-muted bg-muted/50 text-sm h-9"
+                          className="flex-1"
                           disabled={isCreating || sending}
                         />
                         <Button
                           size="icon"
+                          aria-label="Send message"
                           onClick={handleSend}
                           disabled={(!input.trim() && attachments.length === 0) || isCreating || sending}
-                          className="rounded-full h-9 w-9 shrink-0 gradient-primary text-primary-foreground"
+                          className="shrink-0"
                         >
                           <Send className="h-4 w-4" />
                         </Button>
@@ -618,7 +636,7 @@ export default function LiveChat() {
                 )}
               </>
             )}
-          </motion.div>
+          </MotionCard>
         )}
       </AnimatePresence>
     </>

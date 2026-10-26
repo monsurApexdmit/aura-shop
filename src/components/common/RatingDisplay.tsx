@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { Star } from "lucide-react";
 
 interface RatingDisplayProps {
@@ -67,24 +68,22 @@ export default function RatingDisplay({
   const ratingFloor = Math.floor(rating);
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={cn("flex items-center gap-2", className)}>
       {/* Stars */}
       <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            className={`${starSize} transition-colors ${
-              i < ratingFloor
+            className={cn(starSize, "transition-colors", i < ratingFloor
                 ? "fill-accent text-accent"
-                : "text-muted-foreground/30"
-            }`}
+                : "text-muted-foreground/30")}
           />
         ))}
       </div>
 
       {/* Rating Text and Count */}
       {showCount && (
-        <div className={`flex items-center gap-1 ${textSize}`}>
+        <div className={cn("flex items-center gap-1", textSize)}>
           <span className="font-semibold text-foreground">{rating.toFixed(1)}</span>
           <span className="text-muted-foreground">({reviewCount})</span>
           {percentage && (

@@ -71,7 +71,7 @@ describe("FilterPanel", () => {
       <FilterPanel {...mockProps} activeCatSlug={null} />
     );
     const allProductsBtn = screen.getByText("All Products");
-    expect(allProductsBtn).toHaveClass("bg-primary/10");
+    expect(allProductsBtn).toHaveClass("bg-secondary");
   });
 
   it("applies custom className", () => {

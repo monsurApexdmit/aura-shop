@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { ReactNode } from "react";
 
 type GridColumns = 1 | 2 | 3 | 4;
@@ -96,7 +97,7 @@ export default function GridLayout({
   const colClass = `grid ${colClasses[smColumns].sm} ${colClasses[actualMdColumns].md} ${colClasses[columns].lg}`;
 
   return (
-    <div className={`${colClass} ${gapClass} ${className}`}>
+    <div className={cn(colClass, gapClass, className)}>
       {children}
     </div>
   );

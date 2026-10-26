@@ -1,10 +1,16 @@
+import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { ChevronRight, Monitor, Shirt, Pill, ShoppingBasket, Home, Sparkles, Dumbbell, BookOpen, Baby, Coffee, Wrench, Gamepad2, Tag } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
+
+const MotionCard = motion.create(Card);
 
 const ICON_MAP: Record<string, LucideIcon> = {
   "electronics":       Monitor,
@@ -94,12 +100,12 @@ export default function CategoryGrid() {
           {isLoading ? (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <Skeleton className="h-28 rounded-2xl" />
-                <Skeleton className="h-28 rounded-2xl" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
               </div>
               <div className="mt-3 flex gap-2 overflow-hidden">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-9 w-24 shrink-0 rounded-full" />
+                  <Skeleton key={i} className="h-9 w-24 shrink-0" />
                 ))}
               </div>
             </>
@@ -116,20 +122,12 @@ export default function CategoryGrid() {
                       transition={{ delay: i * 0.06 }}
                       viewport={{ once: true }}
                     >
-                      <Link
-                        to={`/shop?cat=${cat.slug}`}
-                        className={`relative flex min-h-28 flex-col justify-between overflow-hidden rounded-2xl border p-4 transition-colors ${
-                          i === 0
-                            ? "border-orange-400/35 bg-orange-500/10"
-                            : "border-primary/35 bg-primary/10"
-                        }`}
-                      >
+                      <Link to={`/shop?cat=${cat.slug}`} className="block">
+                      <Card className={cn("relative flex min-h-28 flex-col justify-between overflow-hidden p-4 transition-colors hover:bg-accent/50", i === 0 && "border-primary")}>
                         <div className="flex items-start justify-between">
-                          <Icon className={`h-5 w-5 ${i === 0 ? "text-orange-400" : "text-primary"}`} />
+                          <Icon className={cn("h-5 w-5", i === 0 ? "text-orange-400" : "text-primary")} />
                           {i === 0 && (
-                            <span className="rounded-md bg-orange-400 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none text-background">
-                              Popular
-                            </span>
+                            <Badge className="uppercase">Popular</Badge>
                           )}
                         </div>
                         <div>
@@ -140,6 +138,7 @@ export default function CategoryGrid() {
                             {cat.children.length} subcategories
                           </p>
                         </div>
+                      </Card>
                       </Link>
                     </motion.div>
                   );
@@ -152,14 +151,12 @@ export default function CategoryGrid() {
                     {pillCategories.map((cat) => {
                       const Icon = getCatIcon(cat.slug);
                       return (
-                        <Link
-                          key={cat.slug}
-                          to={`/shop?cat=${cat.slug}`}
-                          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground"
-                        >
-                          <Icon className="h-3.5 w-3.5 text-primary" />
-                          {cat.name}
-                        </Link>
+                        <Button key={cat.slug} asChild variant="outline" size="sm" className="shrink-0">
+                          <Link to={`/shop?cat=${cat.slug}`}>
+                            <Icon className="h-3.5 w-3.5 text-primary" />
+                            {cat.name}
+                          </Link>
+                        </Button>
                       );
                     })}
                   </div>
@@ -172,7 +169,7 @@ export default function CategoryGrid() {
         <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
           {isLoading
             ? Array.from({ length: 12 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-2xl" />
+                <Skeleton key={i} className="h-28" />
               ))
             : categories.slice(0, 12).map((cat, i) => {
                 const Icon = getCatIcon(cat.slug);
@@ -187,10 +184,8 @@ export default function CategoryGrid() {
                     onMouseLeave={() => setHoveredCat(null)}
                     className="relative"
                   >
-                    <Link
-                      to={`/shop?cat=${cat.slug}`}
-                      className="group block rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-lg transition-all duration-300 p-5 text-center relative overflow-hidden"
-                    >
+                    <Link to={`/shop?cat=${cat.slug}`} className="group block">
+                    <Card className="p-5 text-center relative overflow-hidden transition-colors group-hover:border-primary/40">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="relative z-10">
                         <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-primary/15 transition-all duration-300">
@@ -203,26 +198,25 @@ export default function CategoryGrid() {
                           {cat.children.length} subcategories
                         </p>
                       </div>
+                    </Card>
                     </Link>
 
                     {/* Subcategory tooltip on hover - Desktop only */}
                     {hoveredCat === cat.slug && cat.children.length > 0 && (
-                      <motion.div
+                      <MotionCard
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-xl shadow-xl z-30 py-2 hidden md:block"
+                        className="absolute top-full left-0 right-0 mt-1 z-30 py-2 hidden md:block"
                       >
                         {cat.children.map((child) => (
-                          <Link
-                            key={child.slug}
-                            to={`/shop?cat=${cat.slug}&sub=${child.slug}`}
-                            className="flex items-center justify-between px-4 py-2 text-xs text-popover-foreground hover:bg-muted hover:text-primary transition-colors"
-                          >
-                            {child.name}
-                            <ChevronRight className="h-3 w-3 opacity-40" />
-                          </Link>
+                          <Button key={child.slug} asChild variant="ghost" size="sm" className="w-full justify-between rounded-none text-xs">
+                            <Link to={`/shop?cat=${cat.slug}&sub=${child.slug}`}>
+                              {child.name}
+                              <ChevronRight className="h-3 w-3 opacity-40" />
+                            </Link>
+                          </Button>
                         ))}
-                      </motion.div>
+                      </MotionCard>
                     )}
                   </motion.div>
                 );

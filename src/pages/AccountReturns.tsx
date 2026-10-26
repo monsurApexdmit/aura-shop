@@ -1,11 +1,20 @@
 import { Link, useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
-import { RotateCcw, ChevronRight, Plus, XCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { RotateCcw, ChevronRight, Plus, XCircle, CheckCircle2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card } from "@/components/ui/card"
+import { ItemMedia } from "@/components/ui/item"
+import { Separator } from "@/components/ui/separator"
+import { Spinner } from "@/components/ui/spinner"
+import { EmptyState } from "@/components/common/EmptyState"
+import { PageHeader } from "@/components/common/PageHeader"
+import { StatusBadge } from "@/components/common/StatusBadge"
 import Footer from "@/components/Footer"
 import { useAuth } from "@/contexts/AuthContext"
 import { useReturns, useCancelReturn } from "@/hooks/useReturns"
-import { STATUS_LABEL, STATUS_COLOR } from "@/services/returnApi"
+import { STATUS_LABEL } from "@/services/returnApi"
 import type { ReturnStatus, CustomerReturn } from "@/services/returnApi"
 import { useCurrency } from "@/contexts/CurrencyContext"
 
@@ -31,15 +40,15 @@ function ReturnCard({ ret }: { ret: CustomerReturn }) {
   }
 
   return (
-    <div
-      className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-colors cursor-pointer"
+    <Card
+      className="p-5 cursor-pointer transition-colors hover:bg-accent/50"
       onClick={() => navigate(`/account/returns/${ret.id}`)}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <RotateCcw className="h-5 w-5 text-primary" />
-          </div>
+          <ItemMedia variant="icon">
+            <RotateCcw />
+          </ItemMedia>
           <div>
             <p className="font-mono font-bold text-sm text-foreground">
               {ret.return_number ?? `RET-${ret.id}`}
@@ -55,19 +64,19 @@ function ReturnCard({ ret }: { ret: CustomerReturn }) {
 
         <div className="flex items-center gap-2">
           {ret.total_amount != null && (
-            <span className="font-display font-bold text-sm text-foreground">
+            <span className="font-semibold text-sm tabular-nums">
               {formatCurrency(ret.total_amount)}
             </span>
           )}
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[ret.status as ReturnStatus] ?? "bg-muted text-muted-foreground"}`}>
-            {STATUS_LABEL[ret.status as ReturnStatus] ?? ret.status}
-          </span>
+          <StatusBadge status={ret.status} label={STATUS_LABEL[ret.status as ReturnStatus] ?? ret.status} />
         </div>
       </div>
 
       {/* Items */}
       {ret.items && ret.items.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-border space-y-1.5">
+        <>
+        <Separator className="my-4" />
+        <div className="space-y-1.5">
           {ret.items.map((item, i) => (
             <div key={i} className="flex items-center justify-between text-sm">
               <span className="text-foreground font-medium truncate flex-1">
@@ -78,6 +87,7 @@ function ReturnCard({ ret }: { ret: CustomerReturn }) {
             </div>
           ))}
         </div>
+        </>
       )}
 
       {/* Refund method */}
@@ -89,45 +99,46 @@ function ReturnCard({ ret }: { ret: CustomerReturn }) {
 
       {/* Rejection reason */}
       {ret.status === "rejected" && ret.rejection_reason && (
-        <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl">
-          <p className="text-xs font-semibold text-red-700 dark:text-red-400">Rejection reason:</p>
-          <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{ret.rejection_reason}</p>
-        </div>
+        <Alert variant="destructive" className="mt-3">
+          <AlertTitle>Rejection reason:</AlertTitle>
+          <AlertDescription>{ret.rejection_reason}</AlertDescription>
+        </Alert>
       )}
 
       {/* Approved banner */}
       {ret.status === "approved" && (
-        <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-xl flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-          <p className="text-xs text-green-700 dark:text-green-400 font-medium">
-            Approved — refund is being processed
-          </p>
-        </div>
+        <Alert className="mt-3">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertDescription>Approved — refund is being processed</AlertDescription>
+        </Alert>
       )}
 
       {/* Actions */}
-      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-3">
-        <Link
-          to={`/account/returns/${ret.id}`}
-          onClick={e => e.stopPropagation()}
-          className="text-xs font-semibold text-primary hover:underline"
-        >
-          View Details →
-        </Link>
+      <Separator className="my-4" />
+      <div className="flex items-center justify-between gap-3">
+        <Button asChild variant="link" size="sm" className="h-auto p-0">
+          <Link
+            to={`/account/returns/${ret.id}`}
+            onClick={e => e.stopPropagation()}
+          >
+            View Details →
+          </Link>
+        </Button>
         {ret.status === "pending" && (
-          <button
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={handleCancel}
             disabled={cancelling}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50"
           >
             {cancelling
-              ? <Loader2 className="h-3 w-3 animate-spin" />
+              ? <Spinner className="h-3 w-3" />
               : <XCircle className="h-3 w-3" />}
             Cancel
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -147,39 +158,42 @@ export default function AccountReturns() {
               <span className="text-foreground font-medium">Returns</span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="font-display font-bold text-2xl text-foreground mb-1">My Returns</h1>
-                <p className="text-sm text-muted-foreground">Track and manage your return requests</p>
-              </div>
-              <Link
-                to="/account/returns/new"
-                className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold text-sm"
-              >
-                <Plus className="h-4 w-4" />
-                New Return Request
-              </Link>
-            </div>
+            <PageHeader
+              className="mb-8"
+              title="My Returns"
+              description="Track and manage your return requests"
+              actions={
+                <Button asChild>
+                  <Link to="/account/returns/new">
+                    <Plus className="h-4 w-4" />
+                    New Return Request
+                  </Link>
+                </Button>
+              }
+            />
 
             {isLoading ? (
               <div className="space-y-3">
-                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}
               </div>
             ) : isError ? (
-              <div className="text-center py-20">
-                <RotateCcw className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Could not load returns right now.</p>
-              </div>
+              <EmptyState className="py-20" icon={RotateCcw} title="Could not load returns right now." />
             ) : !returns || returns.length === 0 ? (
-              <div className="text-center py-20 bg-card border border-border rounded-2xl">
-                <RotateCcw className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="font-semibold text-foreground mb-1">No return requests</p>
-                <p className="text-sm text-muted-foreground mb-4">Submit a return for a delivered order.</p>
-                <Link to="/account/returns/new" className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold text-sm">
-                  <Plus className="h-4 w-4" />
-                  New Return Request
-                </Link>
-              </div>
+              <EmptyState
+                bordered
+                className="py-20"
+                icon={RotateCcw}
+                title="No return requests"
+                description="Submit a return for a delivered order."
+                action={
+                  <Button asChild>
+                    <Link to="/account/returns/new">
+                      <Plus className="h-4 w-4" />
+                      New Return Request
+                    </Link>
+                  </Button>
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {returns.map(ret => <ReturnCard key={ret.id} ret={ret} />)}

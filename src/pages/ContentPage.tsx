@@ -9,6 +9,10 @@ import contentPageApi, {
 import { Markdown } from "@/lib/markdown";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card } from "@/components/ui/card";
+import { SectionCard } from "@/components/common/SectionCard";
+
+const MotionCard = motion.create(Card);
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
@@ -244,17 +248,16 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
 
       {useStorePolicy ? (
         <section className="container max-w-4xl">
-          <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
+          <Card className="p-6 sm:p-8">
             <Markdown source={policyText ?? ""} />
-          </div>
+          </Card>
         </section>
       ) : template === "faq" ? (
         <section className="container max-w-4xl">
           <div className="space-y-8">
             {(content as FaqPageContent).faqCategories.map((category, index) => (
               <motion.div key={`${category.title}-${index}`} {...fadeUp} transition={{ delay: index * 0.08 }}>
-                <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
-                  <h2 className="font-display font-bold text-2xl text-foreground mb-5">{category.title}</h2>
+                <SectionCard title={<span className="text-2xl">{category.title}</span>}>
                   <Accordion type="single" collapsible className="w-full">
                     {category.items.map((item, itemIndex) => (
                       <AccordionItem key={`${item.question}-${itemIndex}`} value={`${category.title}-${itemIndex}`}>
@@ -267,7 +270,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
                       </AccordionItem>
                     ))}
                   </Accordion>
-                </div>
+                </SectionCard>
               </motion.div>
             ))}
           </div>
@@ -276,13 +279,13 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
         <section className="container max-w-4xl">
           <div className="space-y-6">
             {(content as PolicyPageContent).sections.map((section, index) => (
-              <motion.div
+              <MotionCard
                 key={`${section.title}-${index}`}
                 {...fadeUp}
                 transition={{ delay: index * 0.08 }}
-                className="bg-card border border-border rounded-3xl p-6 sm:p-8"
+                className="p-6 sm:p-8"
               >
-                <h2 className="font-display font-bold text-2xl text-foreground mb-4">{section.title}</h2>
+                <h2 className="font-semibold text-2xl mb-4">{section.title}</h2>
                 <div className="space-y-4">
                   {section.paragraphs.map((paragraph, paragraphIndex) => (
                     <p key={`${section.title}-${paragraphIndex}`} className="text-muted-foreground leading-relaxed">
@@ -290,7 +293,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
                     </p>
                   ))}
                 </div>
-              </motion.div>
+              </MotionCard>
             ))}
           </div>
         </section>

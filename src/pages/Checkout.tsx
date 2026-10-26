@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
@@ -9,7 +10,7 @@ import { couponApi, type CouponResult } from "@/services/couponApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X, Loader2 } from "lucide-react";
+import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Package, Zap, Box, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X } from "lucide-react";
 import { useShippingMethods, usePickupPoints } from "@/hooks/useShippingMethods";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,18 @@ import FormField from "@/components/forms/FormField";
 import ShippingOption from "@/components/features/checkout/ShippingOption";
 import StepIndicator from "@/components/features/checkout/StepIndicator";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { ChoiceCard, ChoiceCardGroup } from "@/components/common/ChoiceCard";
+import { SectionCard } from "@/components/common/SectionCard";
+import { SectionTitle } from "@/components/common/SectionTitle";
+import { InfoList, InfoRow } from "@/components/common/InfoList";
+import { EmptyState } from "@/components/common/EmptyState";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "Name is required").max(100),
@@ -259,12 +271,16 @@ export default function Checkout() {
 
   if (items.length === 0 && step < 4) {
     return (
-      <div className="min-h-screen bg-background pt-40 flex flex-col items-center gap-4 px-4">
-        <Truck className="h-16 w-16 text-muted-foreground/30" />
-        <p className="font-display font-bold text-xl text-foreground">Your cart is empty</p>
-        <button onClick={() => navigate("/shop")} className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm">
-          Go Shopping
-        </button>
+      <div className="min-h-screen bg-background pt-40 px-4">
+        <EmptyState
+          icon={Truck}
+          title="Your cart is empty"
+          action={
+            <Button onClick={() => navigate("/shop")}>
+              Go Shopping
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -282,70 +298,41 @@ export default function Checkout() {
           {step === 1 && (
             <motion.div key="shipping" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="grid lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3 bg-background rounded-2xl border border-border p-6 sm:p-8">
-                  <h2 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
+                <Card className="lg:col-span-3 p-6 sm:p-8">
+                  <h2 className="font-semibold text-lg mb-6 flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Shipping Information
                   </h2>
 
                   {isLoggedIn && user && (
                     <div className="mb-6">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Ship to</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => switchAddressMode("saved")}
-                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                            addressMode === "saved" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                            addressMode === "saved" ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                          }`}>
-                            <UserCheck className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-xs text-foreground">My Account Address</p>
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              {defaultAddress ? [defaultAddress.address_line1, defaultAddress.city].filter(Boolean).join(", ") : user.name}
-                            </p>
-                          </div>
-                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                            addressMode === "saved" ? "border-primary" : "border-muted-foreground/30"
-                          }`}>
-                            {addressMode === "saved" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => switchAddressMode("new")}
-                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                            addressMode === "new" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                            addressMode === "new" ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                          }`}>
-                            <MapPin className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-xs text-foreground">New Address</p>
-                            <p className="text-[11px] text-muted-foreground">Enter a different address</p>
-                          </div>
-                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                            addressMode === "new" ? "border-primary" : "border-muted-foreground/30"
-                          }`}>
-                            {addressMode === "new" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                        </button>
-                      </div>
+                      <SectionTitle as="p" className="mb-3">Ship to</SectionTitle>
+                      <ChoiceCardGroup
+                        value={addressMode}
+                        onValueChange={(v) => switchAddressMode(v as "saved" | "new")}
+                        className="grid-cols-1 sm:grid-cols-2 gap-3"
+                        aria-label="Ship to"
+                      >
+                        <ChoiceCard
+                          value="saved"
+                          icon={<UserCheck />}
+                          title="My Account Address"
+                          description={<span className="block truncate">{defaultAddress ? [defaultAddress.address_line1, defaultAddress.city].filter(Boolean).join(", ") : user.name}</span>}
+                          className="min-w-0"
+                        />
+                        <ChoiceCard
+                          value="new"
+                          icon={<MapPin />}
+                          title="New Address"
+                          description="Enter a different address"
+                        />
+                      </ChoiceCardGroup>
                       {addressMode === "saved" && !defaultAddress && (
-                        <div className="mt-3 flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
-                          <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                        <Alert className="mt-3">
+                          <Info className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
                             Your account has no saved address yet. Please fill in the fields below.
-                          </p>
-                        </div>
+                          </AlertDescription>
+                        </Alert>
                       )}
                     </div>
                   )}
@@ -414,16 +401,17 @@ export default function Checkout() {
                   </div>
 
                   {/* Shipping Method Selection */}
-                  <div className="mt-6 pt-6 border-t border-border">
-                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+                  <Separator className="mt-6" />
+                  <div className="pt-6">
+                    <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
                       <Truck className="h-4 w-4 text-primary" /> Shipping Method
                     </h3>
-                    <div className="space-y-3">
+                    <div role="radiogroup" aria-label="Shipping method" className="space-y-3">
                       {methodsLoading ? (
                         <>
-                          <Skeleton className="h-[72px] rounded-xl" />
-                          <Skeleton className="h-[72px] rounded-xl" />
-                          <Skeleton className="h-[72px] rounded-xl" />
+                          <Skeleton className="h-[72px]" />
+                          <Skeleton className="h-[72px]" />
+                          <Skeleton className="h-[72px]" />
                         </>
                       ) : shippingMethods.length === 0 ? (
                         <p className="text-sm text-muted-foreground py-4 text-center">No shipping options available.</p>
@@ -447,29 +435,30 @@ export default function Checkout() {
                     </div>
                     {isPickup && (
                       <div className="mt-4">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Pickup point</p>
+                        <SectionTitle as="p" className="mb-3">Pickup point</SectionTitle>
                         {pickupPoints.length === 0 ? (
                           <p className="text-sm text-muted-foreground">No pickup points available.</p>
                         ) : (
-                          <div className="space-y-2">
+                          <ChoiceCardGroup
+                            value={pickupPointId != null ? String(pickupPointId) : undefined}
+                            onValueChange={(v) => setPickupPointId(Number(v))}
+                            aria-label="Pickup point"
+                          >
                             {pickupPoints.map((p) => (
-                              <button
+                              <ChoiceCard
                                 key={p.id}
-                                type="button"
-                                onClick={() => setPickupPointId(p.id)}
-                                className={`w-full text-left p-3 rounded-xl border-2 text-sm transition-colors ${pickupPointId === p.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                              >
-                                <p className="font-semibold text-foreground">{p.name}</p>
-                                <p className="text-xs text-muted-foreground">{[p.address, p.district].filter(Boolean).join(", ")}{p.phone ? ` · ${p.phone}` : ""}</p>
-                              </button>
+                                value={String(p.id)}
+                                title={p.name}
+                                description={`${[p.address, p.district].filter(Boolean).join(", ")}${p.phone ? ` · ${p.phone}` : ""}`}
+                              />
                             ))}
-                          </div>
+                          </ChoiceCardGroup>
                         )}
                         {errors.pickup && <p className="text-xs text-destructive mt-2">{errors.pickup}</p>}
                       </div>
                     )}
                   </div>
-                </div>
+                </Card>
 
                 {/* Order Summary Sidebar */}
                 <div className="lg:col-span-2">
@@ -478,12 +467,12 @@ export default function Checkout() {
               </div>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+                <Button variant="ghost" onClick={() => navigate(-1)}>
                   <ArrowLeft className="h-4 w-4" /> Back
-                </button>
-                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
+                </Button>
+                <Button onClick={nextStep}>
                   Review Order <ArrowRight className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </motion.div>
           )}
@@ -492,39 +481,40 @@ export default function Checkout() {
           {step === 2 && (
             <motion.div key="payment" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="grid lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3 bg-background rounded-2xl border border-border p-6 sm:p-8">
-                  <h2 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
+                <Card className="lg:col-span-3 p-6 sm:p-8">
+                  <h2 className="font-semibold text-lg mb-6 flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-primary" /> Payment Method
                   </h2>
                   <div className="space-y-3">
                     {paymentMethodsLoading ? (
                       <>
-                        <Skeleton className="h-[72px] rounded-xl" />
-                        <Skeleton className="h-[72px] rounded-xl" />
-                        <Skeleton className="h-[72px] rounded-xl" />
+                        <Skeleton className="h-[72px]" />
+                        <Skeleton className="h-[72px]" />
+                        <Skeleton className="h-[72px]" />
                       </>
                     ) : paymentMethods.length === 0 ? (
                       <p className="text-sm text-muted-foreground py-4 text-center">No payment options available.</p>
                     ) : (
-                      paymentMethods.map((method) => {
+                      <ChoiceCardGroup
+                        value={paymentMethodId != null ? String(paymentMethodId) : undefined}
+                        onValueChange={(v) => {
+                          const m = paymentMethods.find((pm) => String(pm.id) === v);
+                          if (m) setPaymentMethodId(m.id);
+                        }}
+                        className="gap-3"
+                        aria-label="Payment method"
+                      >
+                      {paymentMethods.map((method) => {
                         const Icon = PAYMENT_ICON_MAP[method.icon ?? ""] ?? CreditCard;
                         const isSelected = paymentMethodId === method.id;
                         return (
-                          <button
+                          <ChoiceCard
                             key={method.id}
-                            onClick={() => setPaymentMethodId(method.id)}
-                            className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                              isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
-                            }`}
+                            value={String(method.id)}
+                            icon={<Icon />}
+                            title={method.name}
+                            description={method.description || undefined}
                           >
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                              isSelected ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                            }`}>
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div className="text-left flex-1">
-                              <p className="font-semibold text-sm text-foreground">{method.name}</p>
-                              {method.description && <p className="text-xs text-muted-foreground">{method.description}</p>}
                               {isSelected && method.gateway_type === "sslcommerz" && (
                                 <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
                                   <Globe className="h-3 w-3" /> You'll be redirected to pay securely
@@ -556,12 +546,12 @@ export default function Checkout() {
                                 </p>
                               )}
                               {isSelected && method.gateway_type === "manual" && (method.account || method.bank_name) && (
-                                <div className="mt-2 rounded-lg bg-muted/60 p-2.5 text-xs text-foreground space-y-0.5">
+                                <Card className="mt-2 w-full p-3 text-xs font-normal space-y-0.5">
                                   <p className="text-muted-foreground">Send payment to:</p>
                                   {method.bank_name && <p>Bank: <span className="font-medium">{method.bank_name}</span></p>}
                                   {method.account_name && <p>Account name: <span className="font-medium">{method.account_name}</span></p>}
                                   {method.account && <p>Account / number: <span className="font-medium">{method.account}</span></p>}
-                                </div>
+                                </Card>
                               )}
                               {method.gateway_type === "cod" && method.cod_deposit_required && (
                                 <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
@@ -571,29 +561,24 @@ export default function Checkout() {
                                     : "Shipping charge must be paid upfront via bKash/Nagad/Card"}
                                 </p>
                               )}
-                            </div>
-                            <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                              isSelected ? "border-primary" : "border-muted-foreground/30"
-                            }`}>
-                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                            </div>
-                          </button>
+                          </ChoiceCard>
                         );
-                      })
+                      })}
+                      </ChoiceCardGroup>
                     )}
                   </div>
-                </div>
+                </Card>
                 <div className="lg:col-span-2">
                   <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                 </div>
               </div>
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
-                <button onClick={() => setStep(1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+                <Button variant="ghost" onClick={() => setStep(1)}>
                   <ArrowLeft className="h-4 w-4" /> Back to Shipping
-                </button>
-                <button onClick={nextStep} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg">
+                </Button>
+                <Button onClick={nextStep}>
                   Review Order <ArrowRight className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </motion.div>
           )}
@@ -603,10 +588,7 @@ export default function Checkout() {
             <motion.div key="review" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="grid lg:grid-cols-5 gap-6">
                 <div className="lg:col-span-3 space-y-5">
-                  <div className="bg-background rounded-2xl border border-border p-6">
-                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" /> {isPickup ? "Pickup Point" : "Delivery Address"}
-                    </h3>
+                  <SectionCard title={<span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {isPickup ? "Pickup Point" : "Delivery Address"}</span>}>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p className="font-semibold text-foreground">{form.fullName}</p>
                       <p>{isPickup && pickupPoint ? `${pickupPoint.name}${pickupPoint.address ? `, ${pickupPoint.address}` : ""}${pickupPoint.district ? `, ${pickupPoint.district}` : ""}` : form.address}</p>
@@ -616,12 +598,9 @@ export default function Checkout() {
                       <p>{form.phone}{form.email ? ` · ${form.email}` : ""}</p>
                       {form.note && <p className="mt-2 italic text-xs">Note: {form.note}</p>}
                     </div>
-                  </div>
+                  </SectionCard>
 
-                  <div className="bg-background rounded-2xl border border-border p-6">
-                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-primary" /> Shipping Method
-                    </h3>
+                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> Shipping Method</span>}>
                     {selectedShipping && (() => {
                       const Icon = SHIPPING_ICON_MAP[selectedShipping.icon ?? ""] ?? Package;
                       return (
@@ -633,12 +612,10 @@ export default function Checkout() {
                           </div>
                         </div>
                       );
-                    })()}</div>
+                    })()}
+                  </SectionCard>
 
-                  <div className="bg-background rounded-2xl border border-border p-6">
-                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary" /> Payment Method
-                    </h3>
+                  <SectionCard title={<span className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> Payment Method</span>}>
                     {selectedPayment && (() => {
                       const Icon = PAYMENT_ICON_MAP[selectedPayment.icon ?? ""] ?? CreditCard;
                       return (
@@ -648,16 +625,14 @@ export default function Checkout() {
                         </div>
                       );
                     })()}
-                  </div>
+                  </SectionCard>
 
-                  <div className="bg-background rounded-2xl border border-border p-6">
-                    <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
-                      <ClipboardCheck className="h-4 w-4 text-primary" /> Order Items ({items.length})
-                    </h3>
+                  <SectionCard title={<span className="flex items-center gap-2"><ClipboardCheck className="h-4 w-4 text-primary" /> Order Items ({items.length})</span>}>
                     <div className="space-y-3">
                       {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
-                          <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted flex items-center justify-center">
+                        <Item key={item.id} variant="outline" size="sm">
+                          <ItemMedia variant="image" className="size-14 bg-muted">
+
                             {item.image ? (
                               <img
                                 src={item.image}
@@ -669,35 +644,37 @@ export default function Checkout() {
                                 }}
                               />
                             ) : null}
-                            <span className={`text-[10px] text-muted-foreground text-center leading-tight px-1 ${item.image ? "hidden" : ""}`}>No Image</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                          </div>
-                          <p className="font-display font-bold text-sm text-foreground">{formatCurrency(item.price * item.quantity)}</p>
-                        </div>
+                            <span className={cn("text-[10px] text-muted-foreground text-center leading-tight px-1", item.image ? "hidden" : "")}>No Image</span>
+                          </ItemMedia>
+                          <ItemContent className="min-w-0">
+                            <ItemTitle className="w-full truncate">{item.name}</ItemTitle>
+                            <ItemDescription className="text-xs">Qty: {item.quantity}</ItemDescription>
+                          </ItemContent>
+                          <ItemActions>
+                            <p className="font-semibold text-sm text-foreground">{formatCurrency(item.price * item.quantity)}</p>
+                          </ItemActions>
+                        </Item>
                       ))}
                     </div>
-                  </div>
+                  </SectionCard>
                 </div>
 
                 <div className="lg:col-span-2">
                   <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} tax={tax} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
-                  <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-start gap-3">
-                    <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Your order information is secure. We'll send a confirmation to your email.</p>
-                  </div>
+                  <Alert className="mt-4">
+                    <ShieldCheck className="h-4 w-4" />
+                    <AlertDescription className="text-xs text-muted-foreground">Your order information is secure. We'll send a confirmation to your email.</AlertDescription>
+                  </Alert>
                 </div>
               </div>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
-                <button onClick={() => setStep(2)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+                <Button variant="ghost" onClick={() => setStep(2)}>
                   <ArrowLeft className="h-4 w-4" /> Edit Payment
-                </button>
-                <button onClick={nextStep} disabled={placeOrder.isPending} className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-70">
+                </Button>
+                <Button onClick={nextStep} disabled={placeOrder.isPending}>
                   {placeOrder.isPending ? "Placing Order..." : <><span>Place Order</span><CheckCircle2 className="h-4 w-4" /></>}
-                </button>
+                </Button>
               </div>
             </motion.div>
           )}
@@ -705,7 +682,7 @@ export default function Checkout() {
           {/* Step 4: Confirmation */}
           {step === 4 && (
             <motion.div key="complete" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
-              <div className="max-w-lg mx-auto text-center bg-background rounded-2xl border border-border p-8 sm:p-12">
+              <Card className="max-w-lg mx-auto text-center p-8 sm:p-12">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -715,53 +692,40 @@ export default function Checkout() {
                   <CheckCircle2 className="h-10 w-10 text-primary-foreground" />
                 </motion.div>
 
-                <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="font-display font-bold text-2xl text-foreground mb-2">
+                <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="font-semibold text-2xl text-foreground mb-2">
                   Order Placed Successfully!
                 </motion.h2>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-muted-foreground text-sm mb-6">
                   Thank you for your order. We'll send a confirmation to your email once it's on the way.
                 </motion.p>
 
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                  className="bg-muted/30 rounded-xl p-5 mb-6 border border-border/50 text-left space-y-2"
-                >
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Order ID</span>
-                    <span className="font-mono font-bold text-primary">{placedOrderId ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Payment</span>
-                    <span className="font-medium text-foreground">{selectedPayment?.name ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery To</span>
-                    <span className="font-medium text-foreground">{form.fullName}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-medium text-foreground">{selectedShipping?.name ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Estimated Delivery</span>
-                    <span className="font-medium text-foreground">{selectedShipping?.estimated_days ?? "—"}</span>
-                  </div>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-6">
+                  <Card className="p-5 text-left">
+                    <InfoList>
+                      <InfoRow label="Order ID" value={<span className="font-mono font-bold text-primary">{placedOrderId ?? "—"}</span>} />
+                      <InfoRow label="Payment" value={selectedPayment?.name ?? "—"} />
+                      <InfoRow label="Delivery To" value={form.fullName} />
+                      <InfoRow label="Shipping" value={selectedShipping?.name ?? "—"} />
+                      <InfoRow label="Estimated Delivery" value={selectedShipping?.estimated_days ?? "—"} />
+                    </InfoList>
+                  </Card>
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={() => navigate("/")} className="flex-1 gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">
+                  <Button onClick={() => navigate("/")} className="flex-1">
                     Continue Shopping
-                  </button>
+                  </Button>
                   {!isLoggedIn && placedOrderId ? (
-                    <button onClick={() => navigate(`/track-order?invoice=${encodeURIComponent(placedOrderId)}`)} className="flex-1 border border-border text-foreground px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
+                    <Button variant="outline" onClick={() => navigate(`/track-order?invoice=${encodeURIComponent(placedOrderId)}`)} className="flex-1">
                       Track Order
-                    </button>
+                    </Button>
                   ) : (
-                    <button onClick={() => navigate("/shop")} className="flex-1 border border-border text-foreground px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
+                    <Button variant="outline" onClick={() => navigate("/shop")} className="flex-1">
                       Browse More
-                    </button>
+                    </Button>
                   )}
                 </motion.div>
-              </div>
+              </Card>
             </motion.div>
           )}
         </AnimatePresence>
@@ -786,41 +750,37 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
 }) {
   const { formatCurrency } = useCurrency();
   return (
-    <div className="bg-background rounded-2xl border border-border p-4 sm:p-6 lg:sticky lg:top-36">
-      <h3 className="font-display font-bold text-sm mb-4">Order Summary</h3>
-      <div className="space-y-2 text-sm border-b border-border pb-4 mb-4">
-        <div className="flex justify-between text-muted-foreground">
-          <span>Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} items)</span>
-          <span>{formatCurrency(totalPrice)}</span>
-        </div>
-        <div className="flex justify-between text-muted-foreground">
-          <span>Shipping</span>
-          <span>{couponResult?.free_shipping ? <span className="text-green-600 font-medium">FREE</span> : formatCurrency(shipping)}</span>
-        </div>
+    <Card className="p-4 sm:p-6 lg:sticky lg:top-36">
+      <h3 className="font-semibold text-sm mb-4">Order Summary</h3>
+      <InfoList className="pb-4">
+        <InfoRow label={`Subtotal (${items.reduce((s, i) => s + i.quantity, 0)} items)`} value={formatCurrency(totalPrice)} />
+        <InfoRow label="Shipping" value={couponResult?.free_shipping ? <span className="text-green-600">FREE</span> : formatCurrency(shipping)} />
         {discount > 0 && (
-          <div className="flex justify-between text-green-600 font-medium">
-            <span>Discount {couponResult && `(${couponResult.code})`}</span>
-            <span>-{formatCurrency(discount)}</span>
-          </div>
+          <InfoRow
+            label={<span className="text-green-600 font-medium">Discount {couponResult && `(${couponResult.code})`}</span>}
+            value={<span className="text-green-600">-{formatCurrency(discount)}</span>}
+          />
         )}
-        <div className="flex justify-between text-muted-foreground">
-          <span>Tax</span>
-          <span>{formatCurrency(tax)}</span>
-        </div>
-      </div>
+        <InfoRow label="Tax" value={formatCurrency(tax)} />
+      </InfoList>
+      <Separator className="mb-4" />
 
       {/* Coupon input */}
       <div className="mb-4">
         {couponResult ? (
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800">
-            <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-xs font-medium">
+          <Item variant="outline" size="sm" className="py-1.5">
+            <ItemMedia>
               <Tag className="h-3.5 w-3.5" />
-              <span>{couponResult.code} — {couponResult.campaign_name}</span>
-            </div>
-            <button onClick={onRemoveCoupon} className="text-green-600 hover:text-green-800 dark:hover:text-green-300">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle className="text-xs">{couponResult.code} — {couponResult.campaign_name}</ItemTitle>
+            </ItemContent>
+            <ItemActions>
+              <Button variant="ghost" size="icon" onClick={onRemoveCoupon} aria-label="Remove coupon">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </ItemActions>
+          </Item>
         ) : (
           <div className="flex flex-col gap-2 min-[420px]:flex-row">
             <Input
@@ -828,23 +788,23 @@ function OrderSummary({ items, totalPrice, shipping, discount, tax, grandTotal, 
               value={couponCode}
               onChange={(e) => onCouponCodeChange(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onApplyCoupon(); } }}
-              className="h-9 text-sm"
             />
-            <button
+            <Button
+              size="sm"
               onClick={onApplyCoupon}
               disabled={couponApplying || !couponCode.trim()}
-              className="shrink-0 px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
+              className="shrink-0"
             >
-              {couponApplying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
-            </button>
+              {couponApplying ? <Spinner /> : "Apply"}
+            </Button>
           </div>
         )}
       </div>
 
-      <div className="flex justify-between font-display font-bold text-lg">
+      <div className="flex justify-between font-semibold text-lg">
         <span>Total</span>
         <span className="text-primary">{formatCurrency(grandTotal)}</span>
       </div>
-    </div>
+    </Card>
   );
 }

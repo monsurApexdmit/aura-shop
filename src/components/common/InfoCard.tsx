@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { ReactNode } from "react";
 import { LucideIcon } from "lucide-react";
 
@@ -72,7 +73,7 @@ export default function InfoCard({
 
   return (
     <div
-      className={`flex flex-col items-center text-center p-6 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors ${className}`}
+      className={cn("flex flex-col items-center text-center p-6 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors", className)}
     >
       <div className="mb-4 p-3 rounded-full bg-primary/10">
         <Icon className="h-6 w-6 text-primary" />
@@ -89,7 +90,7 @@ export default function InfoCard({
       </div>
 
       {badge && (
-        <div className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold ${badgeColorClass}`}>
+        <div className={cn("mt-3 px-3 py-1 rounded-full text-xs font-semibold", badgeColorClass)}>
           {badge}
         </div>
       )}

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import QuickActionButtons from "./QuickActionButtons";
+
+// Tooltips need a provider, as the app root has.
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: TooltipProvider });
 
 describe("QuickActionButtons", () => {
   const mockProps = {
@@ -59,7 +64,7 @@ describe("QuickActionButtons", () => {
       <QuickActionButtons {...mockProps} liked={true} />
     );
     const wishlistBtn = container.querySelector("button");
-    expect(wishlistBtn).toHaveClass("bg-accent");
+    expect(wishlistBtn).toHaveClass("bg-primary");
   });
 
   it("shows unfilled heart when liked is false", () => {
@@ -67,7 +72,7 @@ describe("QuickActionButtons", () => {
       <QuickActionButtons {...mockProps} liked={false} />
     );
     const wishlistBtn = container.querySelector("button");
-    expect(wishlistBtn).toHaveClass("bg-card/80");
+    expect(wishlistBtn).toHaveClass("border-input");
   });
 
   it("applies custom className", () => {
@@ -90,13 +95,13 @@ describe("QuickActionButtons", () => {
     expect(preventDefaultSpy).toHaveBeenCalled();
   });
 
-  it("has proper titles for accessibility", () => {
+  it("has accessible labels", () => {
     render(<QuickActionButtons {...mockProps} />);
 
     const buttons = screen.getAllByRole("button");
-    expect(buttons[0]).toHaveAttribute("title");
-    expect(buttons[1]).toHaveAttribute("title");
-    expect(buttons[2]).toHaveAttribute("title");
+    expect(buttons[0]).toHaveAttribute("aria-label");
+    expect(buttons[1]).toHaveAttribute("aria-label");
+    expect(buttons[2]).toHaveAttribute("aria-label");
   });
 
   it("updates styling when liked prop changes", () => {
@@ -105,13 +110,13 @@ describe("QuickActionButtons", () => {
     );
 
     let wishlistBtn = container.querySelector("button");
-    expect(wishlistBtn).toHaveClass("bg-card/80");
+    expect(wishlistBtn).toHaveClass("border-input");
 
     rerender(
       <QuickActionButtons {...mockProps} liked={true} />
     );
 
     wishlistBtn = container.querySelector("button");
-    expect(wishlistBtn).toHaveClass("bg-accent");
+    expect(wishlistBtn).toHaveClass("bg-primary");
   });
 });

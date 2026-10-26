@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import contentPageApi, { type StorefrontContentPage } from "@/services/contentPageApi";
 import { Markdown } from "@/lib/markdown";
 import NotFound from "@/pages/NotFound";
+import { Card } from "@/components/ui/card";
 
 export default function CustomPage() {
   const { slug = "" } = useParams();
@@ -40,9 +41,9 @@ export default function CustomPage() {
         {description && <p className="text-muted-foreground max-w-3xl mx-auto text-base leading-relaxed">{description}</p>}
       </section>
       <section className="container max-w-3xl">
-        <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
+        <Card className="p-6 sm:p-8">
           <Markdown source={page.body ?? ""} />
-        </div>
+        </Card>
       </section>
     </div>
   );

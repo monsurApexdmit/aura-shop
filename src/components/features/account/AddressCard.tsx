@@ -1,5 +1,10 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { ReactNode } from "react";
 import { MapPin, Edit2, Trash2, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export interface Address {
   id: string;
@@ -76,11 +81,7 @@ export default function AddressCard({
   className = "",
 }: AddressCardProps) {
   return (
-    <div
-      className={`bg-card border-2 rounded-lg p-4 sm:p-6 transition-all ${
-        isDefault ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-      } ${className}`}
-    >
+    <Card className={cn("p-4 sm:p-6", isDefault && "border-primary bg-primary/5 ring-1 ring-primary", className)}>
       {/* Header with Default Badge */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
@@ -88,15 +89,15 @@ export default function AddressCard({
           <h3 className="font-semibold text-foreground text-sm">{address.fullName}</h3>
         </div>
         {isDefault && (
-          <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+          <Badge variant="secondary" className="gap-1">
             <CheckCircle2 className="h-3 w-3" />
             Default
-          </span>
+          </Badge>
         )}
       </div>
 
       {/* Address Details */}
-      <div className="space-y-2 mb-4 pb-4 border-b border-border/50 text-sm text-muted-foreground">
+      <div className="space-y-2 text-sm text-muted-foreground">
         <p>{address.address}</p>
         <p>
           {address.city}, {address.state} {address.zip}
@@ -104,44 +105,49 @@ export default function AddressCard({
         <p>{address.phone}</p>
       </div>
 
+      <Separator className="my-4" />
+
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
         {onEdit && (
-          <button
+          <Button
+            variant="outline"
             onClick={() => onEdit(address.id)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-sm font-medium text-foreground"
+            className="gap-1.5"
           >
             <Edit2 className="h-4 w-4" />
             Edit
-          </button>
+          </Button>
         )}
 
         {onSetDefault && !isDefault && (
-          <button
+          <Button
+            variant="outline"
             onClick={() => onSetDefault(address.id)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-sm font-medium text-foreground"
+            className="gap-1.5"
           >
             <CheckCircle2 className="h-4 w-4" />
             Set as Default
-          </button>
+          </Button>
         )}
 
         {onDelete && (
-          <button
+          <Button
+            variant="destructive"
             onClick={() => {
               if (confirm("Are you sure you want to delete this address?")) {
                 onDelete(address.id);
               }
             }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-destructive/30 hover:border-destructive hover:bg-destructive/5 transition-colors text-sm font-medium text-destructive"
+            className="gap-1.5"
           >
             <Trash2 className="h-4 w-4" />
             Delete
-          </button>
+          </Button>
         )}
 
         {actions && <div className="ml-auto">{actions}</div>}
       </div>
-    </div>
+    </Card>
   );
 }

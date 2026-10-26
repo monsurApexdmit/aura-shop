@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { Fragment, type ReactNode } from "react";
 
 // Tiny, safe Markdown renderer: builds React elements only (no innerHTML), so any raw HTML in the
@@ -70,7 +71,7 @@ export function Markdown({ source, className }: { source: string; className?: st
       flushPara(); flushList();
       const k = `h${blocks.length}`;
       const cls = h[1].length === 1 ? "text-3xl" : h[1].length === 2 ? "text-2xl" : "text-xl";
-      blocks.push(<h2 key={k} className={`font-display font-bold text-foreground mt-6 mb-3 ${cls}`}>{renderInline(h[2], k)}</h2>);
+      blocks.push(<h2 key={k} className={cn("font-display font-bold text-foreground mt-6 mb-3", cls)}>{renderInline(h[2], k)}</h2>);
       continue;
     }
     const li = /^\s*(?:([-*])|(\d+)\.)\s+(.*)$/.exec(line);

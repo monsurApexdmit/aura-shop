@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 import { Clock } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -58,51 +60,44 @@ export default function ShippingOption({
   const { formatCurrency } = useCurrency();
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      role="radio"
+      aria-checked={selected}
+      data-state={selected ? "checked" : "unchecked"}
       onClick={() => onChange(option.id)}
-      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-        selected
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-primary/30"
-      } ${className}`}
+      className={cn(
+        "h-auto w-full justify-start gap-4 p-4 text-left whitespace-normal",
+        selected && "border-primary bg-primary/5 ring-1 ring-primary",
+        className,
+      )}
     >
       {/* Icon Circle */}
-      <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-          selected
-            ? "gradient-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground"
-        }`}
+      <span
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0", selected
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-muted-foreground")}
       >
         <Icon className="h-5 w-5" />
-      </div>
+      </span>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-foreground">{option.label}</p>
-        <p className="text-xs text-muted-foreground">{option.description}</p>
-      </div>
+      <span className="flex-1 min-w-0">
+        <span className="block font-medium text-sm">{option.label}</span>
+        <span className="block text-xs font-normal text-muted-foreground">{option.description}</span>
+      </span>
 
       {/* Price & Timeline */}
-      <div className="text-right shrink-0">
-        <p className="font-display font-bold text-sm text-foreground">
+      <span className="text-right shrink-0">
+        <span className="block font-semibold text-sm tabular-nums">
           {formatCurrency(option.price)}
-        </p>
-        <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
+        </span>
+        <span className="text-xs font-normal text-muted-foreground flex items-center gap-1 justify-end">
           <Clock className="h-3 w-3" />
           {option.days}
-        </p>
-      </div>
-
-      {/* Selection Radio */}
-      <div
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-          selected ? "border-primary" : "border-muted-foreground/30"
-        }`}
-      >
-        {selected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-      </div>
-    </button>
+        </span>
+      </span>
+    </Button>
   );
 }

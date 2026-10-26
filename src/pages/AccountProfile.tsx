@@ -2,9 +2,17 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, ChevronRight, Save, Loader2 } from "lucide-react";
+import { User, ChevronRight, Save } from "lucide-react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { FormField } from "@/components/common/FormField";
+import { PageHeader } from "@/components/common/PageHeader";
+import { UserAvatar } from "@/components/common/UserAvatar";
 
 export default function AccountProfile() {
   const { user, updateProfile } = useAuth();
@@ -41,20 +49,19 @@ export default function AccountProfile() {
               <span className="text-foreground font-medium">Profile</span>
             </div>
 
-            <h1 className="font-display font-bold text-2xl text-foreground mb-6">Profile Settings</h1>
+            <PageHeader title="Profile Settings" className="mb-6" />
 
-            <div className="bg-card border border-border rounded-2xl p-6 sm:p-8">
+            <Card className="p-6 sm:p-8">
               {/* Avatar */}
-              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border">
-                <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center shadow-lg">
-                  <User className="h-8 w-8 text-primary-foreground" />
-                </div>
+              <div className="flex items-center gap-4">
+                <UserAvatar name={user?.name} fallback={<User className="h-8 w-8" />} className="size-16" />
                 <div>
-                  <p className="font-display font-bold text-lg text-foreground">{user?.name}</p>
+                  <p className="font-semibold text-lg">{user?.name}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{user?.city ? `${user.city}${user.country ? `, ${user.country}` : ""}` : "No location set"}</p>
                 </div>
               </div>
+              <Separator className="mt-6 mb-8" />
 
               <form onSubmit={handleSave} className="space-y-5">
                 {[
@@ -62,24 +69,24 @@ export default function AccountProfile() {
                   { label: "Email Address", value: email, set: setEmail, type: "email", placeholder: "john@example.com" },
                   { label: "Phone Number", value: phone, set: setPhone, type: "tel", placeholder: "+1 234-567-890" },
                 ].map((field) => (
-                  <div key={field.label}>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{field.label}</label>
-                    <input
+                  <FormField key={field.label} label={field.label} htmlFor={`profile-${field.type}`}>
+                    <Input
+                      id={`profile-${field.type}`}
                       type={field.type}
                       value={field.value}
                       onChange={(e) => field.set(e.target.value)}
                       placeholder={field.placeholder}
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                      className="w-full"
                     />
-                  </div>
+                  </FormField>
                 ))}
 
-                <button type="submit" disabled={saving} className="gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-70">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Spinner /> : <Save className="h-4 w-4" />}
                   {saving ? "Saving..." : "Save Changes"}
-                </button>
+                </Button>
               </form>
-            </div>
+            </Card>
           </motion.div>
         </div>
       </div>

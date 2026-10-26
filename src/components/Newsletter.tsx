@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Send, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
 export default function Newsletter() {
@@ -31,16 +33,16 @@ export default function Newsletter() {
             Subscribe for exclusive deals, new arrivals & weekly recommendations curated just for you.
           </p>
           <div className="flex flex-col gap-2 max-w-md mx-auto sm:flex-row">
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
-              className="flex-1 h-12 px-5 rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary-foreground/30 text-sm backdrop-blur-sm"
+              className="flex-1"
             />
-            <button className="h-12 px-6 rounded-xl bg-background text-foreground font-semibold hover:bg-background/90 transition-colors shadow-lg flex items-center justify-center gap-2 text-sm shrink-0">
+            <Button variant="outline" className="shrink-0">
               <Send className="h-4 w-4" /> Subscribe
-            </button>
+            </Button>
           </div>
           <p className="text-xs text-primary-foreground/50 mt-4">No spam ever. Unsubscribe anytime.</p>
         </motion.div>

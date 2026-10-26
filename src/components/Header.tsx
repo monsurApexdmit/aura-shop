@@ -1,7 +1,13 @@
+import { cn } from "@/lib/utils"
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Search, Menu, X, Sun, Moon, Phone, User, ChevronDown, ChevronRight, Heart, MapPin, LogOut, Package, Settings, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { SectionTitle } from "@/components/common/SectionTitle";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -11,6 +17,8 @@ import { useCategories } from "@/hooks/useCategories";
 import { Monitor, Shirt, Pill, ShoppingBasket, Home, Sparkles, Dumbbell, BookOpen, Baby, Coffee, Wrench, Gamepad2, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+
+const MotionCard = motion.create(Card);
 
 const ICON_MAP: Record<string, LucideIcon> = {
   "electronics": Monitor, "fashion": Shirt, "fashion-apparel": Shirt,
@@ -95,10 +103,10 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <Link to="/about" className="hover:underline hidden sm:inline">About</Link>
             <Link to="/contact" className="hover:underline hidden sm:inline">Contact</Link>
-            <button onClick={toggleTheme} className="flex items-center gap-1 hover:underline">
+            <Button variant="link" size="sm" onClick={toggleTheme} className="h-auto p-0 gap-1">
               {theme === "light" ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
               <span className="hidden sm:inline">{theme === "light" ? "Dark" : "Light"}</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -112,9 +120,7 @@ export default function Header() {
               <img src={displayLogo} alt={storeName} className="h-10 sm:h-14 w-auto max-w-[140px] sm:max-w-[200px] object-contain" />
             ) : (
               <>
-                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-                  <span className="text-primary-foreground font-display font-bold text-xl">{storeName.charAt(0).toUpperCase()}</span>
-                </div>
+                <UserAvatar shape="square" className="size-10" name={storeName} fallback={storeName.charAt(0).toUpperCase()} />
                 <div className="hidden sm:block">
                   <span className="font-display font-bold text-xl text-foreground leading-none tracking-tight">{storeName}</span>
                   <p className="text-[10px] text-muted-foreground leading-none mt-0.5 tracking-wide">MARKETPLACE</p>
@@ -130,85 +136,84 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="md:hidden rounded-xl" onClick={() => setSearchOpen(!searchOpen)}>
+            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Search" onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-5 w-5" />
             </Button>
-            <Link to="/wishlist">
-              <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-xl relative">
+            <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex relative">
+              <Link to="/wishlist" aria-label="Wishlist">
                 <Heart className="h-5 w-5" />
                 {totalWishlistItems > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                  <Badge variant="secondary" className="absolute -right-1 -top-1 h-5 min-w-5 justify-center rounded-full px-1">
                     {totalWishlistItems}
-                  </span>
+                  </Badge>
                 )}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             {/* User Menu */}
             <div ref={userMenuRef} className="relative block">
-              <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
+              <Button variant="ghost" size="icon" aria-label={isLoggedIn ? "Account menu" : "Login"} onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
                 {isLoggedIn ? (
-                  <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center cursor-pointer text-primary-foreground text-xs font-bold">
-                    {user?.name?.charAt(0).toUpperCase() || "U"}
-                  </div>
+                  <UserAvatar className="size-9" name={user?.name} fallback={user?.name?.charAt(0).toUpperCase() || "U"} />
                 ) : (
                   <Link to="/login"><User className="h-5 w-5" /></Link>
                 )}
               </Button>
               <AnimatePresence>
                 {userMenuOpen && isLoggedIn && (
-                  <motion.div
+                  <MotionCard
                     initial={{ opacity: 0, y: -4, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-52 bg-popover border border-border rounded-xl shadow-xl z-50 py-2 overflow-hidden"
+                    className="absolute right-0 top-full mt-2 w-52 z-50 py-2 overflow-hidden"
                   >
-                    <div className="px-4 py-2 border-b border-border">
+                    <div className="px-4 py-2">
                       <p className="font-semibold text-sm text-foreground truncate">{user?.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
+                    <Separator />
                     {[
                       { label: "My Account", to: "/account", icon: User },
                       { label: "My Orders", to: "/account/orders", icon: Package },
                       { label: "Settings", to: "/account/profile", icon: Settings },
                     ].map((item) => (
-                      <Link key={item.to} to={item.to} onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors">
-                        <item.icon className="h-4 w-4 text-muted-foreground" />
-                        {item.label}
-                      </Link>
+                      <Button key={item.to} asChild variant="ghost" className="w-full justify-start">
+                        <Link to={item.to} onClick={() => setUserMenuOpen(false)}>
+                          <item.icon className="h-4 w-4 text-muted-foreground" />
+                          {item.label}
+                        </Link>
+                      </Button>
                     ))}
-                    <div className="border-t border-border mt-1 pt-1">
-                      <button onClick={() => { logout(); setUserMenuOpen(false); }}
-                        className="flex items-center gap-2.5 px-4 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors w-full text-left">
-                        <LogOut className="h-4 w-4" />
-                        Log Out
-                      </button>
-                    </div>
-                  </motion.div>
+                    <Separator className="my-1" />
+                    <Button variant="ghost" onClick={() => { logout(); setUserMenuOpen(false); }}
+                      className="w-full justify-start">
+                      <LogOut className="h-4 w-4" />
+                      Log Out
+                    </Button>
+                  </MotionCard>
                 )}
               </AnimatePresence>
             </div>
 
             {/* Cart */}
-            <button
+            <Button
               onClick={() => setIsOpen(true)}
-              className="flex items-center gap-2.5 gradient-primary text-primary-foreground px-3 sm:px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+              className="h-auto gap-2.5"
             >
               <div className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center">
+                  <Badge variant="secondary" className="absolute -right-2 -top-2 h-5 min-w-5 justify-center rounded-full px-1">
                     {totalItems}
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-[10px] opacity-80 leading-none">{totalItems} Items</p>
                 <p className="text-sm font-bold leading-none mt-0.5">{formatCurrency(totalPrice)}</p>
               </div>
-            </button>
+            </Button>
 
-            <Button variant="ghost" size="icon" className="lg:hidden rounded-xl" onClick={() => setMobileOpen(!mobileOpen)}>
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
@@ -220,41 +225,37 @@ export default function Header() {
         <div className="container flex items-center h-12">
           {/* Categories Mega Menu */}
           <div ref={catRef} className="relative">
-            <button
+            <Button
               onClick={() => { setCatOpen(!catOpen); setActiveCat(null); }}
-              className="flex items-center gap-2 h-12 px-5 gradient-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity rounded-t-lg"
             >
               <Menu className="h-4 w-4" />
               All Categories
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${catOpen ? "rotate-180" : ""}`} />
-            </button>
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", catOpen ? "rotate-180" : "")} />
+            </Button>
 
             <AnimatePresence>
               {catOpen && (
-                <motion.div
+                <MotionCard
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 flex bg-popover border border-border rounded-b-xl rounded-r-xl shadow-xl z-50 overflow-hidden"
+                  className="absolute top-full left-0 flex z-50 overflow-hidden"
                 >
                   {/* Parent Categories */}
                   <div className="w-64 border-r border-border py-2 max-h-[420px] overflow-y-auto">
                     {categories.map((cat) => {
                       const Icon = getCatIcon(cat.slug);
                       return (
-                        <button
+                        <Button
                           key={cat.slug}
+                          variant={activeCat === cat.slug ? "secondary" : "ghost"}
                           onMouseEnter={() => setActiveCat(cat.slug)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                            activeCat === cat.slug
-                              ? "bg-primary/5 text-primary font-medium"
-                              : "text-popover-foreground hover:bg-muted"
-                          }`}
+                          className="w-full justify-start gap-3"
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1 text-left">{cat.name}</span>
                           <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -272,19 +273,19 @@ export default function Header() {
                         {categories
                           .find((c) => c.slug === activeCat)
                           ?.children.map((child) => (
-                            <Link
-                              key={child.slug}
-                              to={`/shop?cat=${activeCat}&sub=${child.slug}`}
-                              onClick={() => { setCatOpen(false); setActiveCat(null); }}
-                              className="block px-5 py-2.5 text-sm text-popover-foreground hover:bg-muted hover:text-primary transition-colors"
-                            >
-                              {child.name}
-                            </Link>
+                            <Button key={child.slug} asChild variant="ghost" className="w-full justify-start">
+                              <Link
+                                to={`/shop?cat=${activeCat}&sub=${child.slug}`}
+                                onClick={() => { setCatOpen(false); setActiveCat(null); }}
+                              >
+                                {child.name}
+                              </Link>
+                            </Button>
                           ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </MotionCard>
               )}
             </AnimatePresence>
           </div>
@@ -299,9 +300,7 @@ export default function Header() {
               >
                 {link.label}
                 {link.badge && (
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-md gradient-accent text-[9px] font-bold text-accent-foreground">
-                    HOT
-                  </span>
+                  <Badge className="ml-1.5">HOT</Badge>
                 )}
               </Link>
             ))}
@@ -342,19 +341,20 @@ export default function Header() {
             className="lg:hidden border-b border-border overflow-hidden bg-background max-h-[70vh] overflow-y-auto"
           >
             <nav className="container py-3 space-y-0.5">
-              <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categories</p>
+              <SectionTitle as="p" className="px-3 py-2">Categories</SectionTitle>
               {categories.map((cat) => {
                 const Icon = getCatIcon(cat.slug);
                 return (
                 <div key={cat.slug}>
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => setMobileExpandedCat(mobileExpandedCat === cat.slug ? null : cat.slug)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
+                    className="w-full justify-start gap-3"
                   >
                     <Icon className="h-4 w-4 text-primary" />
                     <span className="flex-1 text-left">{cat.name}</span>
-                    <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${mobileExpandedCat === cat.slug ? "rotate-180" : ""}`} />
-                  </button>
+                    <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", mobileExpandedCat === cat.slug ? "rotate-180" : "")} />
+                  </Button>
                   <AnimatePresence>
                     {mobileExpandedCat === cat.slug && (
                       <motion.div
@@ -382,54 +382,56 @@ export default function Header() {
                 );
               })}
 
-              <div className="border-t border-border my-2" />
-              <Link
-                to="/track-order"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
-              >
-                <Truck className="h-4 w-4 text-primary" />
-                Track your order
-              </Link>
-              {allNavLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
-                >
-                  {link.label}
+              <Separator className="my-2" />
+              <Button asChild variant="ghost" className="w-full justify-start">
+                <Link to="/track-order" onClick={() => setMobileOpen(false)}>
+                  <Truck className="h-4 w-4 text-primary" />
+                  Track your order
                 </Link>
+              </Button>
+              {allNavLinks.map((link) => (
+                <Button key={link.to} asChild variant="ghost" className="w-full justify-start">
+                  <Link to={link.to} onClick={() => setMobileOpen(false)}>
+                    {link.label}
+                  </Link>
+                </Button>
               ))}
-              <div className="border-t border-border my-2" />
-              <button
+              <Separator className="my-2" />
+              <Button
+                variant="ghost"
                 onClick={toggleTheme}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg"
+                className="w-full justify-start"
               >
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
-              </button>
-              <div className="border-t border-border my-2" />
+              </Button>
+              <Separator className="my-2" />
               {isLoggedIn ? (
                 <>
-                  <Link to="/account" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg">
-                    <User className="h-4 w-4 text-primary" />
-                    My Account
-                  </Link>
-                  <Link to="/account/orders" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg">
-                    <Package className="h-4 w-4 text-primary" />
-                    My Orders
-                  </Link>
-                  <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-muted rounded-lg">
+                  <Button asChild variant="ghost" className="w-full justify-start">
+                    <Link to="/account" onClick={() => setMobileOpen(false)}>
+                      <User className="h-4 w-4 text-primary" />
+                      My Account
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="w-full justify-start">
+                    <Link to="/account/orders" onClick={() => setMobileOpen(false)}>
+                      <Package className="h-4 w-4 text-primary" />
+                      My Orders
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start">
                     <LogOut className="h-4 w-4" />
                     Log Out
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-primary hover:bg-muted rounded-lg">
-                  <User className="h-4 w-4" />
-                  Login / Sign Up
-                </Link>
+                <Button asChild variant="ghost" className="w-full justify-start">
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>
+                    <User className="h-4 w-4" />
+                    Login / Sign Up
+                  </Link>
+                </Button>
               )}
             </nav>
           </motion.div>

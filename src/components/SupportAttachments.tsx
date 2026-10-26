@@ -1,4 +1,8 @@
 import type { SupportAttachment } from "@/services/supportApi";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 
 function formatFileSize(sizeBytes: number): string {
   if (sizeBytes < 1024) return `${sizeBytes} B`;
@@ -12,7 +16,7 @@ export function MessageAttachments({ attachments }: { attachments: SupportAttach
   return (
     <div className="mt-2 space-y-2">
       {attachments.map((attachment) => (
-        <div key={attachment.id} className="overflow-hidden rounded-xl border border-border/70 bg-background/80">
+        <Card key={attachment.id} className="overflow-hidden">
           {attachment.isImage ? (
             <a href={attachment.url} target="_blank" rel="noreferrer">
               <img src={attachment.url} alt={attachment.name} className="max-h-60 w-full object-cover" />
@@ -25,20 +29,19 @@ export function MessageAttachments({ attachments }: { attachments: SupportAttach
               </audio>
             </div>
           ) : (
-            <a
-              href={attachment.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between gap-3 p-3 text-xs hover:bg-muted/50"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-foreground">{attachment.name}</p>
-                <p className="text-muted-foreground">{formatFileSize(attachment.sizeBytes)}</p>
-              </div>
-              <span className="text-primary">Open</span>
-            </a>
+            <Item asChild size="sm" className="flex-nowrap rounded-none p-3 text-xs">
+              <a href={attachment.url} target="_blank" rel="noreferrer">
+                <ItemContent className="min-w-0 gap-0">
+                  <ItemTitle className="block truncate text-xs">{attachment.name}</ItemTitle>
+                  <ItemDescription className="text-xs">{formatFileSize(attachment.sizeBytes)}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <span className="text-primary">Open</span>
+                </ItemActions>
+              </a>
+            </Item>
           )}
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -56,12 +59,12 @@ export function SelectedAttachments({
   return (
     <div className="flex flex-wrap gap-2">
       {attachments.map((file, index) => (
-        <div key={`${file.name}-${index}`} className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground">
+        <Badge key={`${file.name}-${index}`} variant="outline" className="gap-1 pr-1 font-normal">
           <span className="max-w-40 truncate">{file.name}</span>
-          <button type="button" onClick={() => onRemove(index)} className="text-muted-foreground hover:text-destructive">
+          <Button type="button" variant="ghost" size="icon" className="size-5" aria-label={`Remove ${file.name}`} onClick={() => onRemove(index)}>
             ×
-          </button>
-        </div>
+          </Button>
+        </Badge>
       ))}
     </div>
   );

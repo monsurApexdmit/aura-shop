@@ -1,3 +1,9 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { SectionCard } from "@/components/common/SectionCard";
+import { SlideDots } from "@/components/common/SlideDots";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Copy, Sparkles, Check } from "lucide-react";
@@ -120,43 +126,15 @@ export default function HeroSection() {
   const getCouponPresentation = (coupon: (typeof activeCoupons)[number]) => {
     const campaign = coupon.campaign_name.toLowerCase();
     if (coupon.free_shipping) {
-      return {
-        accent: "text-emerald-400",
-        border: "border-emerald-400/35",
-        bg: "bg-emerald-500/10",
-        pill: "border-emerald-400/70 text-emerald-300 bg-emerald-500/10",
-        badge: "SHIP",
-        badgeClass: "bg-emerald-500 text-white",
-      };
+      return { accent: "text-emerald-400", badge: "SHIP", badgeVariant: "secondary" as const };
     }
     if (campaign.includes("flash") || campaign.includes("hot") || campaign.includes("limited")) {
-      return {
-        accent: "text-red-400",
-        border: "border-red-400/35",
-        bg: "bg-red-500/10",
-        pill: "border-red-400/70 text-red-300 bg-red-500/10",
-        badge: "HOT",
-        badgeClass: "bg-red-500 text-white",
-      };
+      return { accent: "text-red-400", badge: "HOT", badgeVariant: "destructive" as const };
     }
     if (coupon.type === "percentage") {
-      return {
-        accent: "text-primary",
-        border: "border-primary/35",
-        bg: "bg-primary/10",
-        pill: "border-primary/70 text-primary bg-primary/10",
-        badge: "SAVE",
-        badgeClass: "bg-primary text-primary-foreground",
-      };
+      return { accent: "text-primary", badge: "SAVE", badgeVariant: "default" as const };
     }
-    return {
-      accent: "text-accent",
-      border: "border-accent/35",
-      bg: "bg-accent/10",
-      pill: "border-accent/70 text-accent bg-accent/10",
-      badge: "DEAL",
-      badgeClass: "bg-accent text-accent-foreground",
-    };
+    return { accent: "text-accent", badge: "DEAL", badgeVariant: "secondary" as const };
   };
 
   const renderCouponCard = (coupon: (typeof activeCoupons)[number], compact = false) => {
@@ -169,19 +147,17 @@ export default function HeroSection() {
     const isUrgent = style.badge === "HOT";
 
     return (
-      <div
+      <Card
         key={coupon.code}
-        className={`group/coupon relative text-left rounded-xl border transition-colors ${style.border} ${style.bg} ${
-          compact ? "flex h-[156px] w-full flex-col p-3" : "w-full p-3.5"
-        }`}
+        className={cn("group/coupon relative text-left", compact ? "flex h-[156px] w-full flex-col p-3" : "w-full p-3.5")}
       >
         <div className="mb-1.5 flex min-h-[34px] items-start justify-between gap-2">
-          <span className={`${compact ? "text-[28px] leading-none" : "text-2xl"} font-display font-extrabold ${style.accent}`}>
+          <span className={cn(compact ? "text-[28px] leading-none" : "text-2xl", "font-display font-extrabold", style.accent)}>
             {discountLabel}
           </span>
-          <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none ${style.badgeClass}`}>
+          <Badge variant={style.badgeVariant} className="shrink-0 uppercase">
             {style.badge}
-          </span>
+          </Badge>
         </div>
         <div className="mb-1.5 min-w-0">
           <p className="truncate text-xs font-semibold text-foreground leading-tight">{coupon.campaign_name}</p>
@@ -190,33 +166,35 @@ export default function HeroSection() {
         <p className="mb-2 truncate text-[11px] leading-tight text-muted-foreground">
           {coupon.min_order_amount ? `Min. ${formatCurrency(Number(coupon.min_order_amount ?? 0))}` : "No minimum"}
         </p>
-        <button
+        <Button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             copyCode(coupon.code);
           }}
-          className={`mt-auto flex h-9 w-full items-center justify-center gap-1 rounded-lg border border-dashed px-2 text-[11px] font-mono font-bold leading-none ${style.pill}`}
+          variant="outline"
+          size="sm"
+          className="mt-auto w-full gap-1 font-mono"
         >
           {copiedCode === coupon.code ? (
             <><Check className="h-3.5 w-3.5" /> Copied!</>
           ) : (
             <><Copy className="h-3.5 w-3.5" /> {coupon.code}</>
           )}
-        </button>
+        </Button>
         {!compact && (
           <span className="mt-2 block text-[10px] text-muted-foreground">
             Tap to copy
           </span>
         )}
-      </div>
+      </Card>
     );
   };
 
   return (
     <section className="hero-gradient">
       <div className="container py-5 md:py-8">
-        <div className={`grid w-full min-w-0 grid-cols-1 gap-5 overflow-hidden lg:overflow-visible ${activeCoupons.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "lg:grid-cols-1"}`}>
+        <div className={cn("grid w-full min-w-0 grid-cols-1 gap-5 overflow-hidden lg:overflow-visible", activeCoupons.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "lg:grid-cols-1")}>
           {/* Slider */}
           <div className="relative isolate w-full min-w-0 rounded-2xl overflow-hidden min-h-[330px] sm:aspect-[16/9] sm:min-h-[340px] lg:aspect-[16/7] lg:min-h-[300px] group">
             <AnimatePresence mode="wait">
@@ -229,17 +207,19 @@ export default function HeroSection() {
                 className="absolute inset-0 overflow-hidden"
               >
                 <img src={slides[current].image} alt="" className="w-full h-full object-cover object-left-top sm:object-center" />
-                <div className={`absolute inset-0 bg-gradient-to-r ${slides[current].gradient}`} />
+                <div className={cn("absolute inset-0 bg-gradient-to-r", slides[current].gradient)} />
                 <div className="absolute inset-0 flex max-w-full flex-col justify-center p-5 sm:max-w-xl sm:p-8 md:p-14">
-                  <motion.span
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="inline-flex max-w-[calc(100%-1rem)] items-center gap-1.5 bg-background/15 backdrop-blur-sm text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-full w-fit mb-4 border border-primary-foreground/10"
+                    className="mb-4 w-fit max-w-[calc(100%-1rem)]"
                   >
-                    <Sparkles className="h-3 w-3" />
-                    {slides[current].tag}
-                  </motion.span>
+                    <Badge variant="secondary" className="gap-1.5">
+                      <Sparkles className="h-3 w-3" />
+                      {slides[current].tag}
+                    </Badge>
+                  </motion.div>
                   <motion.h1
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -257,42 +237,43 @@ export default function HeroSection() {
                     {slides[current].subtitle}
                   </motion.p>
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
-                    <button
+                    <Button
                       onClick={() => navigate(slides[current].link)}
-                      className="inline-flex items-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm"
                     >
                       {slides[current].cta} <ArrowRight className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </motion.div>
                 </div>
               </motion.div>
             </AnimatePresence>
 
-            <button
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous slide"
               onClick={() => setCurrent((c) => (c - 1 + slides.length) % slides.length)}
-              className="absolute left-3 top-1/2 hidden -translate-y-1/2 w-10 h-10 rounded-xl glass md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+              className="absolute left-3 top-1/2 hidden -translate-y-1/2 md:inline-flex opacity-0 group-hover:opacity-100"
             >
-              <ChevronLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <button
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next slide"
               onClick={() => setCurrent((c) => (c + 1) % slides.length)}
-              className="absolute right-3 top-1/2 hidden -translate-y-1/2 w-10 h-10 rounded-xl glass md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+              className="absolute right-3 top-1/2 hidden -translate-y-1/2 md:inline-flex opacity-0 group-hover:opacity-100"
             >
-              <ChevronRight className="h-5 w-5 text-foreground" />
-            </button>
+              <ChevronRight className="h-5 w-5" />
+            </Button>
 
             {/* Progress dots */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {slides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={`h-1.5 rounded-full transition-all duration-500 ${
-                    i === current ? "bg-primary-foreground w-8" : "bg-primary-foreground/40 w-1.5"
-                  }`}
-                />
-              ))}
-            </div>
+            <SlideDots
+              tone="light"
+              count={slides.length}
+              current={current}
+              onSelect={setCurrent}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2"
+            />
           </div>
 
           {/* Mobile Coupons */}
@@ -322,17 +303,21 @@ export default function HeroSection() {
           {/* Coupon Sidebar */}
           {activeCoupons.length > 0 && (
           <div className="hidden lg:flex flex-col gap-3">
-            <div className="rounded-2xl border border-border bg-card p-5 flex-1">
-              <h3 className="font-display font-bold text-sm text-card-foreground mb-4 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg gradient-accent flex items-center justify-center">
-                  <Sparkles className="h-3 w-3 text-accent-foreground" />
+            <SectionCard
+              className="flex-1"
+              title={
+                <span className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg gradient-accent flex items-center justify-center">
+                    <Sparkles className="h-3 w-3 text-accent-foreground" />
+                  </span>
+                  Active Coupons
                 </span>
-                Active Coupons
-              </h3>
+              }
+            >
               <div className="space-y-3 max-h-64 overflow-y-auto pr-0.5">
                 {activeCoupons.map((coupon) => renderCouponCard(coupon))}
               </div>
-            </div>
+            </SectionCard>
           </div>
           )}
         </div>

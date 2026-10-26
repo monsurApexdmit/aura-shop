@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,6 +7,15 @@ import {
   ArrowRight, Box, XCircle, Calendar, Info,
 } from "lucide-react";
 import { orderApi } from "@/services/orderApi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { SectionCard } from "@/components/common/SectionCard";
+import { SectionTitle } from "@/components/common/SectionTitle";
+import { InfoList, InfoRow } from "@/components/common/InfoList";
 import type { ApiOrder } from "@/services/orderApi";
 import { mapFulfillmentStatus } from "@/services/orderApi";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -141,23 +151,21 @@ export default function TrackOrder() {
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
+              <Input
                 type="text"
                 value={orderId}
                 onChange={(e) => { setOrderId(e.target.value); setError(""); }}
                 placeholder="Enter invoice number (e.g. ORD-XXXX)"
-                className={`w-full pl-11 pr-4 py-3.5 rounded-xl border bg-card text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
-                  error ? "border-destructive" : "border-border"
-                }`}
+                className={cn("w-full pl-11", error && "border-destructive")}
               />
             </div>
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg shrink-0 disabled:opacity-70"
+              className="shrink-0"
             >
               {loading ? "Tracking…" : <><span>Track</span><ArrowRight className="h-4 w-4" /></>}
-            </button>
+            </Button>
           </div>
           {error && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><Info className="h-3 w-3" />{error}</p>}
         </motion.form>
@@ -175,15 +183,15 @@ export default function TrackOrder() {
             className="container max-w-2xl mx-auto space-y-4"
           >
             {/* Order Info Card */}
-            <div className="bg-card border border-border rounded-2xl p-6">
+            <Card className="p-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Invoice</p>
+                  <SectionTitle as="p">Invoice</SectionTitle>
                   <p className="font-mono font-bold text-primary text-lg">{order.invoice_no}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</p>
-                  <p className="font-display font-bold text-foreground">{statusLabel}</p>
+                  <SectionTitle as="p">Status</SectionTitle>
+                  <p className="font-semibold text-foreground">{statusLabel}</p>
                 </div>
               </div>
 
@@ -212,7 +220,9 @@ export default function TrackOrder() {
 
               {/* Shipping timeline dates */}
               {shipment && (
-                <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <>
+                <Separator className="mt-4" />
+                <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   {shipment.shipped_at && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Package className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -241,24 +251,20 @@ export default function TrackOrder() {
                     </div>
                   )}
                 </div>
+                </>
               )}
-            </div>
+            </Card>
 
             {order.fulfillment_status === "cancelled" ? (
-              <div className="bg-card border border-destructive/30 rounded-2xl p-6 flex items-center gap-4 text-destructive">
-                <XCircle className="h-8 w-8 shrink-0" />
-                <div>
-                  <p className="font-semibold">Order Cancelled</p>
-                  <p className="text-sm text-muted-foreground">This order has been cancelled.</p>
-                </div>
-              </div>
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Order Cancelled</AlertTitle>
+                <AlertDescription className="text-muted-foreground">This order has been cancelled.</AlertDescription>
+              </Alert>
             ) : (
               <>
                 {/* Fulfillment Progress */}
-                <div className="bg-card border border-border rounded-2xl p-6">
-                  <h2 className="font-display font-bold text-sm mb-6 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" /> Order Progress
-                  </h2>
+                <SectionCard title={<span className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> Order Progress</span>}>
                   <div className="space-y-0">
                     {timeline.map((step, i) => {
                       const isLast = i === timeline.length - 1;
@@ -271,26 +277,24 @@ export default function TrackOrder() {
                           className="flex gap-4"
                         >
                           <div className="flex flex-col items-center">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                              step.isCurrent
+                            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all", step.isCurrent
                                 ? "gradient-primary text-primary-foreground shadow-lg ring-4 ring-primary/20"
                                 : step.done
                                 ? "gradient-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
-                            }`}>
+                                : "bg-muted text-muted-foreground")}>
                               <step.icon className="h-5 w-5" />
                             </div>
                             {!isLast && (
-                              <div className={`w-0.5 h-12 ${step.done ? "bg-primary" : "bg-border"}`} />
+                              <div className={cn("w-0.5 h-12", step.done ? "bg-primary" : "bg-border")} />
                             )}
                           </div>
                           <div className="pt-2 pb-4">
-                            <p className={`font-semibold text-sm ${step.done ? "text-foreground" : "text-muted-foreground"}`}>
+                            <p className={cn("font-semibold text-sm", step.done ? "text-foreground" : "text-muted-foreground")}>
                               {step.label}
                               {step.isCurrent && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                                <Badge variant="secondary" className="ml-2">
                                   Current
-                                </span>
+                                </Badge>
                               )}
                             </p>
                             {step.date
@@ -302,14 +306,11 @@ export default function TrackOrder() {
                       );
                     })}
                   </div>
-                </div>
+                </SectionCard>
 
                 {/* Tracking History from shipment */}
                 {trackingHistory.length > 0 && (
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <h2 className="font-display font-bold text-sm mb-5 flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-primary" /> Tracking History
-                    </h2>
+                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> Tracking History</span>}>
                     <div className="space-y-0">
                       {trackingHistory.map((event, i) => {
                         const isLatest = i === 0;
@@ -322,13 +323,11 @@ export default function TrackOrder() {
                               <div className="absolute left-5 top-10 w-0.5 h-full bg-border" />
                             )}
                             {/* Dot */}
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 mt-0.5 ${
-                              isLatest
+                            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 mt-0.5", isLatest
                                 ? "bg-primary border-primary text-primary-foreground"
                                 : isDelivered
                                 ? "bg-emerald-500 border-emerald-500 text-white"
-                                : "bg-muted border-border text-muted-foreground"
-                            }`}>
+                                : "bg-muted border-border text-muted-foreground")}>
                               {isDelivered
                                 ? <CheckCircle2 className="h-4 w-4" />
                                 : <Truck className="h-4 w-4" />
@@ -337,12 +336,12 @@ export default function TrackOrder() {
                             {/* Content */}
                             <div className="flex-1 pb-5">
                               <div className="flex items-start justify-between gap-2">
-                                <p className={`font-semibold text-sm capitalize ${isLatest ? "text-primary" : "text-foreground"}`}>
+                                <p className={cn("font-semibold text-sm capitalize", isLatest ? "text-primary" : "text-foreground")}>
                                   {event.status.replace(/_/g, " ")}
                                   {isLatest && (
-                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                                    <Badge variant="secondary" className="ml-2 normal-case">
                                       Latest
-                                    </span>
+                                    </Badge>
                                   )}
                                 </p>
                                 <p className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1 shrink-0">
@@ -364,14 +363,11 @@ export default function TrackOrder() {
                         );
                       })}
                     </div>
-                  </div>
+                  </SectionCard>
                 )}
 
                 {/* Order Items */}
-                <div className="bg-card border border-border rounded-2xl p-6">
-                  <h2 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
-                    <Box className="h-4 w-4 text-primary" /> Items ({order.items.length})
-                  </h2>
+                <SectionCard title={<span className="flex items-center gap-2"><Box className="h-4 w-4 text-primary" /> Items ({order.items.length})</span>}>
                   <div className="space-y-3">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between text-sm">
@@ -388,25 +384,22 @@ export default function TrackOrder() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 pt-4 border-t border-border space-y-1 text-sm">
-                    {order.shipping_cost > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Shipping</span>
-                        <span>{formatCurrency(order.shipping_cost)}</span>
-                      </div>
-                    )}
-                    {order.discount > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Discount</span>
-                        <span className="text-emerald-600">-{formatCurrency(order.discount)}</span>
-                      </div>
-                    )}
+                  <Separator className="mt-4" />
+                  <div className="pt-4 space-y-1 text-sm">
+                    <InfoList className="gap-1">
+                      {order.shipping_cost > 0 && (
+                        <InfoRow label="Shipping" value={formatCurrency(order.shipping_cost)} />
+                      )}
+                      {order.discount > 0 && (
+                        <InfoRow label="Discount" value={<span className="text-emerald-600">-{formatCurrency(order.discount)}</span>} />
+                      )}
+                    </InfoList>
                     <div className="flex justify-between font-bold text-base pt-1">
                       <span>Total</span>
                       <span className="text-primary">{formatCurrency(order.amount)}</span>
                     </div>
                   </div>
-                </div>
+                </SectionCard>
               </>
             )}
           </motion.section>

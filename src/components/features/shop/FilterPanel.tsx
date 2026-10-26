@@ -1,7 +1,11 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { SectionTitle } from "@/components/common/SectionTitle";
 import { useCategories } from "@/hooks/useCategories";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
@@ -80,24 +84,19 @@ export default function FilterPanel({
   const { formatCurrency } = useCurrency();
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={cn("space-y-6", className)}>
       {/* Categories Filter */}
       <div>
-        <h3 className="font-display font-bold text-sm text-foreground uppercase tracking-wider mb-3">
-          Categories
-        </h3>
+        <SectionTitle className="mb-3">Categories</SectionTitle>
 
         {/* All Products Button */}
-        <button
+        <Button
+          variant={!activeCatSlug ? "secondary" : "ghost"}
           onClick={() => onSelectCategory(null, null)}
-          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
-            !activeCatSlug
-              ? "bg-primary/10 text-primary font-semibold"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
+          className="w-full justify-start mb-1"
         >
           All Products
-        </button>
+        </Button>
 
         {/* Category List */}
         <div className="space-y-0.5">
@@ -109,28 +108,26 @@ export default function FilterPanel({
               <div key={cat.slug}>
                 {/* Category Button */}
                 <div className="flex items-center">
-                  <button
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
                     onClick={() => onSelectCategory(cat.slug, null)}
-                    className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
+                    className="flex-1 min-w-0 justify-start gap-2.5"
                   >
                     <span className="flex-1 text-left truncate">{cat.name}</span>
-                  </button>
+                  </Button>
 
                   {/* Expand/Collapse Button */}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
+                    aria-expanded={isExpanded}
                     onClick={() => onToggleCatExpand(cat.slug)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
                   >
                     <ChevronDown
-                      className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
+                      className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", isExpanded ? "rotate-180" : "")}
                     />
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Subcategories */}
@@ -149,18 +146,16 @@ export default function FilterPanel({
                             activeCatSlug === cat.slug && activeSubSlug === sub.slug;
 
                           return (
-                            <button
+                            <Button
                               key={sub.slug}
+                              variant={isSubActive ? "secondary" : "ghost"}
+                              size="sm"
                               onClick={() => onSelectCategory(cat.slug, sub.slug)}
-                              className={`w-full flex items-center px-3 py-1.5 rounded-md text-xs transition-colors ${
-                                isSubActive
-                                  ? "bg-primary/10 text-primary font-semibold"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                              }`}
+                              className="w-full justify-start"
                             >
                               <ChevronRight className="h-3 w-3 opacity-40 mr-1.5 shrink-0" />
                               {sub.name}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -174,10 +169,9 @@ export default function FilterPanel({
       </div>
 
       {/* Price Range Filter */}
-      <div className="border-t border-border pt-5">
-        <h3 className="font-display font-bold text-sm text-foreground uppercase tracking-wider mb-4">
-          Price Range
-        </h3>
+      <Separator />
+      <div>
+        <SectionTitle className="mb-4">Price Range</SectionTitle>
         <Slider
           defaultValue={[0, 1500]}
           min={0}
@@ -188,21 +182,20 @@ export default function FilterPanel({
           className="mb-3"
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="px-2 py-1 rounded-md bg-muted font-mono">
+          <Badge variant="secondary" className="font-mono">
             {formatCurrency(priceRange[0])}
-          </span>
+          </Badge>
           <span className="text-border">—</span>
-          <span className="px-2 py-1 rounded-md bg-muted font-mono">
+          <Badge variant="secondary" className="font-mono">
             {formatCurrency(priceRange[1])}
-          </span>
+          </Badge>
         </div>
       </div>
 
       {/* Popular Tags */}
-      <div className="border-t border-border pt-5">
-        <h3 className="font-display font-bold text-sm text-foreground uppercase tracking-wider mb-3">
-          Popular Tags
-        </h3>
+      <Separator />
+      <div>
+        <SectionTitle className="mb-3">Popular Tags</SectionTitle>
         <div className="flex flex-wrap gap-1.5">
           {[
             "Hot Deal",
@@ -213,11 +206,7 @@ export default function FilterPanel({
             "Trending",
             "Premium",
           ].map((tag) => (
-            <Badge
-              key={tag}
-              variant="outline"
-              className="cursor-pointer hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors text-xs"
-            >
+            <Badge key={tag} variant="outline">
               {tag}
             </Badge>
           ))}

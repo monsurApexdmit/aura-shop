@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,8 +10,14 @@ import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import FilterPanel from "@/components/features/shop/FilterPanel";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/common/EmptyState";
+import { PageHeader } from "@/components/common/PageHeader";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "newest";
 
@@ -75,14 +82,14 @@ export default function Shop() {
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
-      <div className="bg-muted/40 border-b border-border">
+      <div className="bg-muted/40">
         <div className="container py-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link to="/" className="hover:text-primary transition-colors">Home</Link>
             <ChevronRight className="h-3 w-3" />
             <span className={!activeCatSlug ? "text-foreground font-medium" : "hover:text-primary cursor-pointer transition-colors"}>
               {activeCatSlug ? (
-                <button onClick={() => selectCategory(null, null)}>Shop</button>
+                <Button variant="link" onClick={() => selectCategory(null, null)} className="h-auto p-0">Shop</Button>
               ) : "Shop"}
             </span>
             {activeCategory && (
@@ -90,7 +97,7 @@ export default function Shop() {
                 <ChevronRight className="h-3 w-3" />
                 <span className={!activeSubSlug ? "text-foreground font-medium" : "hover:text-primary cursor-pointer transition-colors"}>
                   {activeSubSlug
-                    ? <button onClick={() => selectCategory(activeCatSlug, null)}>{activeCategory.name}</button>
+                    ? <Button variant="link" onClick={() => selectCategory(activeCatSlug, null)} className="h-auto p-0">{activeCategory.name}</Button>
                     : activeCategory.name}
                 </span>
               </>
@@ -102,20 +109,20 @@ export default function Shop() {
               </>
             )}
           </div>
-          <h1 className="font-display text-xl md:text-2xl font-bold text-foreground mt-2">
-            {activeSubCategory?.name || activeCategory?.name || (searchQuery ? `Results for "${searchQuery}"` : "All Products")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isLoading ? "Loading..." : `${data?.meta?.total ?? filteredProducts.length} product${(data?.meta?.total ?? filteredProducts.length) !== 1 ? "s" : ""} found`}
-          </p>
+          <PageHeader
+            className="mt-2"
+            title={activeSubCategory?.name || activeCategory?.name || (searchQuery ? `Results for "${searchQuery}"` : "All Products")}
+            description={isLoading ? "Loading..." : `${data?.meta?.total ?? filteredProducts.length} product${(data?.meta?.total ?? filteredProducts.length) !== 1 ? "s" : ""} found`}
+          />
         </div>
       </div>
+      <Separator />
 
       <div className="container py-6 md:py-8">
         <div className="flex gap-6">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-40 bg-card border border-border rounded-2xl p-5 max-h-[calc(100vh-180px)] overflow-y-auto">
+            <Card className="sticky top-40 p-5 max-h-[calc(100vh-180px)] overflow-y-auto">
               <FilterPanel
                 activeCatSlug={activeCatSlug}
                 activeSubSlug={activeSubSlug}
@@ -125,7 +132,7 @@ export default function Shop() {
                 onPriceChange={setPriceRange}
                 onToggleCatExpand={toggleCatExpand}
               />
-            </div>
+            </Card>
           </aside>
 
           {/* Main Content */}
@@ -133,7 +140,7 @@ export default function Shop() {
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="lg:hidden rounded-xl gap-2" onClick={() => setMobileFilterOpen(true)}>
+                <Button variant="outline" size="sm" className="lg:hidden gap-2" onClick={() => setMobileFilterOpen(true)}>
                   <SlidersHorizontal className="h-4 w-4" /> Filters
                 </Button>
                 {(activeCatSlug || priceRange[0] > 0 || priceRange[1] < 1500) && (
@@ -154,47 +161,51 @@ export default function Shop() {
 
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="h-9 pl-8 pr-3 rounded-xl border border-border bg-background text-sm text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="default">Default</option>
-                    <option value="price-asc">Price: Low → High</option>
-                    <option value="price-desc">Price: High → Low</option>
-                    <option value="newest">Newest</option>
-                  </select>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                    <SelectTrigger className="w-44 pl-8" aria-label="Sort products">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      <SelectItem value="price-asc">Price: Low → High</SelectItem>
+                      <SelectItem value="price-desc">Price: High → Low</SelectItem>
+                      <SelectItem value="newest">Newest</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 </div>
-                <div className="hidden md:flex items-center border border-border rounded-xl overflow-hidden">
-                  <button onClick={() => setGridCols(3)} className={`p-2 transition-colors ${gridCols === 3 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
+                <ButtonGroup className="hidden md:flex" aria-label="Grid density">
+                  <Button variant={gridCols === 3 ? "default" : "outline"} size="icon" aria-label="Larger cards" aria-pressed={gridCols === 3} onClick={() => setGridCols(3)}>
                     <LayoutList className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => setGridCols(4)} className={`p-2 transition-colors ${gridCols === 4 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
+                  </Button>
+                  <Button variant={gridCols === 4 ? "default" : "outline"} size="icon" aria-label="Compact grid" aria-pressed={gridCols === 4} onClick={() => setGridCols(4)}>
                     <Grid3X3 className="h-4 w-4" />
-                  </button>
-                </div>
+                  </Button>
+                </ButtonGroup>
               </div>
             </div>
 
             {/* Product Grid */}
             {isLoading ? (
-              <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3"} gap-3 md:gap-4`}>
+              <div className={cn("grid grid-cols-2 sm:grid-cols-3", gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3", "gap-3 md:gap-4")}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <Skeleton key={i} className="h-72 rounded-2xl" />
+                  <Skeleton key={i} className="h-72" />
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">No products found</p>
-                <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
-                <Button variant="outline" className="mt-4 rounded-xl" onClick={() => { selectCategory(null, null); setPriceRange([0, 1500]); }}>
-                  Clear Filters
-                </Button>
-              </div>
+              <EmptyState
+                className="py-20"
+                title="No products found"
+                description="Try adjusting your filters"
+                action={
+                  <Button variant="outline" onClick={() => { selectCategory(null, null); setPriceRange([0, 1500]); }}>
+                    Clear Filters
+                  </Button>
+                }
+              />
             ) : (
               <>
-                <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3"} gap-3 md:gap-4`}>
+                <div className={cn("grid grid-cols-2 sm:grid-cols-3", gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3", "gap-3 md:gap-4")}>
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product.id} product={product} index={i} />
                   ))}
@@ -203,13 +214,13 @@ export default function Shop() {
                 {/* Pagination */}
                 {data && data.meta.last_page > 1 && (
                   <div className="flex justify-center gap-2 mt-8">
-                    <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="rounded-xl">
+                    <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                       Previous
                     </Button>
                     <span className="flex items-center px-4 text-sm text-muted-foreground">
                       Page {data.meta.current_page} of {data.meta.last_page}
                     </span>
-                    <Button variant="outline" disabled={page === data.meta.last_page} onClick={() => setPage((p) => p + 1)} className="rounded-xl">
+                    <Button variant="outline" disabled={page === data.meta.last_page} onClick={() => setPage((p) => p + 1)}>
                       Next
                     </Button>
                   </div>
@@ -229,12 +240,13 @@ export default function Shop() {
             <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background z-50 lg:hidden overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="font-display font-bold text-lg">Filters</h2>
-                <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setMobileFilterOpen(false)}>
+              <div className="flex items-center justify-between p-4">
+                <h2 className="font-semibold text-lg">Filters</h2>
+                <Button variant="ghost" size="icon" aria-label="Close filters" onClick={() => setMobileFilterOpen(false)}>
                   <X className="h-5 w-5" />
                 </Button>
               </div>
+              <Separator />
               <div className="p-4">
                 <FilterPanel
                   activeCatSlug={activeCatSlug}

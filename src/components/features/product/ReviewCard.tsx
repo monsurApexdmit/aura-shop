@@ -1,6 +1,11 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { ReactNode } from "react";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import RatingDisplay from "@/components/common/RatingDisplay";
 
 export interface Review {
@@ -92,24 +97,20 @@ export default function ReviewCard({
   };
 
   return (
-    <div
-      className={`border border-border rounded-lg p-4 sm:p-6 space-y-4 ${className}`}
-    >
+    <Card className={cn("p-4 sm:p-6 space-y-4", className)}>
       {/* Header: Author Info */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Avatar className="h-10 w-10 shrink-0">
-            {review.author.image && (
-              <AvatarImage src={review.author.image} alt={review.author.name} />
-            )}
-            <AvatarFallback>
-              {review.author.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            src={review.author.image}
+            name={review.author.name}
+            fallback={review.author.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()}
+            className="h-10 w-10 shrink-0"
+          />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -117,9 +118,7 @@ export default function ReviewCard({
                 {review.author.name}
               </p>
               {review.verified && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 font-medium">
-                  Verified Purchase
-                </span>
+                <Badge variant="secondary">Verified Purchase</Badge>
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -138,7 +137,7 @@ export default function ReviewCard({
       <p className="text-sm text-foreground leading-relaxed">{review.comment}</p>
 
       {review.reply && (
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-2">
+        <Card className="p-4 space-y-2">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold text-foreground">{review.reply.authorName}</p>
             {review.reply.repliedAt && (
@@ -146,17 +145,21 @@ export default function ReviewCard({
             )}
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">{review.reply.body}</p>
-        </div>
+        </Card>
       )}
 
+      <Separator />
+
       {/* Helpful Buttons */}
-      <div className="flex items-center gap-3 pt-2 border-t border-border/50">
+      <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground">Helpful?</span>
 
         {onHelpful && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onHelpful(review.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:border-green-400/50 hover:bg-green-100/30 dark:hover:bg-green-900/20 transition-colors text-xs font-medium text-muted-foreground hover:text-green-700 dark:hover:text-green-400"
+            className="gap-1.5"
           >
             <ThumbsUp className="h-3.5 w-3.5" />
             <span>Yes</span>
@@ -165,13 +168,15 @@ export default function ReviewCard({
                 ({review.helpful})
               </span>
             )}
-          </button>
+          </Button>
         )}
 
         {onNotHelpful && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onNotHelpful(review.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:border-red-400/50 hover:bg-red-100/30 dark:hover:bg-red-900/20 transition-colors text-xs font-medium text-muted-foreground hover:text-red-700 dark:hover:text-red-400"
+            className="gap-1.5"
           >
             <ThumbsDown className="h-3.5 w-3.5" />
             <span>No</span>
@@ -180,9 +185,9 @@ export default function ReviewCard({
                 ({review.notHelpful})
               </span>
             )}
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

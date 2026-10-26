@@ -5,6 +5,10 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useStorefrontPages, BUILT_IN_PAGE_SLUGS, pageHref } from "@/hooks/useStorefrontPages";
 import { StoreHoursList } from "@/components/StoreHours";
 import { Facebook, Instagram, Youtube, MessageCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { UserAvatar } from "@/components/common/UserAvatar";
 
 const footerLinks = {
   Company: [
@@ -60,9 +64,7 @@ export default function Footer() {
                 <img src={displayLogo} alt={storeName} className="h-16 w-auto max-w-[220px] object-contain rounded-xl" />
               ) : (
                 <>
-                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-display font-bold text-lg">{storeName.charAt(0).toUpperCase()}</span>
-                  </div>
+                  <UserAvatar shape="square" name={storeName} fallback={storeName.charAt(0).toUpperCase()} className="size-10" />
                   <div>
                     <span className="font-display font-bold text-lg text-background leading-none">{storeName}</span>
                     <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
@@ -76,10 +78,11 @@ export default function Footer() {
             {socials.length > 0 && (
               <div className="flex items-center gap-2 mb-5">
                 {socials.map(({ label, href, Icon }) => (
-                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                    className="w-9 h-9 rounded-lg bg-background/10 flex items-center justify-center text-background/60 hover:text-primary transition-colors">
-                    <Icon className="h-4 w-4" />
-                  </a>
+                  <Button key={label} asChild variant="ghost" size="icon" className="text-background/60 hover:bg-background/10 hover:text-primary">
+                    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+                      <Icon className="h-4 w-4" />
+                    </a>
+                  </Button>
                 ))}
               </div>
             )}
@@ -140,16 +143,17 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-background/10">
+      <Separator className="bg-background/10" />
+      <div>
         <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-background/30">
             © {year} {storeName}. All rights reserved. Built with ❤️
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {displayPaymentMethods.map((m) => (
-              <span key={m} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-background/8 text-background/40 font-medium border border-background/5">
+              <Badge key={m} variant="outline" className="border-background/10 text-background/40">
                 {m}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
