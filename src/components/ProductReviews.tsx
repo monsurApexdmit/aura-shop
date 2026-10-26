@@ -1,6 +1,7 @@
+import { cn } from "@/lib/utils"
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2, MessageSquareText, Star } from "lucide-react";
+import { MessageSquareText, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import ReviewCard, { Review } from "@/components/features/product/ReviewCard";
@@ -8,6 +9,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProductReviews, useSubmitProductReview } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
+import { SectionCard } from "@/components/common/SectionCard";
+import { EmptyState } from "@/components/common/EmptyState";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 interface ProductReviewsProps {
   productSlug: string;
@@ -103,7 +108,7 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
           <div className="text-5xl font-display font-bold text-foreground">{displayRating.toFixed(1)}</div>
           <div className="flex items-center gap-0.5 justify-center sm:justify-start mt-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className={`h-4 w-4 ${i < Math.floor(displayRating) ? "fill-accent text-accent" : "text-border"}`} />
+              <Star key={i} className={cn("h-4 w-4", i < Math.floor(displayRating) ? "fill-accent text-accent" : "text-border")} />
             ))}
           </div>
           <p className="text-sm text-muted-foreground mt-1">Based on {displayReviewCount} reviews</p>
@@ -127,28 +132,30 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-foreground">{currentUserReview ? "Update your review" : "Write a review"}</h3>
-          <p className="text-sm text-muted-foreground">
-            {isLoggedIn ? "Share your experience with this product." : "Sign in to submit a review for this product."}
-          </p>
-        </div>
+      <SectionCard
+        title={currentUserReview ? "Update your review" : "Write a review"}
+        description={isLoggedIn ? "Share your experience with this product." : "Sign in to submit a review for this product."}
+        contentClassName="space-y-4"
+      >
 
         <div className="flex items-center gap-2">
           {Array.from({ length: 5 }).map((_, index) => {
             const value = index + 1;
 
             return (
-              <button
-                key={value}
+              <WithTooltip key={value} content={`Rate ${value} star${value > 1 ? "s" : ""}`}><Button
+               
                 type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Rate ${value} star${value > 1 ? "s" : ""}`}
+                aria-pressed={value <= selectedRating}
                 onClick={() => setSelectedRating(value)}
-                className="transition-transform hover:scale-110 disabled:cursor-not-allowed"
+                className="[&_svg]:size-6"
                 disabled={!isLoggedIn || submitReview.isPending}
               >
-                <Star className={`h-6 w-6 ${value <= selectedRating ? "fill-accent text-accent" : "text-border"}`} />
-              </button>
+                <Star className={cn("h-6 w-6", value <= selectedRating ? "fill-accent text-accent" : "text-border")} />
+              </Button></WithTooltip>
             );
           })}
         </div>
@@ -163,31 +170,30 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {!isLoggedIn ? (
-            <Link to="/login" className="text-sm font-medium text-primary hover:underline">
-              Sign in to write a review
-            </Link>
+            <Button asChild variant="link" className="h-auto p-0">
+              <Link to="/login">Sign in to write a review</Link>
+            </Button>
           ) : (
             <span className="text-xs text-muted-foreground">Your review appears immediately on this product.</span>
           )}
 
           <Button onClick={handleSubmit} disabled={!isLoggedIn || submitReview.isPending}>
-            {submitReview.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {submitReview.isPending && <Spinner />}
             {currentUserReview ? "Update Review" : "Submit Review"}
           </Button>
         </div>
-      </div>
+      </SectionCard>
 
       <div className="space-y-4">
         {reviewQuery.isLoading ? (
           <div className="text-sm text-muted-foreground">Loading reviews...</div>
         ) : reviews.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-8 text-center space-y-3">
-            <MessageSquareText className="h-8 w-8 text-muted-foreground mx-auto" />
-            <div>
-              <p className="text-sm font-medium text-foreground">No reviews yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Be the first to share your experience with this product.</p>
-            </div>
-          </div>
+          <EmptyState
+            bordered
+            icon={MessageSquareText}
+            title="No reviews yet"
+            description="Be the first to share your experience with this product."
+          />
         ) : reviews.map((review, i) => (
           <motion.div
             key={review.id}

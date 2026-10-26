@@ -1,3 +1,6 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { WithTooltip } from "@/components/common/WithTooltip";
 import { Heart, Eye, ShoppingCart } from "lucide-react";
 
 interface QuickActionButtonsProps {
@@ -57,47 +60,51 @@ export default function QuickActionButtons({
   className = "",
 }: QuickActionButtonsProps) {
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={cn("flex flex-col gap-2", className)}>
       {/* Wishlist Button */}
-      <button
+      <WithTooltip content={liked ? "Remove from wishlist" : "Add to wishlist"}>
+      <Button
+        variant={liked ? "default" : "outline"}
+        size="icon"
         onClick={(e) => {
           e.preventDefault();
           onWishlist();
         }}
-        className={`w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-md ${
-          liked
-            ? "bg-accent text-accent-foreground"
-            : "bg-card/80 text-foreground hover:bg-accent hover:text-accent-foreground"
-        }`}
-        title={liked ? "Remove from wishlist" : "Add to wishlist"}
+        aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
       >
-        <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
-      </button>
+        <Heart className={cn("h-4 w-4", liked ? "fill-current" : "")} />
+      </Button>
+      </WithTooltip>
 
       {/* View Button */}
-      <button
+      <WithTooltip content="View product details">
+      <Button
+        variant="outline"
+        size="icon"
         onClick={(e) => {
           e.preventDefault();
           onView();
         }}
-        className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-md text-foreground flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-md"
-        title="View product details"
+        aria-label="View product details"
       >
         <Eye className="h-4 w-4" />
-      </button>
+      </Button>
+      </WithTooltip>
 
       {/* Add to Cart Button (if not hidden) */}
       {!hideAddCart && (
-        <button
+        <WithTooltip content="Add to cart">
+        <Button
+          size="icon"
           onClick={(e) => {
             e.preventDefault();
             onAddCart();
           }}
-          className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-all duration-300 shadow-md"
-          title="Add to cart"
+          aria-label="Add to cart"
         >
           <ShoppingCart className="h-4 w-4" />
-        </button>
+        </Button>
+        </WithTooltip>
       )}
     </div>
   );

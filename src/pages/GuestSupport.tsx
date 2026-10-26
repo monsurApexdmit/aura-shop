@@ -1,8 +1,19 @@
+import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Loader2, Send, XCircle, Paperclip, Mic, Square } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Send, XCircle, Paperclip, Mic, Square } from "lucide-react";
 import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { PageHeader } from "@/components/common/PageHeader";
+import { FormField } from "@/components/common/FormField";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { Textarea } from "@/components/ui/textarea";
 import { supportApi, type SupportTicket } from "@/services/supportApi";
 import { subscribeToGuestSupportTicket } from "@/lib/reverb";
 import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
@@ -26,19 +37,17 @@ function playNotificationSound() {
 }
 
 const STATUS_CONFIG = {
-  open:        { label: "Open",        icon: AlertCircle,  color: "text-blue-600 bg-blue-50" },
-  in_progress: { label: "In Progress", icon: Clock,        color: "text-yellow-600 bg-yellow-50" },
-  resolved:    { label: "Resolved",    icon: CheckCircle2, color: "text-green-600 bg-green-50" },
-  closed:      { label: "Closed",      icon: XCircle,      color: "text-gray-500 bg-gray-100" },
+  open:        { label: "Open",        icon: AlertCircle },
+  in_progress: { label: "In Progress", icon: Clock },
+  resolved:    { label: "Resolved",    icon: CheckCircle2 },
+  closed:      { label: "Closed",      icon: XCircle },
 } as const;
 
-function StatusBadge({ status }: { status: SupportTicket["status"] }) {
+function TicketStatusBadge({ status }: { status: SupportTicket["status"] }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${cfg.color}`}>
-      <Icon className="w-3 h-3" /> {cfg.label}
-    </span>
+    <StatusBadge status={status} className="gap-1" label={<><Icon className="w-3 h-3" /> {cfg.label}</>} />
   );
 }
 
@@ -199,30 +208,34 @@ export default function GuestSupport() {
   return (
     <div className="min-h-screen bg-background pt-28">
       <div className="container pb-16">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-2">Guest Support</p>
-            <h1 className="font-display text-3xl font-bold text-foreground">Support Conversation</h1>
-          </div>
-          <Link to="/contact" className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Contact
-          </Link>
-        </div>
+        <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-2">Guest Support</p>
+        <PageHeader
+          className="mb-6"
+          title="Support Conversation"
+          actions={
+            <Button asChild variant="outline">
+              <Link to="/contact">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Contact
+              </Link>
+            </Button>
+          }
+        />
 
         {loading ? (
-          <div className="rounded-2xl border border-border bg-card p-10 text-center text-muted-foreground">
-            <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
+          <Card className="p-10 text-center text-muted-foreground">
+            <Spinner className="mx-auto mb-3 size-5" />
             Loading support conversation...
-          </div>
+          </Card>
         ) : error ? (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-            <h2 className="font-semibold text-foreground">Unable to open this conversation</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{error}</p>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Unable to open this conversation</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : ticket ? (
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            <div className="border-b border-border px-6 py-5">
+          <Card className="overflow-hidden">
+            <div className="px-6 py-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{ticket.ticketNumber}</p>
@@ -232,26 +245,26 @@ export default function GuestSupport() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusBadge status={ticket.status} />
-                  <button
+                  <TicketStatusBadge status={ticket.status} />
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => void loadTicket(true)}
-                    className="rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
                   >
                     Refresh
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
+            <Separator />
 
             <div className="max-h-[480px] overflow-y-auto px-6 py-5 space-y-4">
               {ticket.messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    message.senderType === "staff"
+                  className={cn("max-w-[85%] rounded-2xl px-4 py-3", message.senderType === "staff"
                       ? "bg-primary/10 text-foreground"
-                      : "ml-auto bg-muted text-foreground"
-                  }`}
+                      : "ml-auto bg-muted text-foreground")}
                 >
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -266,10 +279,11 @@ export default function GuestSupport() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t border-border px-6 py-5">
+            <Separator />
+            <div className="px-6 py-5">
               {canReply ? (
                 <div className="space-y-3">
-                  <input
+                  <Input
                     ref={fileInputRef}
                     type="file"
                     multiple
@@ -277,41 +291,42 @@ export default function GuestSupport() {
                     className="hidden"
                     onChange={handleFileSelect}
                   />
-                  <label className="block text-sm font-medium text-foreground">Reply to support</label>
-                  <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
-                  <textarea
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    rows={4}
-                    placeholder="Write your follow-up message here..."
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                  />
+                  <FormField label="Reply to support" htmlFor="guest-support-reply">
+                    <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
+                    <Textarea
+                      id="guest-support-reply"
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      rows={4}
+                      placeholder="Write your follow-up message here..."
+                      className="w-full resize-none"
+                    />
+                  </FormField>
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm hover:bg-muted transition-colors">
+                      <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                         <Paperclip className="w-4 h-4" />
                         Attach
-                      </button>
-                      <button type="button" onClick={handleVoiceToggle} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm hover:bg-muted transition-colors">
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={handleVoiceToggle}>
                         {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                         {isRecording ? "Stop" : "Voice"}
-                      </button>
+                      </Button>
                     </div>
-                    <button
+                    <Button
                       onClick={sendReply}
                       disabled={sending || (!reply.trim() && attachments.length === 0)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-opacity"
                     >
-                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {sending ? <Spinner /> : <Send className="w-4 h-4" />}
                       Send Reply
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">This ticket is closed and can no longer receive replies.</p>
               )}
             </div>
-          </div>
+          </Card>
         ) : null}
       </div>
       <Footer />

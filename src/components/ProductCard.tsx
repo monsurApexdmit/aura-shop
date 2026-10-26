@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { Plus, Minus, ShoppingCart, Star } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -5,6 +7,13 @@ import { Product } from "@/types/product";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Badge } from "@/components/ui/badge";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { WithTooltip } from "@/components/common/WithTooltip"
+
+const MotionCard = motion.create(Card);
 
 interface ProductCardProps {
   product: Product;
@@ -39,15 +48,15 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   };
 
   return (
-    <motion.div
+    <MotionCard
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
       viewport={{ once: true }}
-      className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col"
+      className="group relative overflow-hidden flex flex-col"
     >
       {/* Image Area */}
-      <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-gray-50">
+      <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-muted/40">
         <img
           src={product.image}
           alt={product.name}
@@ -61,14 +70,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
         {/* Discount badge — top right */}
         {discount > 0 && (
-          <span className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-400 text-white shadow">
+          <Badge variant="destructive" className="absolute top-3 right-3 z-20">
             {discount}% Off
-          </span>
+          </Badge>
         )}
         {!discount && product.badge && (
-          <span className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full text-[11px] font-bold bg-primary text-primary-foreground shadow">
+          <Badge className="absolute top-3 right-3 z-20">
             {product.badge}
-          </span>
+          </Badge>
         )}
 
         {/* Cart controls — bottom right, vertical pill */}
@@ -80,37 +89,41 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center bg-primary rounded-full shadow-lg py-1 px-1 gap-0.5"
             >
-              <button
+              <ButtonGroup orientation="vertical" aria-label="Quantity in cart">
+              <WithTooltip content="Decrease quantity"><Button
+                size="icon"
+                aria-label="Decrease quantity"
                 onClick={() =>
                   cartItem.quantity <= 1
                     ? removeItem(String(product.id))
                     : updateQuantity(String(product.id), cartItem.quantity - 1)
                 }
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-primary/80 transition-colors"
               >
                 <Minus className="h-3.5 w-3.5" />
-              </button>
-              <span className="text-sm font-bold text-white min-w-[1.25rem] text-center leading-none py-0.5">
+              </Button></WithTooltip>
+              <ButtonGroupText className="justify-center px-0 py-0.5 tabular-nums">
                 {cartItem.quantity}
-              </span>
-              <button
+              </ButtonGroupText>
+              <WithTooltip content="Increase quantity"><Button
+                size="icon"
+                aria-label="Increase quantity"
                 onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-primary/80 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
-              </button>
+              </Button></WithTooltip>
+              </ButtonGroup>
             </motion.div>
           ) : (
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={handleAdd}
-              className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/80 transition-colors"
-              aria-label="Add to cart"
-            >
-              <ShoppingCart className="h-4 w-4" />
-            </motion.button>
+            <WithTooltip content="Add to cart"><Button size="icon" asChild>
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                onClick={handleAdd}
+                aria-label="Add to cart"
+              >
+                <ShoppingCart className="h-4 w-4" />
+              </motion.button>
+            </Button></WithTooltip>
           )}
         </div>
       </Link>
@@ -130,26 +143,24 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             {[1, 2, 3, 4, 5].map((s) => (
               <Star
                 key={s}
-                className={`h-2.5 w-2.5 ${
-                  s <= Math.round(product.rating)
+                className={cn("h-2.5 w-2.5", s <= Math.round(product.rating)
                     ? "fill-amber-400 text-amber-400"
-                    : "fill-gray-200 text-gray-200"
-                }`}
+                    : "fill-gray-200 text-gray-200")}
               />
             ))}
           </div>
-          <span className="text-[10px] text-gray-500">
+          <span className="text-[10px] text-muted-foreground">
             {product.rating.toFixed(1)}({product.reviews} reviews)
           </span>
         </div>
 
         {/* Prices */}
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="font-bold text-base text-gray-900 leading-none">
+          <span className="font-bold text-base text-foreground leading-none">
             {formatCurrency(product.price)}
           </span>
           {product.originalPrice && (
-            <span className="text-xs text-gray-400 line-through leading-none">
+            <span className="text-xs text-muted-foreground line-through leading-none">
               {formatCurrency(product.originalPrice)}
             </span>
           )}
@@ -158,19 +169,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Stock progress bar — only shown when sold data exists */}
         {sold > 0 && stockMax > 0 && (
           <div className="mt-1.5">
-            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-orange-400 rounded-full transition-all duration-500"
-                style={{ width: `${stockPct}%` }}
-              />
-            </div>
+            <Progress value={stockPct} className="h-1.5" aria-label="Sold" />
             <div className="flex items-center justify-between mt-1">
-              <span className="text-[10px] text-gray-400 font-medium">{sold} Sold</span>
-              <span className="text-[10px] text-gray-400 font-medium">{stock}/{stockMax}</span>
+              <span className="text-[10px] text-muted-foreground font-medium">{sold} Sold</span>
+              <span className="text-[10px] text-muted-foreground font-medium">{stock}/{stockMax}</span>
             </div>
           </div>
         )}
       </div>
-    </motion.div>
+    </MotionCard>
   );
 }

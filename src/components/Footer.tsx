@@ -2,6 +2,14 @@ import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useStorefrontPages, BUILT_IN_PAGE_SLUGS, pageHref } from "@/hooks/useStorefrontPages";
+import { StoreHoursList } from "@/components/StoreHours";
+import { Facebook, Instagram, Youtube, MessageCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 const footerLinks = {
   Company: [
@@ -26,7 +34,21 @@ const footerLinks = {
 
 export default function Footer() {
   const { data: categories = [] } = useCategories();
-  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl } = useCurrency();
+  const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl, onlineStore } = useCurrency();
+  const { data: pages = [] } = useStorefrontPages();
+  const extraLinks = pages
+    .filter((p) => p.place === 'footer' && !BUILT_IN_PAGE_SLUGS.includes(p.slug))
+    .map((p) => ({ label: p.title, to: pageHref(p.slug) }));
+  const sections = Object.entries(footerLinks).map(([title, links]) => [title, title === 'Company' ? [...links, ...extraLinks] : links] as const);
+  const rawSocial = onlineStore?.social;
+  const waRaw = rawSocial?.whatsapp?.trim() ?? '';
+  const waHref = waRaw && (/^https?:\/\//i.test(waRaw) ? waRaw : `https://wa.me/${waRaw.replace(/[^0-9]/g, '')}`);
+  const socials = [
+    { label: 'Facebook', href: rawSocial?.facebook, Icon: Facebook },
+    { label: 'Instagram', href: rawSocial?.instagram, Icon: Instagram },
+    { label: 'YouTube', href: rawSocial?.youtube, Icon: Youtube },
+    { label: 'WhatsApp', href: waHref, Icon: MessageCircle },
+  ].filter((x): x is { label: string; href: string; Icon: typeof Facebook } => !!x.href && /^https?:\/\//i.test(x.href));
   const displayLogo = bannerUrl;
   const displayPaymentMethods = paymentMethods.length > 0
     ? paymentMethods
@@ -43,9 +65,7 @@ export default function Footer() {
                 <img src={displayLogo} alt={storeName} className="h-16 w-auto max-w-[220px] object-contain rounded-xl" />
               ) : (
                 <>
-                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-display font-bold text-lg">{storeName.charAt(0).toUpperCase()}</span>
-                  </div>
+                  <UserAvatar shape="square" name={storeName} fallback={storeName.charAt(0).toUpperCase()} className="size-10" />
                   <div>
                     <span className="font-display font-bold text-lg text-background leading-none">{storeName}</span>
                     <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
@@ -56,6 +76,17 @@ export default function Footer() {
             <p className="text-sm text-background/50 leading-relaxed mb-5 max-w-xs">
               Your universal marketplace for health, fashion, electronics, grocery & beyond. Quality products, fast delivery.
             </p>
+            {socials.length > 0 && (
+              <div className="flex items-center gap-2 mb-5">
+                {socials.map(({ label, href, Icon }) => (
+                  <WithTooltip key={label} content={label}><Button asChild variant="ghost" size="icon" className="text-background/60 hover:bg-background/10 hover:text-primary">
+                    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+                      <Icon className="h-4 w-4" />
+                    </a>
+                  </Button></WithTooltip>
+                ))}
+              </div>
+            )}
             <div className="space-y-2.5">
               {storePhone && (
                 <a href={`tel:${storePhone}`} className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
@@ -75,6 +106,7 @@ export default function Footer() {
                   {storeAddress}
                 </p>
               )}
+              <StoreHoursList />
             </div>
           </div>
 
@@ -93,7 +125,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {Object.entries(footerLinks).map(([title, links]) => (
+          {sections.map(([title, links]) => (
             <div key={title} className="col-span-1 md:col-span-2">
               <h3 className="font-display font-semibold text-sm text-background mb-4">{title}</h3>
               <ul className="space-y-2.5">
@@ -112,16 +144,17 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-background/10">
+      <Separator className="bg-background/10" />
+      <div>
         <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-background/30">
             © {year} {storeName}. All rights reserved. Built with ❤️
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {displayPaymentMethods.map((m) => (
-              <span key={m} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-background/8 text-background/40 font-medium border border-background/5">
+              <Badge key={m} variant="outline" className="border-background/10 text-background/40">
                 {m}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>

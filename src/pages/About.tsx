@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Award, Truck, ShieldCheck, Heart, Target, Zap, Globe, LucideIcon } from "lucide-react";
 import contentPageApi, { type AboutPageContent } from "@/services/contentPageApi";
+import { Card } from "@/components/ui/card";
+import { ItemMedia } from "@/components/ui/item";
+import { UserAvatar } from "@/components/common/UserAvatar";
+
+const MotionCard = motion.create(Card);
 
 const defaultContent: AboutPageContent = {
   template: "about",
@@ -132,18 +137,18 @@ export default function About() {
           {content.stats.map((stat, i) => {
             const Icon = getIcon(stat.icon, Users);
             return (
-              <motion.div
+              <MotionCard
                 key={`${stat.label}-${i}`}
                 {...fadeUp}
                 transition={{ delay: i * 0.1 }}
-                className="bg-card border border-border rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
+                className="p-6 text-center"
               >
-                <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center mx-auto mb-3">
-                  <Icon className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <p className="font-display font-bold text-2xl text-foreground">{stat.value}</p>
+                <ItemMedia variant="icon" className="mx-auto mb-3">
+                  <Icon />
+                </ItemMedia>
+                <p className="font-semibold text-2xl tabular-nums">{stat.value}</p>
                 <p className="text-muted-foreground text-sm">{stat.label}</p>
-              </motion.div>
+              </MotionCard>
             );
           })}
         </div>
@@ -157,18 +162,18 @@ export default function About() {
           {content.values.map((value, i) => {
             const Icon = getIcon(value.icon, ShieldCheck);
             return (
-              <motion.div
+              <MotionCard
                 key={`${value.title}-${i}`}
                 {...fadeUp}
                 transition={{ delay: i * 0.1 }}
-                className="bg-card border border-border rounded-2xl p-6 hover:border-primary/30 transition-colors"
+                className="p-6"
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-display font-bold text-foreground mb-2">{value.title}</h3>
+                <ItemMedia variant="icon" className="mb-4">
+                  <Icon />
+                </ItemMedia>
+                <h3 className="font-semibold mb-2">{value.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{value.description}</p>
-              </motion.div>
+              </MotionCard>
             );
           })}
         </div>
@@ -180,19 +185,17 @@ export default function About() {
         </motion.h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {content.team.map((member, i) => (
-            <motion.div
+            <MotionCard
               key={`${member.name}-${i}`}
               {...fadeUp}
               transition={{ delay: i * 0.1 }}
-              className="bg-card border border-border rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
+              className="p-6 text-center"
             >
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                <Users className="h-7 w-7 text-muted-foreground" />
-              </div>
-              <h3 className="font-display font-bold text-foreground">{member.name}</h3>
+              <UserAvatar name={member.name} fallback={<Users className="h-7 w-7 text-muted-foreground" />} className="size-16 mx-auto mb-4" />
+              <h3 className="font-semibold">{member.name}</h3>
               <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-2">{member.role}</p>
               <p className="text-muted-foreground text-sm">{member.bio}</p>
-            </motion.div>
+            </MotionCard>
           ))}
         </div>
       </section>

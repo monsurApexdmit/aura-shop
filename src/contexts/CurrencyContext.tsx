@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { getOnlineStore, type OnlineStoreSettings } from "@/services/storefrontSettingsApi";
 import { API_BASE_URL, COMPANY_ID, USE_SUBDOMAIN, getImageUrl } from "@/lib/api";
 
 function hexToHsl(hex: string): string | null {
@@ -146,6 +147,7 @@ interface CurrencyContextType {
   logoUrl: string | null;
   faviconUrl: string | null;
   bannerUrl: string | null;
+  onlineStore: OnlineStoreSettings | null;
 }
 
 const CurrencyContext = createContext<CurrencyContextType>({
@@ -163,10 +165,36 @@ const CurrencyContext = createContext<CurrencyContextType>({
   logoUrl: null,
   faviconUrl: null,
   bannerUrl: null,
+  onlineStore: null,
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [onlineStore, setOnlineStore] = useState<OnlineStoreSettings | null>(null);
+
+  useEffect(() => {
+    const title = onlineStore?.name || settings?.storeName;
+    if (title) document.title = title;
+  }, [onlineStore?.name, settings?.storeName]);
+
+  // Online-store theme (a hex picked in admin: Blue/Teal/Violet/Ink) = primary colour,
+  // only when Settings > General brand colours are not configured. Unknown values are ignored.
+  useEffect(() => {
+    const theme = onlineStore?.theme?.trim();
+    if (!theme || !settings || settings.primaryColor) return;
+    if (!/^#[0-9a-fA-F]{6}$/.test(theme)) return;
+    applyBrandColors(
+      theme,
+      settings.accentColor ?? "#B8963E",
+      settings.backgroundColor ?? "#F0EBE3",
+    );
+  }, [onlineStore?.theme, settings]);
+
+  useEffect(() => {
+    getOnlineStore()
+      .then((o) => setOnlineStore(o))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     axios
@@ -183,7 +211,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         };
         setSettings(data);
         const name = data?.storeName;
-        if (name) document.title = name;
 
         // Inject brand colors as CSS variables (both light + dark)
         if (data?.primaryColor || data?.accentColor || data?.backgroundColor) {
@@ -236,7 +263,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         taxRate: settings?.taxRate ?? 0,
         freeShippingThreshold: settings?.freeShippingThreshold ?? null,
         settings,
-        storeName: settings?.storeName ?? "StoreFront",
+        storeName: onlineStore?.name || settings?.storeName || "StoreFront",
+        onlineStore,
         paymentMethods: settings?.paymentMethods ?? [],
         storePhone: settings?.storePhone ?? "",
         storeEmail: settings?.storeEmail ?? "",

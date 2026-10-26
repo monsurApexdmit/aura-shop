@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 
-export type PageTemplate = 'about' | 'faq' | 'policy'
+export type PageTemplate = 'about' | 'faq' | 'policy' | 'custom'
 
 export interface PageHeroContent {
   kicker: string
@@ -71,13 +71,34 @@ export interface PolicyPageContent {
   seo?: PageSeo
 }
 
-export type StorefrontPageContent = AboutPageContent | FaqPageContent | PolicyPageContent
+export interface CustomPageContent {
+  template: 'custom'
+  hero: PageHeroContent
+  seo?: PageSeo
+}
+
+export type StorefrontPageContent = AboutPageContent | FaqPageContent | PolicyPageContent | CustomPageContent
+
+export type PagePlace = 'footer' | 'header' | 'checkout' | 'none'
+
+export interface StorefrontPageLink {
+  id: number
+  title: string
+  slug: string
+  summary: string | null
+  type: 'about' | 'faq' | 'policy' | 'custom'
+  place: PagePlace
+  body: string | null
+}
 
 export interface StorefrontContentPage {
   id: number
   title: string
   slug: string
   summary: string | null
+  type?: 'about' | 'faq' | 'policy' | 'custom'
+  place?: PagePlace
+  body?: string | null
   publishedAt: string | null
   updatedAt: string | null
   content: StorefrontPageContent
@@ -94,6 +115,10 @@ export const inferPageTemplate = (slug: string, content?: Partial<StorefrontPage
 }
 
 export const contentPageApi = {
+  getAll: async (): Promise<StorefrontPageLink[]> => {
+    const response = await api.get('/pages')
+    return response.data.data ?? []
+  },
   getBySlug: async (slug: string): Promise<StorefrontContentPage> => {
     const response = await api.get(`/pages/${slug}`)
     return response.data.data

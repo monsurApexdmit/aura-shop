@@ -18,6 +18,7 @@ import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
 import About from "./pages/About";
+import CustomPage from "./pages/CustomPage";
 import ContentPage, {
   defaultFaqPageContent,
   defaultPrivacyPolicyPageContent,
@@ -72,6 +73,7 @@ function AnimatedRoutes() {
           <Route path="/returns" element={<ContentPage slug="returns" fallbackContent={defaultReturnsRefundsPageContent} />} />
           <Route path="/shipping" element={<ContentPage slug="shipping" fallbackContent={defaultShippingPolicyPageContent} />} />
           <Route path="/privacy" element={<ContentPage slug="privacy" fallbackContent={defaultPrivacyPolicyPageContent} />} />
+          <Route path="/pages/:slug" element={<CustomPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/deals" element={<Deals />} />
           <Route path="/track-order" element={<TrackOrder />} />

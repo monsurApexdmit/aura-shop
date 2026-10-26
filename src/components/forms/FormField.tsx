@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Label } from "@/components/ui/label";
+import { FormField as BaseFormField } from "@/components/common/FormField";
 
 interface FormFieldProps {
   /**
@@ -60,23 +60,14 @@ export default function FormField({
   className = "",
 }: FormFieldProps) {
   return (
-    <div className={`space-y-2 ${className}`}>
-      <Label className="text-sm font-medium text-foreground">
-        {label}
-        {required && <span className="ml-1 text-destructive">*</span>}
-      </Label>
-
-      {helperText && !error && (
-        <p className="text-xs text-muted-foreground">{helperText}</p>
-      )}
-
-      <div className="space-y-1">{children}</div>
-
-      {error && (
-        <p className="text-xs text-destructive font-medium animate-in fade-in">
-          {error}
-        </p>
-      )}
-    </div>
+    <BaseFormField
+      label={label}
+      required={required}
+      description={!error ? helperText : undefined}
+      error={error}
+      className={className}
+    >
+      {children}
+    </BaseFormField>
   );
 }

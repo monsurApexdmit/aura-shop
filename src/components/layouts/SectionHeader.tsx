@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 interface SectionHeaderProps {
   /**
    * Main title of the section
@@ -48,7 +49,7 @@ export default function SectionHeader({
   }[align];
 
   return (
-    <div className={`mb-8 ${alignClass} ${className}`}>
+    <div className={cn("mb-8", alignClass, className)}>
       <h2 className="font-display font-bold text-2xl md:text-3xl text-foreground mb-2 tracking-tight">
         {title}
       </h2>

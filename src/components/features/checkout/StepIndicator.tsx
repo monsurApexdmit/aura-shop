@@ -1,5 +1,8 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 export interface Step {
   id: number;
@@ -58,7 +61,7 @@ export default function StepIndicator({
   className = "",
 }: StepIndicatorProps) {
   return (
-    <div className={`w-full overflow-x-auto pb-2 ${className}`}>
+    <div className={cn("w-full overflow-x-auto pb-2", className)}>
       <div className="flex min-w-max items-center justify-start gap-0 px-1 sm:justify-center">
       {steps.map((step, index) => {
         const isCompleted = currentStep > step.id;
@@ -69,35 +72,32 @@ export default function StepIndicator({
         return (
           <div key={step.id} className="flex items-center">
             {/* Step Circle */}
-            <button
+            <WithTooltip content={step.label}><Button
               type="button"
+              variant={isCurrent || isCompleted ? "default" : "secondary"}
+              size="icon"
+              aria-label={step.label}
               onClick={() => {
                 if (isClickable && onStepClick) {
                   onStepClick(step.id);
                 }
               }}
               disabled={!isClickable}
-              className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                isCurrent || isCompleted
-                  ? "gradient-primary text-primary-foreground shadow-lg"
-                  : "bg-muted text-muted-foreground"
-              } ${isClickable ? "cursor-pointer hover:shadow-md" : ""}`}
+              className="disabled:opacity-100"
             >
               {isCompleted ? (
                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
                 <StepIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
-            </button>
+            </Button></WithTooltip>
 
             {/* Step Label */}
             <div className="flex flex-col items-center gap-1.5 ml-1.5 mr-1.5 sm:ml-2 sm:mr-2">
               <span
-                className={`whitespace-nowrap text-[10px] sm:text-xs font-semibold ${
-                  isCurrent || isCompleted
+                className={cn("whitespace-nowrap text-[10px] sm:text-xs font-semibold", isCurrent || isCompleted
                     ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
+                    : "text-muted-foreground")}
               >
                 {step.label}
               </span>
@@ -106,9 +106,7 @@ export default function StepIndicator({
             {/* Connector Line */}
             {index < steps.length - 1 && (
               <div
-                className={`w-8 sm:w-16 md:w-24 h-0.5 mx-1 sm:mx-2 mb-5 rounded-full transition-colors duration-300 ${
-                  currentStep > step.id ? "bg-primary" : "bg-border"
-                }`}
+                className={cn("w-8 sm:w-16 md:w-24 h-0.5 mx-1 sm:mx-2 mb-5 rounded-full transition-colors duration-300", currentStep > step.id ? "bg-primary" : "bg-border")}
               />
             )}
           </div>

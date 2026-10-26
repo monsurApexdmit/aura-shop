@@ -1,6 +1,12 @@
+import { cn } from "@/lib/utils"
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, AlertCircle, ShoppingBag, Home, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 type ResultStatus = "success" | "fail" | "cancel";
 
@@ -49,16 +55,16 @@ export default function OrderResult() {
 
   return (
     <div className="min-h-screen bg-muted/30 pt-32 pb-16 flex items-start justify-center px-4">
-      <motion.div
+      <MotionCard
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-background rounded-2xl border border-border p-8 text-center shadow-sm"
+        className="w-full max-w-md p-8 text-center"
       >
         <div className="flex justify-center mb-5">
           {isDeposit && status === "success"
             ? <Truck className="h-16 w-16 text-amber-500" />
-            : <Icon className={`h-16 w-16 ${iconClass}`} />
+            : <Icon className={cn("h-16 w-16", iconClass)} />
           }
         </div>
 
@@ -66,9 +72,9 @@ export default function OrderResult() {
         <p className="text-sm text-muted-foreground mb-1">{message}</p>
 
         {isDeposit && status === "success" && (
-          <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 font-medium">
-            Pay the rest of your order amount when it arrives at your door.
-          </div>
+          <Alert className="mt-3 text-left">
+            <AlertDescription>Pay the rest of your order amount when it arrives at your door.</AlertDescription>
+          </Alert>
         )}
 
         {invoice && (
@@ -78,33 +84,34 @@ export default function OrderResult() {
         )}
 
         {reason === "order_not_found" && (
-          <p className="text-xs text-red-500 mt-2">Order not found. Contact support if you were charged.</p>
+          <p className="text-xs text-destructive mt-2">Order not found. Contact support if you were charged.</p>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 mt-8">
           {status === "success" && invoice ? (
-            <button
+            <Button
               onClick={() => navigate(`/account/orders`)}
-              className="flex-1 gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+              className="flex-1"
             >
               <ShoppingBag className="h-4 w-4" /> View Orders
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={() => navigate("/checkout")}
-              className="flex-1 gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+              className="flex-1"
             >
               <ShoppingBag className="h-4 w-4" /> Try Again
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="outline"
             onClick={() => navigate("/")}
-            className="flex-1 border border-border px-6 py-3 rounded-xl font-semibold text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
+            className="flex-1"
           >
             <Home className="h-4 w-4" /> Home
-          </button>
+          </Button>
         </div>
-      </motion.div>
+      </MotionCard>
     </div>
   );
 }

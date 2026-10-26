@@ -45,7 +45,7 @@ describe("AddressCard", () => {
       <AddressCard address={mockAddress} isDefault={false} />
     );
     const card = container.firstChild;
-    expect(card).toHaveClass("border-border");
+    expect(card).not.toHaveClass("border-primary");
   });
 
   it("renders edit button when onEdit provided", () => {

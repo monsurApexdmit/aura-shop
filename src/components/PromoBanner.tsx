@@ -1,4 +1,5 @@
 import { ArrowRight, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -46,12 +47,13 @@ export default function PromoBanner() {
                 </p>
               </div>
             </div>
-            <button
+            <Button
+              variant="outline"
               onClick={() => navigate(banner.link)}
-              className="inline-flex w-full items-center justify-center gap-2 bg-background text-foreground font-semibold px-6 py-3 rounded-xl hover:bg-background/90 transition-colors shadow-lg text-sm shrink-0 sm:w-auto"
+              className="w-full shrink-0 sm:w-auto"
             >
               {banner.cta} <ArrowRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />

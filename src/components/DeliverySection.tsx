@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Truck, ShieldCheck, Package, Users } from "lucide-react";
 import { api } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 interface StoreStats {
   totalProducts: number;
@@ -56,10 +60,10 @@ export default function DeliverySection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+            <Badge variant="secondary" className="mb-4 gap-1.5 uppercase tracking-wider">
               <Truck className="h-3 w-3" />
               Fast & Reliable
-            </span>
+            </Badge>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-5 leading-[1.15]">
               Lightning-Fast Delivery to Your
               <span className="text-gradient"> Doorstep</span>
@@ -70,20 +74,20 @@ export default function DeliverySection() {
 
             <div className="grid grid-cols-2 gap-3 md:gap-4">
               {statCards.map((s, i) => (
-                <motion.div
+                <MotionCard
                   key={s.label}
                   initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08 }}
                   viewport={{ once: true }}
-                  className="text-center p-4 rounded-xl bg-card border border-border card-shadow"
+                  className="text-center p-4"
                 >
                   <s.icon className="h-5 w-5 text-primary mx-auto mb-2" />
                   <p className="font-display font-bold text-xl text-foreground">
                     {s.value}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
-                </motion.div>
+                </MotionCard>
               ))}
             </div>
           </motion.div>
@@ -104,28 +108,28 @@ export default function DeliverySection() {
               </div>
 
               {/* Orders today — real */}
-              <motion.div
+              <MotionCard
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-                className="absolute -top-2 right-4 md:right-8 bg-card rounded-xl p-3 card-shadow border border-border"
+                className="absolute -top-2 right-4 md:right-8 p-3"
               >
                 <p className="text-xs text-muted-foreground">Orders today</p>
                 <p className="font-display font-bold text-primary text-lg">
                   {stats ? (stats.todayOrders > 0 ? stats.todayOrders + "+" : "0") : "—"}
                 </p>
-              </motion.div>
+              </MotionCard>
 
               {/* Total customers — real */}
-              <motion.div
+              <MotionCard
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
-                className="absolute bottom-4 -left-2 md:left-2 bg-card rounded-xl p-3 card-shadow border border-border"
+                className="absolute bottom-4 -left-2 md:left-2 p-3"
               >
                 <p className="text-xs text-muted-foreground">Customers</p>
                 <p className="font-display font-bold text-accent text-lg">
                   {stats ? fmt(stats.totalCustomers) : "—"}
                 </p>
-              </motion.div>
+              </MotionCard>
             </div>
           </motion.div>
         </div>

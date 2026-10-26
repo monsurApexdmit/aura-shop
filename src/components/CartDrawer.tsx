@@ -1,8 +1,14 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { X, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Separator } from "@/components/ui/separator";
+import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { EmptyState } from "@/components/common/EmptyState";
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalPrice } = useCart();
@@ -28,7 +34,7 @@ export default function CartDrawer() {
             className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-background border-l border-border flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-border">
+            <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
                   <ShoppingBag className="h-5 w-5 text-primary-foreground" />
@@ -38,37 +44,35 @@ export default function CartDrawer() {
                   <p className="text-xs text-muted-foreground">{items.length} items</p>
                 </div>
               </div>
-              <button onClick={() => setIsOpen(false)} className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+              <WithTooltip content="Close cart"><Button variant="ghost" size="icon" aria-label="Close cart" onClick={() => setIsOpen(false)}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button></WithTooltip>
             </div>
+            <Separator />
 
             {items.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
-                <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center">
-                  <ShoppingBag className="h-10 w-10 text-muted-foreground/30" />
-                </div>
-                <p className="font-display font-semibold text-foreground">Your cart is empty</p>
-                <p className="text-sm text-muted-foreground text-center">Looks like you haven't added anything yet.</p>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="inline-flex items-center gap-2 gradient-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
-                >
-                  Continue Shopping <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
+              <EmptyState
+                className="flex-1"
+                icon={ShoppingBag}
+                title="Your cart is empty"
+                description="Looks like you haven't added anything yet."
+                action={
+                  <Button onClick={() => setIsOpen(false)}>
+                    Continue Shopping <ArrowRight className="h-4 w-4" />
+                  </Button>
+                }
+              />
             ) : (
               <>
                 <div className="flex-1 overflow-y-auto p-5 space-y-3">
                   {items.map((item, i) => (
+                    <Item key={item.id} asChild variant="outline" className="flex-nowrap items-start gap-3 p-3">
                     <motion.div
-                      key={item.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="flex gap-3 p-3 rounded-xl bg-card border border-border"
                     >
-                      <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden shrink-0 flex items-center justify-center">
+                      <ItemMedia className="size-20 overflow-hidden rounded-md bg-muted">
                         {item.image ? (
                           <img
                             src={item.image}
@@ -81,49 +85,58 @@ export default function CartDrawer() {
                             }}
                           />
                         ) : null}
-                        <span className={`text-xs text-muted-foreground text-center leading-tight px-1 ${item.image ? "hidden" : ""}`}>No Image</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm text-card-foreground truncate">{item.name}</h3>
-                        <p className="text-primary font-display font-bold mt-1">{formatCurrency(item.price)}</p>
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <button
+                        <span className={cn("text-xs text-muted-foreground text-center leading-tight px-1", item.image ? "hidden" : "")}>No Image</span>
+                      </ItemMedia>
+                      <ItemContent className="min-w-0">
+                        <ItemTitle className="block truncate">{item.name}</ItemTitle>
+                        <p className="text-primary font-semibold">{formatCurrency(item.price)}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <WithTooltip content="Decrease quantity"><Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Decrease quantity"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
                           >
                             <Minus className="h-3 w-3" />
-                          </button>
+                          </Button></WithTooltip>
                           <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
-                          <button
+                          <WithTooltip content="Increase quantity"><Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Increase quantity"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-7 h-7 rounded-lg gradient-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
                           >
                             <Plus className="h-3 w-3" />
-                          </button>
+                          </Button></WithTooltip>
                         </div>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive transition-colors self-start mt-1">
-                        <X className="h-4 w-4" />
-                      </button>
+                      </ItemContent>
+                      <ItemActions className="self-start">
+                        <WithTooltip content={`Remove ${item.name}`}><Button variant="ghost" size="icon" aria-label={`Remove ${item.name}`} onClick={() => removeItem(item.id)}>
+                          <X className="h-4 w-4" />
+                        </Button></WithTooltip>
+                      </ItemActions>
                     </motion.div>
+                    </Item>
                   ))}
                 </div>
 
                 {/* Checkout */}
-                <div className="border-t border-border p-5 space-y-4">
+                <Separator />
+                <div className="p-5 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-sm">Subtotal</span>
-                    <span className="font-display font-bold text-xl">{formatCurrency(totalPrice)}</span>
+                    <span className="font-semibold text-xl tabular-nums">{formatCurrency(totalPrice)}</span>
                   </div>
-                  <button onClick={() => { setIsOpen(false); navigate("/checkout"); }} className="w-full gradient-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg text-sm flex items-center justify-center gap-2">
+                  <Button onClick={() => { setIsOpen(false); navigate("/checkout"); }} className="w-full">
                     Proceed to Checkout <ArrowRight className="h-4 w-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setIsOpen(false)}
-                    className="w-full border border-border text-foreground font-medium py-3 rounded-xl hover:bg-muted transition-colors text-sm"
+                    className="w-full"
                   >
                     Continue Shopping
-                  </button>
+                  </Button>
                 </div>
               </>
             )}

@@ -1,8 +1,21 @@
+import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { motion } from "framer-motion"
 import { ChevronRight, RotateCcw, Package, Minus, Plus, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card } from "@/components/ui/card"
+import { Spinner } from "@/components/ui/spinner"
+import { ChoiceCard, ChoiceCardGroup } from "@/components/common/ChoiceCard"
+import { EmptyState } from "@/components/common/EmptyState"
+import { FormField } from "@/components/common/FormField"
+import { PageHeader } from "@/components/common/PageHeader"
+import { SectionCard } from "@/components/common/SectionCard"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Footer from "@/components/Footer"
 import { useAuth } from "@/contexts/AuthContext"
 import { useOrders } from "@/hooks/useOrders"
@@ -10,6 +23,7 @@ import { useCreateReturn } from "@/hooks/useReturns"
 import { RETURN_REASONS } from "@/services/returnApi"
 import type { ApiOrder } from "@/services/orderApi"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { WithTooltip } from "@/components/common/WithTooltip"
 
 interface SelectedItem {
   product_id: number
@@ -117,65 +131,57 @@ export default function NewReturnRequest() {
               <span className="text-foreground font-medium">New Request</span>
             </div>
 
-            <h1 className="font-display font-bold text-2xl text-foreground mb-2">New Return Request</h1>
-            <p className="text-sm text-muted-foreground mb-8">Select the order and items you'd like to return.</p>
+            <PageHeader
+              className="mb-8"
+              title="New Return Request"
+              description="Select the order and items you'd like to return."
+            />
 
             {/* Step 1: Select order */}
-            <div className="bg-card border border-border rounded-2xl p-6 mb-5">
-              <h2 className="font-display font-bold text-sm mb-4">Step 1 — Select Order</h2>
+            <SectionCard title="Step 1 — Select Order" className="mb-5">
               {isLoading ? (
-                <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+                <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
               ) : deliveredOrders.length === 0 ? (
-                <div className="text-center py-6">
-                  <Package className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">No delivered orders eligible for return.</p>
-                </div>
+                <EmptyState className="py-6" icon={Package} title="No delivered orders eligible for return." />
               ) : (
-                <div className="space-y-2">
+                <ChoiceCardGroup
+                  aria-label="Order"
+                  value={selectedOrder ? String(selectedOrder.id) : undefined}
+                  onValueChange={(v) => {
+                    const order = deliveredOrders.find(o => String(o.id) === v)
+                    if (order) { setSelectedOrder(order); setSelectedItems([]) }
+                  }}
+                >
                   {deliveredOrders.map(order => (
-                    <button
+                    <ChoiceCard
                       key={order.id}
-                      onClick={() => { setSelectedOrder(order); setSelectedItems([]) }}
-                      className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-colors ${
-                        selectedOrder?.id === order.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/40"
-                      }`}
-                    >
-                      <div>
-                        <p className="font-mono font-bold text-sm text-foreground">{order.invoice_no}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(order.order_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          {" · "}{order.items.length} item{order.items.length !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full border-2 transition-colors shrink-0 ${
-                        selectedOrder?.id === order.id ? "border-primary bg-primary" : "border-muted-foreground/40"
-                      }`} />
-                    </button>
+                      value={String(order.id)}
+                      title={<span className="font-mono">{order.invoice_no}</span>}
+                      description={<>
+                        {new Date(order.order_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {" · "}{order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                      </>}
+                    />
                   ))}
-                </div>
+                </ChoiceCardGroup>
               )}
-            </div>
+            </SectionCard>
 
             {/* Step 2: Select items */}
             {selectedOrder && (
-              <div className="bg-card border border-border rounded-2xl p-6 mb-5">
-                <h2 className="font-display font-bold text-sm mb-4">Step 2 — Select Items to Return</h2>
+              <SectionCard title="Step 2 — Select Items to Return" className="mb-5">
                 <div className="space-y-3">
                   {selectedOrder.items.map((item) => {
                     const sel = selectedItems.find(s => s.product_id === item.product_id && s.variant_id === ((item as any).variant_id ?? null))
                     return (
-                      <div key={item.id} className={`border rounded-xl p-4 transition-colors ${sel ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <Card key={item.id} className={cn("p-4 transition-colors", sel && "border-primary bg-primary/5")}>
                         <div className="flex items-start gap-3">
-                          <button
-                            onClick={() => toggleItem(item)}
-                            className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                              sel ? "bg-primary border-primary" : "border-muted-foreground/40"
-                            }`}
-                          >
-                            {sel && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                          </button>
+                          <Checkbox
+                            checked={!!sel}
+                            onCheckedChange={() => toggleItem(item)}
+                            aria-label={`Return ${item.product_name}`}
+                            className="mt-0.5"
+                          />
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm text-foreground">{item.product_name}</p>
                             {item.variant_name && <p className="text-xs text-muted-foreground">{item.variant_name}</p>}
@@ -189,100 +195,90 @@ export default function NewReturnRequest() {
                             <div className="flex items-center gap-3">
                               <span className="text-xs text-muted-foreground w-16">Qty</span>
                               <div className="flex items-center gap-2">
-                                <button onClick={() => updateQty(selectedItems.indexOf(sel), -1)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
+                                <WithTooltip content="Decrease quantity"><Button variant="outline" size="icon" aria-label="Decrease quantity" onClick={() => updateQty(selectedItems.indexOf(sel), -1)}>
                                   <Minus className="h-3 w-3" />
-                                </button>
+                                </Button></WithTooltip>
                                 <span className="w-8 text-center text-sm font-semibold">{sel.quantity}</span>
-                                <button onClick={() => updateQty(selectedItems.indexOf(sel), 1)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
+                                <WithTooltip content="Increase quantity"><Button variant="outline" size="icon" aria-label="Increase quantity" onClick={() => updateQty(selectedItems.indexOf(sel), 1)}>
                                   <Plus className="h-3 w-3" />
-                                </button>
+                                </Button></WithTooltip>
                                 <span className="text-xs text-muted-foreground">/ {sel.max_qty}</span>
                               </div>
                             </div>
                             {/* Reason */}
                             <div className="flex items-start gap-3">
                               <span className="text-xs text-muted-foreground w-16 mt-2">Reason</span>
-                              <select
+                              <Select
                                 value={sel.reason}
-                                onChange={e => updateReason(selectedItems.indexOf(sel), e.target.value)}
-                                className="flex-1 text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground"
+                                onValueChange={v => updateReason(selectedItems.indexOf(sel), v)}
                               >
-                                {RETURN_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
-                              </select>
+                                <SelectTrigger className="flex-1" aria-label="Return reason">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {RETURN_REASONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
                         )}
-                      </div>
+                      </Card>
                     )
                   })}
                 </div>
-              </div>
+              </SectionCard>
             )}
 
             {/* Step 3: Refund method + notes */}
             {selectedItems.length > 0 && (
-              <div className="bg-card border border-border rounded-2xl p-6 mb-5">
-                <h2 className="font-display font-bold text-sm mb-4">Step 3 — Refund Preference</h2>
-
-                <div className="space-y-2 mb-5">
+              <SectionCard title="Step 3 — Refund Preference" className="mb-5">
+                <ChoiceCardGroup aria-label="Refund method" value={refundMethod} onValueChange={setRefundMethod} className="mb-5">
                   {[
                     { value: "original_payment", label: "Original Payment Method", desc: "Refund to how you originally paid" },
                     { value: "store_credit",     label: "Store Credit",            desc: "Get credit to use on future orders" },
                     { value: "cash",             label: "Cash Refund",             desc: "Cash refund via bank transfer" },
                   ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setRefundMethod(opt.value)}
-                      className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-colors ${
-                        refundMethod === opt.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                      }`}
-                    >
-                      <div>
-                        <p className="font-semibold text-sm text-foreground">{opt.label}</p>
-                        <p className="text-xs text-muted-foreground">{opt.desc}</p>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full border-2 shrink-0 transition-colors ${
-                        refundMethod === opt.value ? "border-primary bg-primary" : "border-muted-foreground/40"
-                      }`} />
-                    </button>
+                    <ChoiceCard key={opt.value} value={opt.value} title={opt.label} description={opt.desc} />
                   ))}
-                </div>
+                </ChoiceCardGroup>
 
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Additional Notes (optional)</label>
-                <textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Any additional information about your return..."
-                  className="w-full text-sm bg-background border border-border rounded-xl px-4 py-3 text-foreground resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
+                <FormField label="Additional Notes (optional)" htmlFor="return-notes">
+                  <Textarea
+                    id="return-notes"
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Any additional information about your return..."
+                    className="w-full resize-none"
+                  />
+                </FormField>
+              </SectionCard>
             )}
 
             {/* Error */}
             {error && (
-              <div className="flex items-start gap-2 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl mb-5">
-                <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
+              <Alert variant="destructive" className="mb-5">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
             {/* Submit */}
             <div className="flex items-center gap-4">
-              <Link to="/account/returns" className="px-5 py-3 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
-                Cancel
-              </Link>
-              <button
+              <Button asChild variant="outline">
+                <Link to="/account/returns">Cancel</Link>
+              </Button>
+              <Button
                 onClick={handleSubmit}
                 disabled={isPending || !selectedOrder || selectedItems.length === 0}
-                className="flex-1 gradient-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1"
               >
                 {isPending ? (
-                  <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Submitting...</>
+                  <><Spinner />Submitting...</>
                 ) : (
                   <><RotateCcw className="h-4 w-4" />Submit Return Request</>
                 )}
-              </button>
+              </Button>
             </div>
           </motion.div>
         </div>

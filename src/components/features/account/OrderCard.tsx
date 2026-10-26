@@ -1,7 +1,13 @@
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
 import { ReactNode } from "react";
 import { Package, ChevronRight, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { StatusBadge } from "@/components/common/StatusBadge";
 
 export interface Order {
   id: string;
@@ -64,19 +70,15 @@ interface OrderCardProps {
 const statusConfig = {
   processing: {
     label: "Processing",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
   },
   shipped: {
     label: "Shipped",
-    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400",
   },
   delivered: {
     label: "Delivered",
-    color: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
   },
   cancelled: {
     label: "Cancelled",
-    color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
   },
 };
 
@@ -109,19 +111,15 @@ export default function OrderCard({
   const { formatCurrency } = useCurrency();
 
   return (
-    <div
-      className={`bg-card border border-border rounded-lg p-4 sm:p-6 hover:border-primary/40 transition-colors ${className}`}
-    >
+    <Card className={cn("p-4 sm:p-6", className)}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-4 border-b border-border/50">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground text-sm">{order.id}</span>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.color}`}>
-            {statusInfo.label}
-          </span>
+          <StatusBadge status={order.status} label={statusInfo.label} />
         </div>
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -132,80 +130,81 @@ export default function OrderCard({
         </div>
       </div>
 
+      <Separator className="my-4" />
+
       {/* Items Summary */}
-      <div className="mb-4 pb-4 border-b border-border/50">
+      <div>
         <p className="text-xs text-muted-foreground mb-3">
           {itemCount} item{itemCount !== 1 ? "s" : ""}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {order.items.slice(0, 3).map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-2 p-2 rounded bg-muted/30"
-            >
+            <Item key={item.id} variant="muted" size="sm" className="flex-nowrap gap-2 p-2">
               {item.image && (
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-8 h-8 object-contain rounded"
-                />
+                <ItemMedia className="size-8 overflow-hidden rounded-sm">
+                  <img src={item.image} alt={item.name} className="size-full object-contain" />
+                </ItemMedia>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground truncate">
-                  {item.name}
-                </p>
-                <p className="text-xs text-muted-foreground">x{item.quantity}</p>
-              </div>
-            </div>
+              <ItemContent className="min-w-0 gap-0">
+                <ItemTitle className="text-xs truncate">{item.name}</ItemTitle>
+                <ItemDescription className="text-xs">x{item.quantity}</ItemDescription>
+              </ItemContent>
+            </Item>
           ))}
           {order.items.length > 3 && (
-            <div className="flex items-center justify-center p-2 rounded bg-muted/30">
+            <Item variant="muted" size="sm" className="justify-center p-2">
               <p className="text-xs font-medium text-muted-foreground">
                 +{order.items.length - 3} more
               </p>
-            </div>
+            </Item>
           )}
         </div>
       </div>
 
+      <Separator className="my-4" />
+
       {/* Order Total */}
-      <div className="mb-4 pb-4 border-b border-border/50 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">Order Total</span>
         <span className="font-bold text-lg text-foreground">
           {formatCurrency(order.total)}
         </span>
       </div>
 
+      <Separator className="my-4" />
+
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
         {onView && (
-          <button
+          <Button
+            variant="outline"
             onClick={() => onView(order.id)}
-            className="flex-1 sm:flex-none flex items-center gap-1 px-4 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-sm font-medium text-foreground"
+            className="flex-1 sm:flex-none gap-1"
           >
             View Details
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         )}
         {onTrack && order.status !== "cancelled" && (
-          <button
+          <Button
+            variant="outline"
             onClick={() => onTrack(order.id)}
-            className="flex-1 sm:flex-none flex items-center gap-1 px-4 py-2 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-sm font-medium text-foreground"
+            className="flex-1 sm:flex-none gap-1"
           >
             Track Order
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         )}
         {onReorder && order.status === "delivered" && (
-          <button
+          <Button
             onClick={() => onReorder(order.id)}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-lg gradient-primary text-primary-foreground transition-opacity text-sm font-medium hover:opacity-90"
+            className="flex-1 sm:flex-none"
           >
             Reorder
-          </button>
+          </Button>
         )}
         {actions && <div className="ml-auto">{actions}</div>}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -67,7 +67,7 @@ describe("ShippingOption", () => {
       />
     );
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("radio");
     button.click();
 
     expect(onChange).toHaveBeenCalledWith("standard");
@@ -95,7 +95,8 @@ describe("ShippingOption", () => {
       />
     );
     const button = container.querySelector("button");
-    expect(button).toHaveClass("border-border");
+    expect(button).toHaveAttribute("aria-checked", "false");
+    expect(button).not.toHaveClass("border-primary");
   });
 
   it("applies custom className", () => {
@@ -118,8 +119,7 @@ describe("ShippingOption", () => {
         onChange={() => {}}
       />
     );
-    // Check for the visual radio indicator
-    const indicators = container.querySelectorAll(".rounded-full");
-    expect(indicators.length).toBeGreaterThan(0);
+    // Selection is exposed via radio semantics
+    expect(container.querySelector('[role="radio"]')).toHaveAttribute("aria-checked", "true");
   });
 });

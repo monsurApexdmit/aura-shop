@@ -60,7 +60,7 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {popularLoading
-              ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)
+              ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-72" />)
               : popularProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
             }
           </div>
@@ -100,7 +100,7 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {saleLoading
-              ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)
+              ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-72" />)
               : saleProducts.length > 0
                 ? saleProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
                 : popularProducts.slice(0, 4).map((product, i) => <ProductCard key={product.id} product={product} index={i} />)
