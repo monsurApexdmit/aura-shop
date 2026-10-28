@@ -27,6 +27,8 @@ import ContentPage, {
 } from "./pages/ContentPage";
 import Contact from "./pages/Contact";
 import Deals from "./pages/Deals";
+import Collections from "./pages/Collections";
+import CollectionDetail from "./pages/CollectionDetail";
 import TrackOrder from "./pages/TrackOrder";
 import ProductDetail from "./pages/ProductDetail";
 import Wishlist from "./pages/Wishlist";
@@ -76,6 +78,8 @@ function AnimatedRoutes() {
           <Route path="/pages/:slug" element={<CustomPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/deals" element={<Deals />} />
+          <Route path="/collections" element={<Collections />} />
+          <Route path="/collections/:slug" element={<CollectionDetail />} />
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />

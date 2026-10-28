@@ -14,6 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCategories } from "@/hooks/useCategories";
 import { useShopNavLinks } from "@/hooks/useHomepageSections";
+import { useCollections } from "@/hooks/useCollections";
+import { SegmentedControl } from "@/components/common/SegmentedControl";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStorefrontPages, pageLinkHref } from "@/hooks/useStorefrontPages";
 import { StoreClosureBanner } from "@/components/StoreHours";
@@ -37,13 +39,18 @@ export default function Header() {
   // Pages published with "Header menu" placement in admin (Pages).
   const headerPageLinks = pages.filter((p) => p.place === 'header').map((p) => ({ label: p.title, to: pageLinkHref(p.slug) }));
   const allUtilityLinks = [...headerPageLinks, { label: "Contact", to: "/contact" }];
+  // Collections link only once the store has published collections, so the nav never leads to an empty page.
+  const { data: collections = [] } = useCollections();
+  const hasCollections = collections.length > 0;
   const shopLinks = [
     ...navLinks,
     { label: "Shop all", to: "/shop" },
+    ...(hasCollections ? [{ label: "Collections", to: "/collections" }] : []),
   ];
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileExpandedCat, setMobileExpandedCat] = useState<string | null>(null);
+  const [mobileBrowse, setMobileBrowse] = useState<"categories" | "collections">("categories");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -209,8 +216,36 @@ export default function Header() {
                 </Link>
               </div>
 
-              <SectionTitle as="p" className="px-3 py-2">Categories</SectionTitle>
-              {categories.map((cat) => (
+              {hasCollections ? (
+                <SegmentedControl
+                  aria-label="Browse by"
+                  className="mx-3 my-2"
+                  value={mobileBrowse}
+                  onValueChange={(v) => setMobileBrowse(v as "categories" | "collections")}
+                  options={[
+                    { value: "categories", label: "All Categories" },
+                    { value: "collections", label: "Collections" },
+                  ]}
+                />
+              ) : (
+                <SectionTitle as="p" className="px-3 py-2">Categories</SectionTitle>
+              )}
+              {hasCollections && mobileBrowse === "collections" && (
+                <>
+                  {collections.map((c) => (
+                    <Button key={c.slug} asChild variant="ghost" className="w-full justify-between">
+                      <Link to={`/collections/${c.slug}`} onClick={() => setMobileOpen(false)}>
+                        <span className="truncate">{c.name}</span>
+                        <span className="text-xs text-muted-foreground">{c.productCount}</span>
+                      </Link>
+                    </Button>
+                  ))}
+                  <Button asChild variant="ghost" className="w-full justify-start font-semibold">
+                    <Link to="/collections" onClick={() => setMobileOpen(false)}>View all collections</Link>
+                  </Button>
+                </>
+              )}
+              {(!hasCollections || mobileBrowse === "categories") && categories.map((cat) => (
                 <div key={cat.slug}>
                   <Button
                     variant="ghost"

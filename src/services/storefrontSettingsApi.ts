@@ -45,6 +45,8 @@ export interface HomepageSections {
   lookbook: { enabled: boolean; tag: string; title: string; text: string; cta: string; link: string; images: string[] } | null;
   perks: { enabled: boolean; items: { icon: HomepagePerkIcon; title: string; text: string; link: string | null }[] } | null;
   footer: { tagline: string } | null;
+  /** "Shop by collection" block; absent/null until the backend serves it, then the storefront default is used. */
+  collections?: { enabled: boolean; title: string; subtitle: string } | null;
 }
 
 export const storefrontSettingsApi = {

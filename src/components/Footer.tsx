@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useHomepageSections, useShopNavLinks } from "@/hooks/useHomepageSections";
 import { useStorefrontPages, pageLinkHref } from "@/hooks/useStorefrontPages";
+import { useCollections } from "@/hooks/useCollections";
 import { StoreHoursList } from "@/components/StoreHours";
 import { Facebook, Instagram, Youtube, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +21,14 @@ export default function Footer() {
   const { data: pages = [] } = useStorefrontPages();
   const [email, setEmail] = useState("");
   const { data: sections } = useHomepageSections();
+  const { data: collections = [] } = useCollections();
   // Admin: Online store > Homepage sections > Footer text.
   const tagline = sections?.footer ? sections.footer.tagline : "Color-forward, joyfully made clothing for women, men and kids.";
   // Pages published with "Footer" placement in admin (Pages); policies and FAQ go under Help.
   const footerPages = pages.filter((p) => p.place === 'footer');
   const toLink = (p: (typeof pages)[number]) => ({ label: p.title, to: pageLinkHref(p.slug) });
   const columns = [
-    { title: "Shop", links: [...navLinks, { label: "All clothing", to: "/shop" }, { label: "Sale", to: "/deals" }] },
+    { title: "Shop", links: [...navLinks, { label: "All clothing", to: "/shop" }, ...(collections.length > 0 ? [{ label: "Collections", to: "/collections" }] : []), { label: "Sale", to: "/deals" }] },
     {
       title: "Help",
       links: [
