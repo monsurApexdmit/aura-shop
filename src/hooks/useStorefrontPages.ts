@@ -13,3 +13,7 @@ export function useStorefrontPages() {
 export const BUILT_IN_PAGE_SLUGS = ['about', 'faq', 'returns', 'shipping', 'privacy', 'contact']
 
 export const pageHref = (slug: string) => `/pages/${slug}`
+
+// Built-in slugs keep their dedicated route; other pages render at /pages/:slug.
+export const pageLinkHref = (slug: string) =>
+  BUILT_IN_PAGE_SLUGS.includes(slug) ? `/${slug}` : pageHref(slug)

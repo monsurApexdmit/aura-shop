@@ -32,7 +32,7 @@ export default function Wishlist() {
             <PageHeader
               title={
                 <span className="flex items-center gap-3">
-                  <Heart className="h-7 w-7 text-accent fill-accent" />
+                  <Heart className="h-7 w-7 text-foreground fill-highlight" />
                   My Wishlist
                 </span>
               }
@@ -45,7 +45,7 @@ export default function Wishlist() {
 
       <div className="container py-8">
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-72" />)}
           </div>
         ) : wishlistProducts.length === 0 ? (
@@ -71,7 +71,7 @@ export default function Wishlist() {
                 <Trash2 className="h-4 w-4" /> Clear All
               </Button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
               {wishlistProducts.map((product, i) => (
                 <ProductCard key={product.id} product={product} index={i} />
               ))}

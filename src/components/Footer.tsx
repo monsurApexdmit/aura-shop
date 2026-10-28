@@ -1,45 +1,48 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
-import { useCategories } from "@/hooks/useCategories";
+import { useState } from "react";
+import { Phone, Mail, MapPin } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { useStorefrontPages, BUILT_IN_PAGE_SLUGS, pageHref } from "@/hooks/useStorefrontPages";
+import { useHomepageSections, useShopNavLinks } from "@/hooks/useHomepageSections";
+import { useStorefrontPages, pageLinkHref } from "@/hooks/useStorefrontPages";
 import { StoreHoursList } from "@/components/StoreHours";
 import { Facebook, Instagram, Youtube, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { UserAvatar } from "@/components/common/UserAvatar";
 import { WithTooltip } from "@/components/common/WithTooltip"
 
-const footerLinks = {
-  Company: [
-    { label: "About Us", to: "/about" },
-    { label: "Contact Us", to: "/contact" },
-    { label: "Careers", to: "/careers" },
-    { label: "Press", to: "/press" },
-  ],
-  "Customer Care": [
-    { label: "FAQ", to: "/faq" },
-    { label: "Returns & Refunds", to: "/returns" },
-    { label: "Shipping Policy", to: "/shipping" },
-    { label: "Privacy Policy", to: "/privacy" },
-  ],
-  "My Account": [
-    { label: "Dashboard", to: "/account" },
-    { label: "Order History", to: "/orders" },
-    { label: "Wishlist", to: "/wishlist" },
-    { label: "Track Order", to: "/track-order" },
-  ],
-};
+const LINK = "text-sm text-white/60 transition-colors hover:text-white";
 
 export default function Footer() {
-  const { data: categories = [] } = useCategories();
   const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl, onlineStore } = useCurrency();
+  const navLinks = useShopNavLinks();
   const { data: pages = [] } = useStorefrontPages();
-  const extraLinks = pages
-    .filter((p) => p.place === 'footer' && !BUILT_IN_PAGE_SLUGS.includes(p.slug))
-    .map((p) => ({ label: p.title, to: pageHref(p.slug) }));
-  const sections = Object.entries(footerLinks).map(([title, links]) => [title, title === 'Company' ? [...links, ...extraLinks] : links] as const);
+  const [email, setEmail] = useState("");
+  const { data: sections } = useHomepageSections();
+  // Admin: Online store > Homepage sections > Footer text.
+  const tagline = sections?.footer ? sections.footer.tagline : "Color-forward, joyfully made clothing for women, men and kids.";
+  // Pages published with "Footer" placement in admin (Pages); policies and FAQ go under Help.
+  const footerPages = pages.filter((p) => p.place === 'footer');
+  const toLink = (p: (typeof pages)[number]) => ({ label: p.title, to: pageLinkHref(p.slug) });
+  const columns = [
+    { title: "Shop", links: [...navLinks, { label: "All clothing", to: "/shop" }, { label: "Sale", to: "/deals" }] },
+    {
+      title: "Help",
+      links: [
+        ...footerPages.filter((p) => p.type === 'policy' || p.type === 'faq').map(toLink),
+        { label: "Contact", to: "/contact" },
+        { label: "Track order", to: "/track-order" },
+      ],
+    },
+    {
+      title: "Company",
+      links: [
+        ...footerPages.filter((p) => p.type !== 'policy' && p.type !== 'faq').map(toLink),
+        { label: "My account", to: "/account" },
+      ],
+    },
+  ];
   const rawSocial = onlineStore?.social;
   const waRaw = rawSocial?.whatsapp?.trim() ?? '';
   const waHref = waRaw && (/^https?:\/\//i.test(waRaw) ? waRaw : `https://wa.me/${waRaw.replace(/[^0-9]/g, '')}`);
@@ -49,92 +52,61 @@ export default function Footer() {
     { label: 'YouTube', href: rawSocial?.youtube, Icon: Youtube },
     { label: 'WhatsApp', href: waHref, Icon: MessageCircle },
   ].filter((x): x is { label: string; href: string; Icon: typeof Facebook } => !!x.href && /^https?:\/\//i.test(x.href));
-  const displayLogo = bannerUrl;
-  const displayPaymentMethods = paymentMethods.length > 0
-    ? paymentMethods
-    : ["Visa", "Mastercard", "PayPal", "Apple Pay", "GPay"];
   const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-foreground text-background">
+    <footer className="mt-8 bg-[#1C1917] text-white">
       <div className="container py-14 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 md:gap-6">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-12 md:gap-6">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-3">
-            <div className="flex items-center gap-2.5 mb-5">
-              {displayLogo ? (
-                <img src={displayLogo} alt={storeName} className="h-16 w-auto max-w-[220px] object-contain rounded-xl" />
-              ) : (
-                <>
-                  <UserAvatar shape="square" name={storeName} fallback={storeName.charAt(0).toUpperCase()} className="size-10" />
-                  <div>
-                    <span className="font-display font-bold text-lg text-background leading-none">{storeName}</span>
-                    <p className="text-[9px] text-background/40 uppercase tracking-[0.2em]">Marketplace</p>
-                  </div>
-                </>
-              )}
-            </div>
-            <p className="text-sm text-background/50 leading-relaxed mb-5 max-w-xs">
-              Your universal marketplace for health, fashion, electronics, grocery & beyond. Quality products, fast delivery.
-            </p>
-            {socials.length > 0 && (
-              <div className="flex items-center gap-2 mb-5">
-                {socials.map(({ label, href, Icon }) => (
-                  <WithTooltip key={label} content={label}><Button asChild variant="ghost" size="icon" className="text-background/60 hover:bg-background/10 hover:text-primary">
-                    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
-                      <Icon className="h-4 w-4" />
-                    </a>
-                  </Button></WithTooltip>
-                ))}
-              </div>
+          <div className="col-span-2 md:col-span-5">
+            {bannerUrl ? (
+              <img src={bannerUrl} alt={storeName} className="h-12 w-auto max-w-[220px] rounded-lg object-contain" />
+            ) : (
+              <span className="font-display text-2xl font-extrabold tracking-tight">{storeName}</span>
             )}
-            <div className="space-y-2.5">
+            {tagline && <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">{tagline}</p>}
+            <form className="mt-6 flex max-w-sm items-center gap-2" onSubmit={(e) => e.preventDefault()}>
+              <label htmlFor="footer-email" className="sr-only">Email address</label>
+              <Input
+                id="footer-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="h-11 flex-1 rounded-full border-white/15 bg-white/5 px-5 text-white placeholder:text-white/40"
+              />
+              <Button type="submit" variant="ghost" className="h-11 rounded-full px-4 font-semibold text-white hover:bg-white/10 hover:text-white">
+                Join
+              </Button>
+            </form>
+            <div className="mt-6 space-y-2">
               {storePhone && (
-                <a href={`tel:${storePhone}`} className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
-                  <Phone className="h-4 w-4 text-primary shrink-0" />
-                  {storePhone}
+                <a href={`tel:${storePhone}`} className={`flex items-center gap-2.5 ${LINK}`}>
+                  <Phone className="h-4 w-4 shrink-0" /> {storePhone}
                 </a>
               )}
               {storeEmail && (
-                <a href={`mailto:${storeEmail}`} className="flex items-center gap-2.5 text-sm text-background/50 hover:text-primary transition-colors">
-                  <Mail className="h-4 w-4 text-primary shrink-0" />
-                  {storeEmail}
+                <a href={`mailto:${storeEmail}`} className={`flex items-center gap-2.5 ${LINK}`}>
+                  <Mail className="h-4 w-4 shrink-0" /> {storeEmail}
                 </a>
               )}
               {storeAddress && (
-                <p className="flex items-center gap-2.5 text-sm text-background/50">
-                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                  {storeAddress}
+                <p className="flex items-center gap-2.5 text-sm text-white/60">
+                  <MapPin className="h-4 w-4 shrink-0" /> {storeAddress}
                 </p>
               )}
               <StoreHoursList />
             </div>
           </div>
 
-          {/* Top Categories */}
-          <div className="col-span-1 md:col-span-2">
-            <h3 className="font-display font-semibold text-sm text-background mb-4">Categories</h3>
-            <ul className="space-y-2.5">
-              {categories.slice(0, 6).map((cat) => (
-                <li key={cat.slug}>
-                  <Link to={`/shop?cat=${cat.slug}`} className="text-sm text-background/40 hover:text-primary transition-colors flex items-center gap-1 group">
-                    {cat.name}
-                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {sections.map(([title, links]) => (
-            <div key={title} className="col-span-1 md:col-span-2">
-              <h3 className="font-display font-semibold text-sm text-background mb-4">{title}</h3>
-              <ul className="space-y-2.5">
+          {columns.map(({ title, links }, i) => (
+            <div key={title} className={i === 0 ? "col-span-1 md:col-span-2 md:col-start-7" : "col-span-1 md:col-span-2"}>
+              <h3 className="font-display text-base font-bold">{title}</h3>
+              <ul className="mt-4 space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to} className="text-sm text-background/40 hover:text-primary transition-colors flex items-center gap-1 group">
-                      {link.label}
-                      <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
+                    <Link to={link.to} className={LINK}>{link.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -144,19 +116,22 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <Separator className="bg-background/10" />
-      <div>
-        <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-background/30">
-            © {year} {storeName}. All rights reserved. Built with ❤️
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {displayPaymentMethods.map((m) => (
-              <Badge key={m} variant="outline" className="border-background/10 text-background/40">
-                {m}
-              </Badge>
-            ))}
-          </div>
+      <Separator className="bg-white/10" />
+      <div className="container flex flex-col items-center justify-between gap-3 py-5 md:flex-row">
+        <p className="text-xs text-white/50">© {year} {storeName}. All rights reserved.</p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {paymentMethods.map((m) => (
+            <Badge key={m} variant="outline" className="border-white/20 font-medium text-white/60">
+              {m}
+            </Badge>
+          ))}
+          {socials.map(({ label, href, Icon }) => (
+            <WithTooltip key={label} content={label}><Button asChild variant="ghost" size="icon" className="rounded-full text-white/60 hover:bg-white/10 hover:text-white">
+              <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+                <Icon className="h-4 w-4" />
+              </a>
+            </Button></WithTooltip>
+          ))}
         </div>
       </div>
     </footer>

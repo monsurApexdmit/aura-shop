@@ -31,6 +31,8 @@ function hexLightness(hex: string): number {
 }
 
 
+// The storefront's "accent" token is the subtle hover surface, so the admin accent
+// colour drives --highlight (the brand pop: italic headline word, Sale link, badges).
 function applyBrandColors(primary: string, accent: string, bg: string) {
   const pH  = hexToHsl(primary)!;
   const aH  = hexToHsl(accent)!;
@@ -48,7 +50,7 @@ function applyBrandColors(primary: string, accent: string, bg: string) {
   const pFg     = pLight  < 50 ? "0 0% 98%"  : "0 0% 8%";
   const aFg     = aLight  < 50 ? "0 0% 98%"  : "0 0% 8%";
 
-  // Dark mode: invert bg luminance, keep hue/sat, swap primary↔accent roles
+  // Dark mode keeps the default light-on-dark primary; only the ground and highlight follow the brand.
   const darkBgL   = 10;
   const darkCardL = 14;
 
@@ -56,8 +58,8 @@ function applyBrandColors(primary: string, accent: string, bg: string) {
 :root {
   --primary: ${pH};
   --primary-foreground: ${pFg};
-  --accent: ${aH};
-  --accent-foreground: ${aFg};
+  --highlight: ${aH};
+  --highlight-foreground: ${aFg};
   --background: ${bgH};
   --foreground: ${fg};
   --card: ${bh} ${bs} ${Math.round(cardL)}%;
@@ -73,23 +75,15 @@ function applyBrandColors(primary: string, accent: string, bg: string) {
   --gradient-accent: linear-gradient(135deg, hsl(${aH}), hsl(${aH} / 0.8));
 }
 .dark {
-  --primary: ${aH};
-  --primary-foreground: ${aFg};
-  --accent: ${pH};
-  --accent-foreground: ${pFg};
+  --highlight: ${aH};
+  --highlight-foreground: ${aFg};
   --background: ${bh} ${bs} ${darkBgL}%;
-  --foreground: 0 0% 92%;
   --card: ${bh} ${bs} ${darkCardL}%;
-  --card-foreground: 0 0% 92%;
   --popover: ${bh} ${bs} ${darkCardL}%;
-  --popover-foreground: 0 0% 92%;
   --border: ${bh} ${bs} 20%;
   --input: ${bh} ${bs} 20%;
   --muted: ${bh} ${bs} 18%;
-  --muted-foreground: 0 0% 55%;
   --ring: ${aH};
-  --gradient-primary: linear-gradient(135deg, hsl(${aH}), hsl(${aH} / 0.8));
-  --gradient-accent: linear-gradient(135deg, hsl(${pH}), hsl(${pH} / 0.8));
 }`;
 
   let style = document.getElementById("brand-colors") as HTMLStyleElement | null;
@@ -99,6 +93,19 @@ function applyBrandColors(primary: string, accent: string, bg: string) {
     document.head.appendChild(style);
   }
   style.textContent = css;
+}
+
+// Online-store theme colour (admin: Online store > Theme colour) only recolours the highlight.
+function applyThemeHighlight(hex: string) {
+  const h = hexToHsl(hex)!;
+  const fgOn = hexLightness(hex) < 50 ? "0 0% 98%" : "0 0% 8%";
+  let style = document.getElementById("store-theme") as HTMLStyleElement | null;
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "store-theme";
+    document.head.appendChild(style);
+  }
+  style.textContent = `:root, .dark { --highlight: ${h}; --highlight-foreground: ${fgOn}; }`;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -177,17 +184,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     if (title) document.title = title;
   }, [onlineStore?.name, settings?.storeName]);
 
-  // Online-store theme (a hex picked in admin: Blue/Teal/Violet/Ink) = primary colour,
-  // only when Settings > General brand colours are not configured. Unknown values are ignored.
+  // Online-store theme (a hex picked in admin: Blue/Teal/Violet/Ink) = highlight colour,
+  // only when Settings > General accent colour is not configured. Unknown values are ignored.
   useEffect(() => {
     const theme = onlineStore?.theme?.trim();
-    if (!theme || !settings || settings.primaryColor) return;
+    if (!theme || !settings || settings.accentColor) return;
     if (!/^#[0-9a-fA-F]{6}$/.test(theme)) return;
-    applyBrandColors(
-      theme,
-      settings.accentColor ?? "#B8963E",
-      settings.backgroundColor ?? "#F0EBE3",
-    );
+    applyThemeHighlight(theme);
   }, [onlineStore?.theme, settings]);
 
   useEffect(() => {
@@ -215,9 +218,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         // Inject brand colors as CSS variables (both light + dark)
         if (data?.primaryColor || data?.accentColor || data?.backgroundColor) {
           applyBrandColors(
-            data.primaryColor    ?? "#6B1A2A",
-            data.accentColor     ?? "#B8963E",
-            data.backgroundColor ?? "#F0EBE3",
+            data.primaryColor    ?? "#1C1917",
+            data.accentColor     ?? "#94234A",
+            data.backgroundColor ?? "#FFFFFF",
           );
         }
 

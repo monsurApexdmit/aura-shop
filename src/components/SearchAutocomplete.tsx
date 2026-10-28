@@ -73,19 +73,20 @@ export default function SearchAutocomplete({ mobile, onClose }: SearchAutocomple
   return (
     <div ref={ref} className="relative w-full">
       <div className="relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground text-foreground" />
         <Input
           type="text"
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search for products, brands, categories..."
-          className="w-full pl-11 pr-10"
+          placeholder="Search dresses, jeans, panjabi…"
+          aria-label="Search products"
+          className="h-11 w-full rounded-full border-input bg-secondary pl-11 pr-11"
           autoFocus={mobile}
         />
         {query && (
-          <WithTooltip content="Clear search"><Button variant="ghost" size="icon" aria-label="Clear search" onClick={() => { setQuery(""); setDebouncedQuery(""); setOpen(false); }} className="absolute right-0 top-1/2 -translate-y-1/2">
+          <WithTooltip content="Clear search"><Button variant="ghost" size="icon" aria-label="Clear search" onClick={() => { setQuery(""); setDebouncedQuery(""); setOpen(false); }} className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded-full">
             <X className="h-4 w-4" />
           </Button></WithTooltip>
         )}

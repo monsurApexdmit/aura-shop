@@ -10,6 +10,8 @@ export interface ApiCategory {
   id: number
   name: string
   slug: string
+  /** Storage path of the image uploaded in admin (Categories), if any. */
+  image?: string | null
   children: ApiSubCategory[]
 }
 

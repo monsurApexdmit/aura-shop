@@ -298,7 +298,7 @@ export default function ProductDetail() {
             <div className="flex items-center gap-3 mb-5">
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={cn("h-4 w-4", i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-border")} />
+                  <Star key={i} className={cn("h-4 w-4", i < Math.floor(product.rating) ? "fill-amber-400 text-amber-400" : "text-border")} />
                 ))}
               </div>
               <span className="text-sm font-semibold text-foreground">{product.rating}</span>
