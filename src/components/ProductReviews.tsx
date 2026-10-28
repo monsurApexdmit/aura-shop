@@ -108,7 +108,7 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
           <div className="text-5xl font-display font-bold text-foreground">{displayRating.toFixed(1)}</div>
           <div className="flex items-center gap-0.5 justify-center sm:justify-start mt-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className={cn("h-4 w-4", i < Math.floor(displayRating) ? "fill-accent text-accent" : "text-border")} />
+              <Star key={i} className={cn("h-4 w-4", i < Math.floor(displayRating) ? "fill-amber-400 text-amber-400" : "text-border")} />
             ))}
           </div>
           <p className="text-sm text-muted-foreground mt-1">Based on {displayReviewCount} reviews</p>
@@ -154,7 +154,7 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
                 className="[&_svg]:size-6"
                 disabled={!isLoggedIn || submitReview.isPending}
               >
-                <Star className={cn("h-6 w-6", value <= selectedRating ? "fill-accent text-accent" : "text-border")} />
+                <Star className={cn("h-6 w-6", value <= selectedRating ? "fill-amber-400 text-amber-400" : "text-border")} />
               </Button></WithTooltip>
             );
           })}

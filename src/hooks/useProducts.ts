@@ -1,19 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { productApi, type ProductFilters, type DealFilter } from '@/services/productApi'
 
-export function useDeals(filter: DealFilter = 'all', limit = 48) {
+export function useDeals(filter: DealFilter = 'all', limit = 48, { enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ['deals', filter, limit],
     queryFn:  () => productApi.getDeals(filter, limit),
+    enabled,
     staleTime: 1000 * 60 * 5,
     placeholderData: (prev) => prev,
   })
 }
 
-export function useProducts(filters: ProductFilters = {}) {
+export function useProducts(filters: ProductFilters = {}, { enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ['products', filters],
     queryFn:  () => productApi.getAll(filters),
+    enabled,
     staleTime: 1000 * 60 * 5,
     placeholderData: (prev) => prev,
   })

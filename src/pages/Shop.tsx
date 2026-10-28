@@ -24,7 +24,8 @@ type SortOption = "default" | "price-asc" | "price-desc" | "newest";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeCatSlug = searchParams.get("cat") || null;
+  // Admin-built links use ?category=, storefront links use ?cat=.
+  const activeCatSlug = searchParams.get("cat") || searchParams.get("category") || null;
   const activeSubSlug = searchParams.get("sub") || null;
   const searchQuery   = searchParams.get("search") || "";
 
@@ -188,7 +189,7 @@ export default function Shop() {
 
             {/* Product Grid */}
             {isLoading ? (
-              <div className={cn("grid grid-cols-2 sm:grid-cols-3", gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3", "gap-3 md:gap-4")}>
+              <div className={cn("grid grid-cols-2 sm:grid-cols-3", gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3", "gap-x-4 gap-y-8")}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className="h-72" />
                 ))}
@@ -206,7 +207,7 @@ export default function Shop() {
               />
             ) : (
               <>
-                <div className={cn("grid grid-cols-2 sm:grid-cols-3", gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3", "gap-3 md:gap-4")}>
+                <div className={cn("grid grid-cols-2 sm:grid-cols-3", gridCols === 4 ? "md:grid-cols-4 lg:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-3", "gap-x-4 gap-y-8")}>
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product.id} product={product} index={i} />
                   ))}

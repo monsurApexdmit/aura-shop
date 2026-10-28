@@ -24,6 +24,29 @@ export interface PromoBannerSettings {
   link: string;
 }
 
+// Homepage blocks below the hero (admin: Online store > Homepage sections).
+// A null section has never been customised; the storefront builds it automatically.
+export interface HomepageAisle {
+  id: string;
+  label: string;
+  tagline: string;
+  emoji: string;
+  imagePath: string | null;
+  link: string;
+}
+
+export type HomepageProductSource = "latest" | "featured" | "best_seller" | "hot_deal" | "on_sale";
+
+export type HomepagePerkIcon = "truck" | "rotate" | "shield" | "heart" | "gift" | "star" | "sparkles" | "package" | "clock" | "phone";
+
+export interface HomepageSections {
+  aisles: { enabled: boolean; title: string; subtitle: string; items: HomepageAisle[] } | null;
+  products: { enabled: boolean; title: string; subtitle: string; source: HomepageProductSource; categoryId: number | null; limit: number } | null;
+  lookbook: { enabled: boolean; tag: string; title: string; text: string; cta: string; link: string; images: string[] } | null;
+  perks: { enabled: boolean; items: { icon: HomepagePerkIcon; title: string; text: string; link: string | null }[] } | null;
+  footer: { tagline: string } | null;
+}
+
 export const storefrontSettingsApi = {
   getHomepageHero: async (): Promise<AuraShopHeroSettings> => {
     const response = await api.get("/settings/homepage-hero");
@@ -31,6 +54,10 @@ export const storefrontSettingsApi = {
   },
   getPromoBanner: async (): Promise<PromoBannerSettings> => {
     const response = await api.get("/settings/promo-banner");
+    return response.data.data;
+  },
+  getHomepageSections: async (): Promise<HomepageSections> => {
+    const response = await api.get("/settings/homepage-sections");
     return response.data.data;
   },
 };
