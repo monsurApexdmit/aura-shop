@@ -392,7 +392,7 @@ export default function LiveChat() {
       {/* ── Floating button ── */}
       <AnimatePresence>
         {!open && (
-          <WithTooltip content="Open chat"><Button asChild size="icon" className="fixed bottom-6 right-6 z-[100] size-14 rounded-full shadow-xl [&_svg]:size-6">
+          <WithTooltip content="Open chat"><Button asChild size="icon" className="fixed bottom-4 right-4 z-[100] size-12 rounded-full shadow-xl sm:bottom-6 sm:right-6 sm:size-14 [&_svg]:size-5 sm:[&_svg]:size-6">
             <motion.button
               type="button"
               aria-label="Open chat"
@@ -425,7 +425,7 @@ export default function LiveChat() {
               : { opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 right-6 z-[100] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
+            className="fixed bottom-4 right-4 z-[100] w-[360px] sm:bottom-6 sm:right-6 max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
             style={minimized ? { height: 56 } : { height: 500, maxHeight: "calc(100vh - 6rem)" }}
           >
             {/* Header */}

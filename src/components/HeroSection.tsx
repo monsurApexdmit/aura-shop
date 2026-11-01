@@ -81,7 +81,7 @@ export default function HeroSection() {
 
   return (
     <section className="border-b border-border" aria-roledescription={slides.length > 1 ? "carousel" : undefined}>
-      <div className="container grid items-center gap-10 py-12 md:py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
+      <div className="container grid items-center gap-6 py-8 sm:gap-10 sm:py-12 md:py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
         <div>
           <motion.div
             key={slides.length ? active : "default"}
@@ -95,18 +95,18 @@ export default function HeroSection() {
                 {current.tag}
               </span>
             )}
-            <h1 className="mt-6 font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+            <h1 className="mt-5 font-display text-[2.75rem] sm:mt-6 sm:text-5xl font-extrabold leading-[0.95] tracking-tight text-foreground md:text-6xl lg:text-7xl xl:text-[5.5rem]">
               <AccentText text={current.title} accentClassName="text-highlight" />
             </h1>
             {current.subtitle && (
               <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">{current.subtitle}</p>
             )}
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="h-12 rounded-full px-7 font-semibold">
+            <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
+              <Button asChild size="lg" className="h-11 rounded-full px-6 sm:h-12 sm:px-7 font-semibold">
                 <Link to={current.link}>{current.cta} <ArrowRight className="h-4 w-4" /></Link>
               </Button>
               {firstAisle && firstAisle.to !== current.link && (
-                <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-2 border-foreground px-7 font-semibold">
+                <Button asChild size="lg" variant="outline" className="h-11 rounded-full border-2 border-foreground px-6 sm:h-12 sm:px-7 font-semibold">
                   <Link to={firstAisle.to}>Shop {firstAisle.label}</Link>
                 </Button>
               )}
@@ -131,19 +131,19 @@ export default function HeroSection() {
           )}
         </div>
 
-        <div className="relative mx-auto h-[340px] w-full max-w-[520px] sm:h-[420px] lg:h-[480px]" aria-hidden="true">
+        <div className="relative mx-auto h-[250px] w-full max-w-[320px] sm:h-[420px] sm:max-w-[520px] lg:h-[480px]" aria-hidden="true">
           {COLLAGE.map((card, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
-              className={cn("absolute aspect-[4/5] overflow-hidden rounded-3xl shadow-xl", card.tone, card.className)}
+              className={cn("absolute aspect-[4/5] overflow-hidden rounded-2xl shadow-xl sm:rounded-3xl", card.tone, card.className)}
             >
               {images[i] ? (
                 <img key={images[i]} src={images[i]} alt="" className="h-full w-full object-cover animate-in fade-in duration-500" />
               ) : (
-                <span className="flex h-full w-full items-center justify-center text-6xl sm:text-7xl">{card.emoji}</span>
+                <span className="flex h-full w-full items-center justify-center text-5xl sm:text-7xl">{card.emoji}</span>
               )}
             </motion.div>
           ))}

@@ -104,7 +104,7 @@ export default function Header() {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center justify-self-end gap-0.5">
+          <div className="col-start-3 flex items-center justify-self-end gap-0.5">
             <WithTooltip content="Search"><Button variant="ghost" size="icon" className="rounded-full" aria-label="Search" aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-[18px] w-[18px]" />
             </Button></WithTooltip>

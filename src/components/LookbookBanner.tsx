@@ -99,7 +99,7 @@ export default function LookbookBanner() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4" aria-hidden="true">
+        <div className="mx-auto grid w-full max-w-[340px] grid-cols-2 gap-3 sm:gap-4 md:max-w-none" aria-hidden="true">
           {[0, 1].map((i) => (
             <div key={i} className={`aspect-[3/4] overflow-hidden rounded-2xl ${PASTELS[i + 2]} ${i === 1 ? "mt-6 sm:mt-8" : ""}`}>
               {images[i] ? (

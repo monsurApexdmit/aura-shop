@@ -422,13 +422,13 @@ export default function ProductDetail() {
             <Separator className="mb-6" />
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 { icon: Truck, title: "Free Shipping", sub: freeShippingThreshold != null ? `Orders ${formatCurrency(freeShippingThreshold)}+` : "Fast delivery" },
                 { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
                 { icon: RotateCcw, title: "Easy Returns", sub: "30-Day Policy" },
               ].map(({ icon: Icon, title, sub }) => (
-                <Card key={title} className="flex flex-col items-center gap-2 p-3 text-center">
+                <Card key={title} className="flex flex-col items-center gap-1.5 rounded-2xl bg-secondary p-2.5 text-center shadow-none sm:gap-2 sm:p-3">
                   <Icon className="h-5 w-5 text-primary" />
                   <span className="text-[11px] font-medium text-foreground leading-tight">{title}</span>
                   <span className="text-[10px] text-muted-foreground">{sub}</span>
