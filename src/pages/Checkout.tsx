@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,8 @@ import { usePlaceOrder } from "@/hooks/useOrders";
 import { addressApi, type ApiAddress } from "@/services/addressApi";
 import { couponApi, type CouponResult } from "@/services/couponApi";
 import { useNavigate } from "react-router-dom";
+import { getAttributionPayload } from "@/lib/attribution";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/pixels";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, ClipboardCheck, CheckCircle2, ArrowLeft, ArrowRight, Truck, ShieldCheck, Banknote, Landmark, Globe, Wallet, QrCode, Smartphone, UserCheck, Info, Tag, X, Store, Package, Zap, Box } from "lucide-react";
@@ -74,7 +76,7 @@ const steps = [
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { isLoggedIn, user } = useAuth();
-  const { formatCurrency, currencySymbol } = useCurrency();
+  const { formatCurrency, currencySymbol, settings } = useCurrency();
   const placeOrder = usePlaceOrder();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -239,6 +241,13 @@ export default function Checkout() {
           shipping_method_id: selectedShipping?.id,
           pickup_location_id: isPickup && pickupPoint ? pickupPoint.id : undefined,
           guest: isLoggedIn ? undefined : { name: form.fullName, phone: form.phone, email: form.email || undefined },
+          attribution: getAttributionPayload(),
+        });
+        trackPurchase({
+          value: order.amount || grandTotal,
+          currency: settings?.currency || "BDT",
+          orderId: order.invoice_no,
+          contentIds: items.map((i) => i.productId),
         });
         clearCart();
         if (payment_url) {
@@ -276,6 +285,14 @@ export default function Checkout() {
   const discount = calcDiscount(totalPrice);
   // No tax on storefront orders (the server doesn't charge any either).
   const grandTotal = totalPrice - discount + shippingCost;
+
+  // Ad pixels (no-op unless the store configured one): one InitiateCheckout per visit with a non-empty cart
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || items.length === 0) return;
+    checkoutTracked.current = true;
+    trackInitiateCheckout({ value: totalPrice, currency: settings?.currency || "BDT", numItems: items.reduce((n, i) => n + i.quantity, 0) });
+  }, [items, totalPrice, settings?.currency]);
 
 
   if (items.length === 0 && step < 4) {

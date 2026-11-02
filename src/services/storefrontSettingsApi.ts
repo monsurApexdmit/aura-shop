@@ -73,6 +73,10 @@ export interface OnlineStoreSettings {
   published: boolean;
   policies: { returns: string; shipping: string; privacy: string };
   social: { facebook: string; instagram: string; whatsapp: string; youtube: string; twitter: string };
+  /** Optional ad pixels + order-on-WhatsApp number (admin: Online store); absent on older backends. */
+  facebookPixelId?: string | null;
+  tiktokPixelId?: string | null;
+  whatsappNumber?: string | null;
 }
 
 export const getOnlineStore = async (): Promise<OnlineStoreSettings> => {

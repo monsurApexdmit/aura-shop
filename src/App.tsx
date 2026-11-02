@@ -14,6 +14,7 @@ import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
 import LiveChat from "@/components/LiveChat";
+import MarketingTracker from "@/components/MarketingTracker";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
@@ -45,6 +46,8 @@ import ReturnDetail from "./pages/ReturnDetail";
 import Support from "./pages/Support";
 import GuestSupport from "./pages/GuestSupport";
 import OrderResult from "./pages/OrderResult";
+import QuickOrder from "./pages/QuickOrder";
+import CampaignLinkRedirect from "./pages/CampaignLinkRedirect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +57,20 @@ const pageVariants = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
   exit:    { opacity: 0, y: -8,  transition: { duration: 0.18, ease: "easeIn"  } },
 };
+
+// The quick order page has its own sticky "Confirm order" bar; keep floating buttons off it.
+const isQuickOrderPath = (pathname: string) => /^\/order\/(?!result\/?$)[^/]+\/?$/.test(pathname);
+
+function FloatingWidgets() {
+  const { pathname } = useLocation();
+  if (isQuickOrderPath(pathname)) return null;
+  return (
+    <>
+      <BackToTop />
+      <LiveChat />
+    </>
+  );
+}
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -96,6 +113,8 @@ function AnimatedRoutes() {
           <Route path="/support" element={<Support />} />
           <Route path="/support/guest/:ticketNumber" element={<GuestSupport />} />
           <Route path="/order/result" element={<OrderResult />} />
+          <Route path="/order/:slug" element={<QuickOrder />} />
+          <Route path="/l/:code" element={<CampaignLinkRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>
@@ -114,10 +133,10 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <MarketingTracker />
                 <Header />
                 <CartDrawer />
-                <BackToTop />
-                <LiveChat />
+                <FloatingWidgets />
                 <AnimatedRoutes />
               </BrowserRouter>
             </TooltipProvider>

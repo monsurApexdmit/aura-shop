@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Package, Tag } from "lucide-react";
+import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Package, Tag, Zap, MessageCircle } from "lucide-react";
 import { useProduct, useProducts } from "@/hooks/useProducts";
 import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
@@ -26,6 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo, useEffect } from "react";
 import type { ProductAttribute } from "@/types/product";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { whatsAppLink } from "@/lib/bdPhone";
+import { trackViewContent } from "@/lib/pixels";
 
 const MotionCard = motion.create(Card);
 
@@ -56,7 +58,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { formatCurrency, freeShippingThreshold } = useCurrency();
+  const { formatCurrency, freeShippingThreshold, onlineStore, settings } = useCurrency();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
@@ -106,6 +108,13 @@ export default function ProductDetail() {
   }, [product, selectedAttributes]);
 
   const cartItem = items.find((i) => i.id === String(selectedVariant?.id ?? product?.id));
+
+  // Ad pixels (no-op unless configured): ViewContent once per product
+  useEffect(() => {
+    if (product) trackViewContent({ id: product.id, name: product.name, value: product.price, currency: settings?.currency || "BDT" });
+  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const storeWhatsApp = onlineStore?.whatsappNumber || onlineStore?.social?.whatsapp || "";
 
   if (isLoading) {
     return (
@@ -417,7 +426,31 @@ export default function ProductDetail() {
                   {currentStock === 0 ? "Out of Stock" : "Add to Cart"}
                 </Button>
               )}
+              {currentStock > 0 && (
+                <Button asChild size="lg" variant="secondary" className="gap-2 flex-1 min-[420px]:max-w-xs">
+                  <Link to={`/order/${product.slug}`}>
+                    <Zap className="h-5 w-5" />
+                    Quick order
+                  </Link>
+                </Button>
+              )}
             </div>
+            {(() => {
+              const productUrl = typeof window !== "undefined" ? `${window.location.origin}/product/${product.slug}` : `/product/${product.slug}`;
+              const variantText = selectedVariant && attributes.length ? ` (${Object.values(selectedAttributes).join(", ")})` : "";
+              const href = whatsAppLink(
+                storeWhatsApp,
+                `Hi, I'd like to order: ${product.name}${variantText} — ${formatCurrency(currentPrice)}\n${productUrl}`,
+              );
+              return href ? (
+                <Button asChild size="lg" variant="outline" className="mb-6 w-full gap-2 min-[420px]:w-fit">
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-5 w-5" />
+                    Order on WhatsApp
+                  </a>
+                </Button>
+              ) : null;
+            })()}
 
             <Separator className="mb-6" />
 
