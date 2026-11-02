@@ -11,15 +11,17 @@ import type { ApiCollection } from "@/services/collectionApi";
 export const productCountLabel = (n: number) => `${n} product${n === 1 ? "" : "s"}`;
 
 interface CollectionCardProps {
-  collection: Pick<ApiCollection, "name" | "slug" | "imageUrl" | "productCount" | "description">;
+  collection: Pick<ApiCollection, "name" | "slug" | "imageUrl" | "coverImageUrl" | "productCount" | "description">;
   index?: number;
   className?: string;
 }
 
-// Banner tile (pastel ground when there is no image) with the name and product count underneath.
+// Banner tile (pastel ground when there is no photo) with the name and product count underneath.
 export default function CollectionCard({ collection, index = 0, className }: CollectionCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const image = collection.imageUrl && !imageFailed ? getImageUrl(collection.imageUrl) : null;
+  // Own image first, else the first product's photo, else a lettered pastel tile.
+  const src = collection.imageUrl || collection.coverImageUrl;
+  const image = src && !imageFailed ? getImageUrl(src) : null;
 
   return (
     <motion.div

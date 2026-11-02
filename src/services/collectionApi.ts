@@ -11,6 +11,8 @@ export interface ApiCollection {
   /** Stored path; use imageUrl (absolute) for <img>. */
   image?: string | null
   imageUrl: string | null
+  /** First product photo, sent when the collection has no image of its own. */
+  coverImageUrl?: string | null
   /** Storefront-visible products only. */
   productCount: number
   sortOrder?: number

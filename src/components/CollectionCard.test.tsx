@@ -11,7 +11,7 @@ class IO {
 }
 (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver ??= IO;
 
-const base = { name: "Premium Tech", slug: "premium-tech", imageUrl: null, productCount: 12, description: null };
+const base = { name: "Premium Tech", slug: "premium-tech", imageUrl: null as string | null, coverImageUrl: null as string | null, productCount: 12, description: null };
 
 const renderCard = (overrides: Partial<typeof base> = {}) =>
   render(
@@ -31,6 +31,11 @@ describe("CollectionCard", () => {
   it("shows the banner image when there is one", () => {
     const { container } = renderCard({ imageUrl: "https://cdn.example.com/banner.jpg" });
     expect(container.querySelector("img")).toHaveAttribute("src", "https://cdn.example.com/banner.jpg");
+  });
+
+  it("uses the first product photo when the collection has no image", () => {
+    const { container } = renderCard({ coverImageUrl: "https://cdn.example.com/product.jpg" });
+    expect(container.querySelector("img")).toHaveAttribute("src", "https://cdn.example.com/product.jpg");
   });
 
   it("falls back to the initial without an image", () => {
