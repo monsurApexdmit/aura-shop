@@ -43,7 +43,7 @@ function AisleCard({ aisle, index, compact, count = 3 }: { aisle: Aisle; index: 
     >
       <Link
         to={aisle.href}
-        className={cn("group relative block overflow-hidden rounded-3xl", WIDE_ASPECT[count] ?? "sm:aspect-[4/5]", compact ? "aspect-[4/5] rounded-2xl sm:rounded-3xl" : "aspect-[4/3]", aisle.tone)}
+        className={cn("group relative block overflow-hidden rounded-3xl", WIDE_ASPECT[count] ?? "sm:aspect-[4/5]", compact ? "aspect-[4/5] rounded-2xl sm:rounded-3xl" : "aspect-[16/10]", aisle.tone)}
       >
         {aisle.image ? (
           <img
@@ -91,10 +91,10 @@ function AutoAisleCard({ item, index, compact, count }: { item: AutoAisle; index
   return <AisleCard index={index} compact={compact} count={count} aisle={{ ...aisle, image }} />;
 }
 
-// Card count decides the columns so 1–6 cards always fill the row neatly; 4+ cards sit two-up on phones.
+// Card count decides the columns so 1–6 cards always fill the row neatly; 2 or 4+ cards sit two-up on phones.
 const GRID_COLS: Record<number, string> = {
   1: "sm:grid-cols-1",
-  2: "sm:grid-cols-2",
+  2: "grid-cols-2",
   3: "sm:grid-cols-3",
   4: "grid-cols-2 lg:grid-cols-4",
   5: "grid-cols-2 lg:grid-cols-3",
@@ -158,13 +158,13 @@ export default function DepartmentAisles() {
   if (custom && (!custom.enabled || custom.items.length === 0)) return null;
 
   const count = custom ? custom.items.length : auto.length;
-  const compact = count >= 4;
+  const compact = count === 2 || count >= 4;
   const subtitle = custom
     ? custom.subtitle
     : `${COUNT_WORDS[Math.min(count, MAX_AUTO)]} aisle${count === 1 ? "" : "s"}, one wardrobe philosophy.`;
 
   return (
-    <section className="container py-14 md:py-24">
+    <section className="container py-10 sm:py-14 md:py-24">
       <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
       {subtitle && <p className="mt-2 text-sm text-muted-foreground md:text-base">{subtitle}</p>}
       <div className={cn("mt-8 grid gap-3 sm:gap-4 md:mt-10 md:gap-5", GRID_COLS[Math.min(count, 6)])}>

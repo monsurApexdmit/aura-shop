@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { AttributionPayload } from '@/lib/attribution'
 
 export interface OrderItem {
   product_id: number
@@ -32,6 +33,8 @@ export interface PlaceOrderPayload {
     phone: string
     email?: string
   }
+  /** Last-touch ad/social attribution (utm, click id, campaign link code, landing page, referrer). */
+  attribution?: AttributionPayload
 }
 
 export interface ApiOrderItem {

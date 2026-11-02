@@ -66,24 +66,26 @@ export default function FeaturesBar() {
   if (custom && (!custom.enabled || perks.length === 0)) return null;
 
   return (
-    <section aria-label="Store perks" className="container py-14 md:py-20">
-      <ul className={cn("grid gap-4 sm:grid-cols-2 md:gap-5", perks.length === 3 && "lg:grid-cols-3", perks.length === 4 && "lg:grid-cols-4")}>
+    <section aria-label="Store perks" className="container py-10 sm:py-14 md:py-20">
+      <ul className={cn("grid gap-3 sm:grid-cols-2 sm:gap-4 md:gap-5", perks.length === 3 && "lg:grid-cols-3", perks.length === 4 && "lg:grid-cols-4")}>
         {perks.map(({ icon: Icon, title, text, to }) => {
           const body = (
             <>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
-              <h3 className="mt-5 font-display text-lg font-bold text-foreground">{title}</h3>
-              {text && <p className="mt-1 text-sm text-muted-foreground">{text}</p>}
+              <div className="min-w-0">
+                <h3 className="font-display text-base font-bold text-foreground sm:mt-5 sm:text-lg">{title}</h3>
+                {text && <p className="mt-1 text-sm text-muted-foreground">{text}</p>}
+              </div>
             </>
           );
           return (
             <li key={title} className={cn(perks.length === 3 && "sm:last:col-span-2 lg:last:col-span-1")}>
               {to ? (
-                <Link to={to} className="block h-full rounded-2xl bg-secondary p-6 transition-colors hover:bg-accent">{body}</Link>
+                <Link to={to} className="flex h-full items-start gap-4 rounded-2xl bg-secondary p-4 transition-colors hover:bg-accent sm:block sm:p-6">{body}</Link>
               ) : (
-                <div className="h-full rounded-2xl bg-secondary p-6">{body}</div>
+                <div className="flex h-full items-start gap-4 rounded-2xl bg-secondary p-4 sm:block sm:p-6">{body}</div>
               )}
             </li>
           );

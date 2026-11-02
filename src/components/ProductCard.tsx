@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Heart, Shirt } from "lucide-react";
+import { Plus, Minus, Heart, Shirt, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -102,11 +102,13 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </Button>
         </WithTooltip>
 
-        {/* Bag action: always shown on touch screens, on hover/focus from md up */}
+        {/* Bag action: a round icon button on phones, a full pill on hover/focus from md up */}
         <div
           className={cn(
-            "absolute inset-x-3 bottom-3 z-10 transition-all duration-200",
-            !cartItem && "md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100"
+            "absolute z-10 transition-all duration-200",
+            cartItem
+              ? "inset-x-2 bottom-2 md:inset-x-3 md:bottom-3"
+              : "bottom-2 right-2 md:bottom-3 md:left-3 md:right-3 md:translate-y-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100"
           )}
         >
           {cartItem ? (
@@ -136,26 +138,37 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               </Button></WithTooltip>
             </div>
           ) : hasVariants ? (
-            <Button asChild className="h-10 w-full rounded-full bg-white text-xs font-semibold text-neutral-950 shadow-md hover:bg-white/90">
-              <Link to={`/product/${product.slug}`}>Choose options</Link>
-            </Button>
+            <>
+              <Button asChild size="icon" className="h-10 w-10 rounded-full bg-white text-neutral-950 shadow-md hover:bg-white/90 md:hidden">
+                <Link to={`/product/${product.slug}`} aria-label={`Choose options for ${product.name}`}><ShoppingBag className="h-4 w-4" /></Link>
+              </Button>
+              <Button asChild className="hidden h-10 w-full rounded-full bg-white text-xs font-semibold text-neutral-950 shadow-md hover:bg-white/90 md:inline-flex">
+                <Link to={`/product/${product.slug}`}>Choose options</Link>
+              </Button>
+            </>
           ) : (
-            <Button onClick={handleAdd} className="h-10 w-full rounded-full bg-white text-xs font-semibold text-neutral-950 shadow-md hover:bg-white/90">
-              Add to bag
-            </Button>
+            <>
+              <Button size="icon" onClick={handleAdd} aria-label={`Add ${product.name} to bag`} className="h-10 w-10 rounded-full bg-white text-neutral-950 shadow-md hover:bg-white/90 md:hidden">
+                <ShoppingBag className="h-4 w-4" />
+              </Button>
+              <Button onClick={handleAdd} className="hidden h-10 w-full rounded-full bg-white text-xs font-semibold text-neutral-950 shadow-md hover:bg-white/90 md:inline-flex">
+                Add to bag
+              </Button>
+            </>
           )}
         </div>
       </div>
 
       {/* Content */}
       <div className="flex flex-col gap-1 pt-3">
-        <div className="flex items-start justify-between gap-3">
+        {/* Name and price stack on narrow (2-up phone) cards, sit side by side from sm up */}
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <Link to={`/product/${product.slug}`} className="min-w-0">
-            <h3 className="line-clamp-2 font-display text-[15px] font-semibold leading-snug text-foreground">
+            <h3 className="line-clamp-2 font-display text-sm font-semibold leading-snug text-foreground sm:text-[15px]">
               {product.name}
             </h3>
           </Link>
-          <span className="shrink-0 text-sm font-bold text-foreground">{formatCurrency(product.price)}</span>
+          <span className="text-sm font-bold text-foreground sm:shrink-0">{formatCurrency(product.price)}</span>
         </div>
         <div className="flex items-start justify-between gap-3 text-xs text-muted-foreground">
           <span className="truncate">{product.category}</span>
