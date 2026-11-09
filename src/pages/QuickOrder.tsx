@@ -5,6 +5,7 @@ import { useQuickOrder, usePlaceQuickOrder } from "@/hooks/useQuickOrder";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import type { QuickOrderPaymentMethod, QuickOrderResult } from "@/services/quickOrderApi";
 import { getAttributionPayload } from "@/lib/attribution";
+import { keepKeyAfterError, newIdempotencyKey, shortageText, stockShortages } from "@/lib/orderErrors";
 import { isValidBdPhone, normalizeBdPhone, whatsAppLink } from "@/lib/bdPhone";
 import { trackInitiateCheckout, trackPurchase, trackViewContent } from "@/lib/pixels";
 import { cn } from "@/lib/utils";
@@ -84,6 +85,7 @@ export default function QuickOrder() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [slide, setSlide] = useState(0);
   const checkoutTracked = useRef(false);
+  const orderAttemptKey = useRef<string | null>(null);
 
   const product = data?.product;
   const variants = useMemo(() => product?.variants ?? [], [product]);
@@ -185,8 +187,10 @@ export default function QuickOrder() {
       requestAnimationFrame(() => document.querySelector<HTMLElement>("[data-invalid=true] input, [data-invalid=true] textarea, [data-invalid=true] [role=radio]")?.focus());
       return;
     }
+    orderAttemptKey.current ??= newIdempotencyKey();
     try {
       const res = await placeOrder.mutateAsync({
+        idempotencyKey: orderAttemptKey.current,
         productId: product.id,
         variantId: selectedVariant?.id ?? null,
         quantity,
@@ -202,6 +206,7 @@ export default function QuickOrder() {
         website: form.website,
         attribution: getAttributionPayload(),
       });
+      orderAttemptKey.current = null;
       trackPurchase({ value: res.total || total, currency, orderId: res.invoiceNo, contentIds: [product.id] });
       if (res.paymentUrl) {
         window.location.href = res.paymentUrl;
@@ -211,7 +216,13 @@ export default function QuickOrder() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: unknown) {
       const resp = (err as { response?: { status?: number; data?: { message?: string; errors?: unknown } } })?.response;
-      if (resp?.status === 422) {
+      if (!keepKeyAfterError(resp?.status)) orderAttemptKey.current = null;
+      const shortages = stockShortages(resp?.data?.errors);
+      if (shortages.length) {
+        // Stock ran out while ordering: say how many are left next to the quantity picker
+        setErrors((cur) => ({ ...cur, product: shortageText(shortages[0]) }));
+        setGeneralError(null);
+      } else if (resp?.status === 422) {
         const { fields, rest } = mapServerErrors(resp.data?.errors);
         setErrors((cur) => ({ ...cur, ...fields }));
         setGeneralError(rest[0] ?? (Object.keys(fields).length ? null : resp.data?.message ?? "Please check your details."));

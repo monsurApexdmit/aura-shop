@@ -9,6 +9,7 @@ import { addressApi, type ApiAddress } from "@/services/addressApi";
 import { couponApi, type CouponResult } from "@/services/couponApi";
 import { useNavigate } from "react-router-dom";
 import { getAttributionPayload } from "@/lib/attribution";
+import { keepKeyAfterError, newIdempotencyKey, orderErrorMessage } from "@/lib/orderErrors";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixels";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -78,6 +79,7 @@ export default function Checkout() {
   const { isLoggedIn, user } = useAuth();
   const { formatCurrency, currencySymbol, settings } = useCurrency();
   const placeOrder = usePlaceOrder();
+  const orderAttemptKey = useRef<string | null>(null);
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -215,6 +217,8 @@ export default function Checkout() {
   const nextStep = async () => {
     if (step === 1 && !validateShipping()) return;
     if (step === 3) {
+      // Same key for retries of this attempt, so a timeout + retry can never create a second order
+      orderAttemptKey.current ??= newIdempotencyKey();
       try {
         const orderItems = items.map((i) => ({
           product_id: i.productId,
@@ -242,7 +246,9 @@ export default function Checkout() {
           pickup_location_id: isPickup && pickupPoint ? pickupPoint.id : undefined,
           guest: isLoggedIn ? undefined : { name: form.fullName, phone: form.phone, email: form.email || undefined },
           attribution: getAttributionPayload(),
+          idempotency_key: orderAttemptKey.current,
         });
+        orderAttemptKey.current = null;
         trackPurchase({
           value: order.amount || grandTotal,
           currency: settings?.currency || "BDT",
@@ -256,10 +262,12 @@ export default function Checkout() {
         }
         setPlacedOrderId(order.invoice_no ?? String(order.id));
         setStep(4);
-      } catch (err: any) {
-        const data = err?.response?.data;
-        const firstError = data?.errors ? (Object.values(data.errors).flat()[0] as string | undefined) : undefined;
-        toast.error(data?.message ?? firstError ?? "Failed to place order. Please try again.");
+      } catch (err: unknown) {
+        const response = (err as { response?: { status?: number; data?: { message?: string; errors?: unknown } } })?.response;
+        const status = response?.status;
+        // The order was refused (e.g. stock ran out): the next try is a new attempt with a new key
+        if (!keepKeyAfterError(status)) orderAttemptKey.current = null;
+        toast.error(orderErrorMessage(response?.data, "Failed to place order. Please try again."));
       }
       return;
     }
