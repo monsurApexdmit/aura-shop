@@ -24,7 +24,7 @@ export default function Deals() {
   const { formatCurrency, freeShippingThreshold } = useCurrency();
 
   const banners = [
-    { title: "Flash Sale — Up to 40% Off", subtitle: "Limited time deals on electronics & fashion", icon: Zap,  color: "bg-neutral-950 text-white"  },
+    { title: "Flash Sale — Up to 40% Off", subtitle: "Limited time deals on electronics & fashion", icon: Zap,  color: "bg-ink text-ink-foreground"  },
     ...(freeShippingThreshold != null
       ? [{ title: `Free Shipping on Orders ${formatCurrency(freeShippingThreshold)}+`, subtitle: "Use code FREESHIP at checkout", icon: Gift, color: "bg-highlight text-highlight-foreground" }]
       : []),

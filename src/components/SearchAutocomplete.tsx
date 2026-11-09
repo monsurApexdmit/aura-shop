@@ -14,11 +14,13 @@ import { WithTooltip } from "@/components/common/WithTooltip"
 const MotionCard = motion.create(Card);
 
 interface SearchAutocompleteProps {
+  /** Input hint; templates suit it to what the store sells */
+  placeholder?: string;
   mobile?: boolean;
   onClose?: () => void;
 }
 
-export default function SearchAutocomplete({ mobile, onClose }: SearchAutocompleteProps) {
+export default function SearchAutocomplete({ mobile, onClose, placeholder = "Search dresses, jeans, panjabi…" }: SearchAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -80,9 +82,9 @@ export default function SearchAutocomplete({ mobile, onClose }: SearchAutocomple
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search dresses, jeans, panjabi…"
+          placeholder={placeholder}
           aria-label="Search products"
-          className="h-11 w-full rounded-full border-input bg-secondary pl-11 pr-11"
+          className="h-11 w-full rounded-pill border-input bg-secondary pl-11 pr-11"
           autoFocus={mobile}
         />
         {query && (

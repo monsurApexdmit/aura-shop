@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,7 @@ import BackToTop from "@/components/BackToTop";
 import LiveChat from "@/components/LiveChat";
 import MarketingTracker from "@/components/MarketingTracker";
 import MobileTabBar from "@/components/MobileTabBar";
-import { hidesTabBar } from "@/lib/mobileNav";
+import { useStoreTemplate } from "@/templates/registry";
 import { cn } from "@/lib/utils";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
@@ -67,17 +68,21 @@ const isQuickOrderPath = (pathname: string) => /^\/order\/(?!result\/?$)[^/]+\/?
 
 function FloatingWidgets() {
   const { pathname } = useLocation();
+  const template = useStoreTemplate();
   if (isQuickOrderPath(pathname)) return null;
+  // The template says how high floating buttons sit on phones, clear of its bottom bars.
+  const fabBottom = template?.fabBottom?.(pathname);
   return (
-    <>
+    <div style={fabBottom ? ({ "--fab-bottom": fabBottom } as CSSProperties) : undefined}>
       <BackToTop />
       <LiveChat />
-    </>
+    </div>
   );
 }
 
 function AnimatedRoutes() {
   const location = useLocation();
+  const template = useStoreTemplate();
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
@@ -86,8 +91,8 @@ function AnimatedRoutes() {
         initial="initial"
         animate="animate"
         exit="exit"
-        // Keep page ends clear of the phone tab bar.
-        className={cn(!hidesTabBar(location.pathname) && "pb-tabbar md:pb-0")}
+        // Keep page ends clear of the template's phone navigation.
+        className={cn(template?.mobileNavPadding(location.pathname))}
       >
         <Routes location={location}>
           <Route path="/" element={<Index />} />

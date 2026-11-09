@@ -149,7 +149,7 @@ export default function HeroSection() {
             </div>
           )}
           <span className={cn(
-            "inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em]",
+            "inline-flex max-w-full items-center gap-1.5 truncate rounded-pill px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em]",
             cardImages[active] ? "bg-white/15 text-white ring-1 ring-white/30 backdrop-blur-md" : "bg-white/70 text-neutral-950"
           )}>
             <span className="size-1.5 shrink-0 rounded-full bg-highlight" aria-hidden="true" />
@@ -166,7 +166,7 @@ export default function HeroSection() {
           className={cn("mt-auto p-5 pt-0", cardImages[active] ? "text-white" : "text-neutral-950")}
         >
           <h1 className="line-clamp-3 pb-1 font-display text-[2.6rem] font-extrabold leading-[0.95] tracking-[-0.02em]">
-            <AccentText text={cover.title} accentClassName={cn("italic", cardImages[active] ? "text-[#FFC2CF]" : "text-highlight")} />
+            <AccentText text={cover.title} accentClassName={cn("italic", cardImages[active] ? "text-highlight-soft" : "text-highlight")} />
           </h1>
           {cover.subtitle && (
             <p className={cn("mt-2 line-clamp-2 text-[13px] leading-snug", cardImages[active] ? "text-white/80" : "text-neutral-950/70")}>{cover.subtitle}</p>
@@ -174,8 +174,8 @@ export default function HeroSection() {
           <Link
             to={cover.link}
             className={cn(
-              "mt-4 flex h-12 w-full items-center justify-between rounded-full pl-5 pr-1.5 text-xs font-bold uppercase tracking-[0.14em] active:scale-[0.98]",
-              cardImages[active] ? "bg-white text-neutral-950" : "bg-neutral-950 text-white"
+              "mt-4 flex h-12 w-full items-center justify-between rounded-pill pl-5 pr-1.5 text-xs font-bold uppercase tracking-[0.14em] active:scale-[0.98]",
+              cardImages[active] ? "bg-white text-neutral-950" : "bg-ink text-ink-foreground"
             )}
           >
             {cover.cta}
@@ -197,7 +197,7 @@ export default function HeroSection() {
             transition={{ duration: 0.35 }}
           >
             {current.tag && (
-              <span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center gap-2 rounded-pill border border-border px-3 py-1 text-xs font-medium text-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-highlight" aria-hidden="true" />
                 {current.tag}
               </span>
@@ -209,11 +209,11 @@ export default function HeroSection() {
               <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">{current.subtitle}</p>
             )}
             <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
-              <Button asChild size="lg" className="h-11 rounded-full px-6 sm:h-12 sm:px-7 font-semibold">
+              <Button asChild size="lg" className="h-11 rounded-pill px-6 sm:h-12 sm:px-7 font-semibold">
                 <Link to={current.link}>{current.cta} <ArrowRight className="h-4 w-4" /></Link>
               </Button>
               {firstAisle && firstAisle.to !== current.link && (
-                <Button asChild size="lg" variant="outline" className="h-11 rounded-full border-2 border-foreground px-6 sm:h-12 sm:px-7 font-semibold">
+                <Button asChild size="lg" variant="outline" className="h-11 rounded-pill border-2 border-foreground px-6 sm:h-12 sm:px-7 font-semibold">
                   <Link to={firstAisle.to}>Shop {firstAisle.label}</Link>
                 </Button>
               )}

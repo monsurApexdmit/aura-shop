@@ -205,7 +205,7 @@ export default function DepartmentAisles() {
           ? custom.items.map((item, i) => <AisleCard key={item.id || i} index={i} circle aisle={customAisle(item, i)} />)
           : auto.map((item, i) => <AutoAisleCard key={item.aisle.key} item={item} index={i} count={count} circle />)}
         <Link to="/categories" className="w-[42%] shrink-0 snap-start rotate-2 active:scale-95">
-          <div className="flex h-full flex-col justify-between rounded-xl bg-[#1C1917] p-4 text-white shadow-[0_10px_24px_-10px_rgba(0,0,0,0.35)]">
+          <div className="flex h-full flex-col justify-between rounded-xl bg-ink p-4 text-ink-foreground shadow-[0_10px_24px_-10px_rgba(0,0,0,0.35)]">
             <LayoutGrid className="h-6 w-6 text-highlight" aria-hidden="true" />
             <span className="font-display text-2xl font-extrabold leading-[0.95]">Every<br /><em className="text-highlight">aisle</em> →</span>
           </div>

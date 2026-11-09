@@ -69,6 +69,15 @@ const stockHint = (stock: number) => (stock <= 0 ? "Out of stock" : stock <= 5 ?
 
 export default function QuickOrder() {
   const { slug = "" } = useParams<{ slug: string }>();
+  return <QuickOrderForm slug={slug} />;
+}
+
+/**
+ * One-page order form for a product (the /order/:slug page). `embedded` drops the photo column and
+ * turns the fixed confirm bar into an inline summary, for pages that show the product themselves
+ * (the Single Product template's landing page).
+ */
+export function QuickOrderForm({ slug, embedded = false }: { slug: string; embedded?: boolean }) {
   const navigate = useNavigate();
   const { formatCurrency, settings, storePhone, onlineStore, storeName } = useCurrency();
   const { data, isLoading, isError, error } = useQuickOrder(slug || null);
@@ -320,10 +329,10 @@ export default function QuickOrder() {
   const hasDiscount = originalPrice > unitPrice;
 
   return (
-    <form noValidate onSubmit={submit} onFocusCapture={onFormFocus} className="container max-w-5xl pb-44 pt-4 md:pt-8">
-      <div className="grid gap-6 md:grid-cols-2 md:gap-10">
+    <form noValidate onSubmit={submit} onFocusCapture={onFormFocus} className={embedded ? "w-full" : "container max-w-5xl pb-44 pt-4 md:pt-8"}>
+      <div className={embedded ? "grid gap-6" : "grid gap-6 md:grid-cols-2 md:gap-10"}>
         {/* Images */}
-        <div className="space-y-2 md:sticky md:top-24 md:self-start">
+        <div className={cn("space-y-2 md:sticky md:top-24 md:self-start", embedded && "hidden")}>
           <Carousel setApi={setCarouselApi} opts={{ loop: images.length > 1 }} className="overflow-hidden rounded-2xl border bg-muted/30">
             <CarouselContent className="ml-0">
               {images.map((src, i) => (
@@ -345,8 +354,8 @@ export default function QuickOrder() {
         </div>
 
         <div className="space-y-6">
-          {/* Product */}
-          <div className="space-y-2">
+          {/* Product (the embedding page already shows it) */}
+          <div className={cn("space-y-2", embedded && "hidden")}>
             <h1 className="font-display text-2xl font-bold leading-tight text-foreground md:text-3xl">{product.name}</h1>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-display text-2xl font-bold text-foreground">{formatCurrency(unitPrice)}</span>
@@ -512,9 +521,11 @@ export default function QuickOrder() {
         </div>
       </div>
 
-      {/* Sticky summary + confirm */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
-        <div className="container max-w-5xl space-y-2 py-3">
+      {/* Summary + confirm: a fixed bar on the order page, inline when embedded */}
+      <div className={embedded
+        ? "mt-6 rounded-2xl border bg-card p-4"
+        : "fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur"}>
+        <div className={embedded ? "space-y-2" : "container max-w-5xl space-y-2 py-3"}>
           <dl className="grid grid-cols-[1fr_auto] gap-x-4 text-sm">
             <dt className="text-muted-foreground">Subtotal ({quantity} × {formatCurrency(unitPrice)})</dt>
             <dd className="text-right tabular-nums text-foreground">{formatCurrency(subtotal)}</dd>

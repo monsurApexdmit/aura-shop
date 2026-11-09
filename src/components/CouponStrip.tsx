@@ -69,7 +69,7 @@ export default function CouponStrip() {
                   type="button"
                   onClick={() => copy(c.code)}
                   aria-label={`Copy code ${c.code}`}
-                  className="mt-3 h-10 w-full justify-between rounded-full border border-dashed border-neutral-950/40 bg-white/70 px-4 font-mono text-sm font-semibold text-neutral-950 hover:bg-white"
+                  className="mt-3 h-10 w-full justify-between rounded-pill border border-dashed border-neutral-950/40 bg-white/70 px-4 font-mono text-sm font-semibold text-neutral-950 hover:bg-white"
                 >
                   {c.code}
                   {copied === c.code

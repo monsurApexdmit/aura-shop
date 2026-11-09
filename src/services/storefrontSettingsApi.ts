@@ -69,7 +69,12 @@ export default storefrontSettingsApi;
 export interface OnlineStoreSettings {
   name: string;
   slug: string;
+  /** Accent colour hex, or "" for the theme's own accent */
   theme: string;
+  /** Store theme id (src/themes); absent on older backends = default theme */
+  themePreset?: string;
+  /** "theme" = the theme's colours; "brand" (default) = Company settings brand colours */
+  colorSource?: "theme" | "brand";
   published: boolean;
   policies: { returns: string; shipping: string; privacy: string };
   social: { facebook: string; instagram: string; whatsapp: string; youtube: string; twitter: string };

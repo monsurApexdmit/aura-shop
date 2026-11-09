@@ -62,7 +62,7 @@ export default function AnnouncementBar() {
   );
 
   return (
-    <div aria-label="Store announcements" role="region" className="overflow-hidden bg-neutral-950 text-white">
+    <div aria-label="Store announcements" role="region" className="overflow-hidden bg-ink text-ink-foreground">
       <div className="flex w-max animate-marquee py-2 hover:[animation-play-state:paused] motion-reduce:animate-none">
         {renderRun(false)}
         {renderRun(true)}

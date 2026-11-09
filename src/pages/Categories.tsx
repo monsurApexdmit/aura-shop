@@ -59,7 +59,7 @@ export default function Categories() {
               key={label}
               to={to}
               className={cn(
-                "rounded-full border-2 border-foreground px-4 py-2 text-sm font-bold transition-transform active:scale-95",
+                "rounded-pill border-2 border-foreground px-4 py-2 text-sm font-bold transition-transform active:scale-95",
                 STICKER_TILTS[i % STICKER_TILTS.length],
                 hot ? "border-highlight bg-highlight text-highlight-foreground" : "bg-background text-foreground"
               )}
@@ -106,11 +106,11 @@ export default function Categories() {
                 )}
                 {expanded && (
                   <div className="flex flex-wrap gap-2 pb-5 pl-10">
-                    <Link to={`/shop?cat=${cat.slug}`} className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-bold text-background">
+                    <Link to={`/shop?cat=${cat.slug}`} className="rounded-pill bg-foreground px-3.5 py-1.5 text-xs font-bold text-background">
                       All {cat.name} →
                     </Link>
                     {cat.children.map((child) => (
-                      <Link key={child.slug} to={`/shop?cat=${cat.slug}&sub=${child.slug}`} className="rounded-full border border-foreground/30 px-3.5 py-1.5 text-xs font-semibold text-foreground">
+                      <Link key={child.slug} to={`/shop?cat=${cat.slug}&sub=${child.slug}`} className="rounded-pill border border-foreground/30 px-3.5 py-1.5 text-xs font-semibold text-foreground">
                         {child.name}
                       </Link>
                     ))}

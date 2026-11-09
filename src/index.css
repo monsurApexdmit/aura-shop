@@ -42,6 +42,24 @@
 
     --radius: 1rem;
 
+    /* Inverse "ink" surfaces: footer, phone tab bar, lookbook, sticky buy bar */
+    --ink: 24 10% 10%;
+    --ink-foreground: 0 0% 100%;
+    /* Highlight tint readable on top of photos */
+    --highlight-soft: 347 100% 88%;
+    /* Pastel grounds behind photos (always light: dark text sits on them) */
+    --tile-1: 47 95% 76.5%;
+    --tile-2: 158 55% 78%;
+    --tile-3: 197.5 71% 78%;
+    --tile-4: 346 85% 84%;
+    --tile-5: 29 100% 82%;
+
+    /* Pills: buttons, chips, search. 9999px = fully round ends */
+    --radius-pill: 9999px;
+
+    --font-display: Fraunces, Georgia, serif;
+    --font-body: "DM Sans", system-ui, sans-serif;
+
     --success: 152 40% 38%;
     --warning: 38 60% 50%;
     --info: 24 10% 10%;
@@ -88,6 +106,10 @@
 
     --highlight: 345 75% 70%;
     --highlight-foreground: 24 10% 8%;
+
+    --ink: 24 10% 10%;
+    --ink-foreground: 0 0% 100%;
+    --highlight-soft: 347 100% 88%;
 
     --destructive: 4 62% 52%;
     --destructive-foreground: 0 0% 100%;

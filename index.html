@@ -16,6 +16,34 @@
     <meta property="og:title" content="Store" />
     <meta property="og:description" content="Your online marketplace" />
     <meta property="og:type" content="website" />
+    <script>
+      // Before first paint: dark mode and the store theme from the last visit (see src/lib/storeTheme.ts),
+      // so pages don't flash the default look while settings load.
+      (function () {
+        try {
+          var mode = localStorage.getItem("theme");
+          if (mode === "dark" || (!mode && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+            document.documentElement.classList.add("dark");
+          }
+          var c = JSON.parse(localStorage.getItem("store-theme") || "null");
+          if (!c || !c.layers) return;
+          var css = ["theme", "accent", "brand"].map(function (k) { return c.layers[k] || ""; }).filter(Boolean).join("\n");
+          if (css) {
+            var s = document.createElement("style");
+            s.id = "store-theme";
+            s.textContent = css;
+            document.head.appendChild(s);
+          }
+          if (typeof c.fontsHref === "string" && c.fontsHref.indexOf("https://fonts.googleapis.com/") === 0) {
+            var l = document.createElement("link");
+            l.id = "store-theme-fonts";
+            l.rel = "stylesheet";
+            l.href = c.fontsHref;
+            document.head.appendChild(l);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body>

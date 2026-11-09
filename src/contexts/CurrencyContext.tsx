@@ -2,111 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { getOnlineStore, type OnlineStoreSettings } from "@/services/storefrontSettingsApi";
 import { API_BASE_URL, COMPANY_ID, USE_SUBDOMAIN, getImageUrl } from "@/lib/api";
-
-function hexToHsl(hex: string): string | null {
-  const m = hex.replace("#", "").match(/.{2}/g);
-  if (!m) return null;
-  const r = parseInt(m[0], 16) / 255;
-  const g = parseInt(m[1], 16) / 255;
-  const b = parseInt(m[2], 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  if (max === min) return `0 0% ${Math.round(l * 100)}%`;
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h = 0;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  else if (max === g) h = ((b - r) / d + 2) / 6;
-  else h = ((r - g) / d + 4) / 6;
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
-
-function hexLightness(hex: string): number {
-  const m = hex.replace("#", "").match(/.{2}/g);
-  if (!m) return 50;
-  const r = parseInt(m[0], 16) / 255;
-  const g = parseInt(m[1], 16) / 255;
-  const b = parseInt(m[2], 16) / 255;
-  return ((Math.max(r, g, b) + Math.min(r, g, b)) / 2) * 100;
-}
-
-
-// The storefront's "accent" token is the subtle hover surface, so the admin accent
-// colour drives --highlight (the brand pop: italic headline word, Sale link, badges).
-function applyBrandColors(primary: string, accent: string, bg: string) {
-  const pH  = hexToHsl(primary)!;
-  const aH  = hexToHsl(accent)!;
-  const bgH = hexToHsl(bg)!;
-  const pLight  = hexLightness(primary);
-  const aLight  = hexLightness(accent);
-  const bgLight = hexLightness(bg);
-
-  const [bh, bs] = bgH.split(" ");
-  const cardL   = bgLight > 50 ? Math.min(bgLight + 4, 100) : Math.max(bgLight - 4, 0);
-  const borderL = bgLight > 50 ? Math.max(bgLight - 10, 60)  : Math.min(bgLight + 10, 40);
-  const mutedL  = bgLight > 50 ? bgLight - 5 : bgLight + 5;
-  const fg      = bgLight > 50 ? "0 0% 8%"   : "0 0% 96%";
-  const fgMuted = bgLight > 50 ? "0 0% 45%"  : "0 0% 60%";
-  const pFg     = pLight  < 50 ? "0 0% 98%"  : "0 0% 8%";
-  const aFg     = aLight  < 50 ? "0 0% 98%"  : "0 0% 8%";
-
-  // Dark mode keeps the default light-on-dark primary; only the ground and highlight follow the brand.
-  const darkBgL   = 10;
-  const darkCardL = 14;
-
-  const css = `
-:root {
-  --primary: ${pH};
-  --primary-foreground: ${pFg};
-  --highlight: ${aH};
-  --highlight-foreground: ${aFg};
-  --background: ${bgH};
-  --foreground: ${fg};
-  --card: ${bh} ${bs} ${Math.round(cardL)}%;
-  --card-foreground: ${fg};
-  --popover: ${bh} ${bs} ${Math.round(cardL)}%;
-  --popover-foreground: ${fg};
-  --border: ${bh} ${bs} ${Math.round(borderL)}%;
-  --input: ${bh} ${bs} ${Math.round(borderL)}%;
-  --muted: ${bh} ${bs} ${Math.round(mutedL)}%;
-  --muted-foreground: ${fgMuted};
-  --ring: ${pH};
-  --gradient-primary: linear-gradient(135deg, hsl(${pH}), hsl(${pH} / 0.8));
-  --gradient-accent: linear-gradient(135deg, hsl(${aH}), hsl(${aH} / 0.8));
-}
-.dark {
-  --highlight: ${aH};
-  --highlight-foreground: ${aFg};
-  --background: ${bh} ${bs} ${darkBgL}%;
-  --card: ${bh} ${bs} ${darkCardL}%;
-  --popover: ${bh} ${bs} ${darkCardL}%;
-  --border: ${bh} ${bs} 20%;
-  --input: ${bh} ${bs} 20%;
-  --muted: ${bh} ${bs} 18%;
-  --ring: ${aH};
-}`;
-
-  let style = document.getElementById("brand-colors") as HTMLStyleElement | null;
-  if (!style) {
-    style = document.createElement("style");
-    style.id = "brand-colors";
-    document.head.appendChild(style);
-  }
-  style.textContent = css;
-}
-
-// Online-store theme colour (admin: Online store > Theme colour) only recolours the highlight.
-function applyThemeHighlight(hex: string) {
-  const h = hexToHsl(hex)!;
-  const fgOn = hexLightness(hex) < 50 ? "0 0% 98%" : "0 0% 8%";
-  let style = document.getElementById("store-theme") as HTMLStyleElement | null;
-  if (!style) {
-    style = document.createElement("style");
-    style.id = "store-theme";
-    document.head.appendChild(style);
-  }
-  style.textContent = `:root, .dark { --highlight: ${h}; --highlight-foreground: ${fgOn}; }`;
-}
+import { applyStoreTheme, setThemeLayer } from "@/lib/storeTheme";
+import { colorLayers } from "@/lib/storeColors";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$", EUR: "€", GBP: "£", INR: "₹", AUD: "A$", CAD: "C$",
@@ -184,18 +81,20 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     if (title) document.title = title;
   }, [onlineStore?.name, settings?.storeName]);
 
-  // Online-store theme (a hex picked in admin: Blue/Teal/Violet/Ink) = highlight colour,
-  // only when Settings > General accent colour is not configured. Unknown values are ignored.
+  // Accent and brand colour layers on top of the theme; needs both settings, so the cached look stays until then.
   useEffect(() => {
-    const theme = onlineStore?.theme?.trim();
-    if (!theme || !settings || settings.accentColor) return;
-    if (!/^#[0-9a-fA-F]{6}$/.test(theme)) return;
-    applyThemeHighlight(theme);
-  }, [onlineStore?.theme, settings]);
+    if (!onlineStore || !settings) return;
+    const layers = colorLayers(onlineStore, settings);
+    setThemeLayer("accent", layers.accent);
+    setThemeLayer("brand", layers.brand);
+  }, [onlineStore, settings]);
 
   useEffect(() => {
     getOnlineStore()
-      .then((o) => setOnlineStore(o))
+      .then((o) => {
+        applyStoreTheme(o.themePreset);
+        setOnlineStore(o);
+      })
       .catch(() => {});
   }, []);
 
@@ -214,15 +113,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         };
         setSettings(data);
         const name = data?.storeName;
-
-        // Inject brand colors as CSS variables (both light + dark)
-        if (data?.primaryColor || data?.accentColor || data?.backgroundColor) {
-          applyBrandColors(
-            data.primaryColor    ?? "#1C1917",
-            data.accentColor     ?? "#94234A",
-            data.backgroundColor ?? "#FFFFFF",
-          );
-        }
 
         const faviconUrl = data?.faviconUrl ?? data?.logoUrl ?? data?.bannerUrl;
         let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
