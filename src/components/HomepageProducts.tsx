@@ -38,19 +38,19 @@ export default function HomepageProducts() {
   if (!isLatest && !isLoading && products.length === 0) return null;
 
   return (
-    <section className="container pb-16 md:pb-24">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-x-4 gap-y-2 md:mb-10">
+    <section className="container pb-8 pt-4 md:pb-24 md:pt-0">
+      <div className="mb-5 flex items-end justify-between gap-x-4 gap-y-2 border-b border-foreground pb-2 sm:mb-8 sm:flex-wrap sm:border-0 sm:pb-0 md:mb-10">
         <div className="min-w-0">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
+          <h2 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-foreground sm:text-3xl sm:leading-tight md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
           {(custom ? custom.subtitle : DEFAULT_SUBTITLE) && (
-            <p className="mt-2 text-sm text-muted-foreground md:text-base">{custom ? custom.subtitle : DEFAULT_SUBTITLE}</p>
+            <p className="mt-2 hidden text-sm text-muted-foreground sm:block md:text-base">{custom ? custom.subtitle : DEFAULT_SUBTITLE}</p>
           )}
         </div>
-        <Link to={SOURCE_LINK[source]} className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
-          Shop all <ArrowRight className="h-4 w-4" />
+        <Link to={SOURCE_LINK[source]} className="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground underline-offset-4 hover:underline sm:text-sm sm:font-semibold sm:normal-case sm:tracking-normal">
+          <span className="sm:hidden">See all →</span><span className="hidden sm:inline">Shop all</span> <ArrowRight className="hidden h-4 w-4 sm:block" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-4 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4">
         {isLoading
           ? Array.from({ length: Math.min(limit, 8) }).map((_, i) => <Skeleton key={i} className="aspect-[4/5] rounded-2xl" />)
           : products.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)}

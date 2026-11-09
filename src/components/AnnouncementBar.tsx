@@ -51,7 +51,7 @@ export default function AnnouncementBar() {
       {run.map((item, i) => {
         const isCopy = hidden || i >= items.length;
         return (
-          <li key={i} aria-hidden={isCopy || undefined} className="whitespace-nowrap px-6 text-xs font-medium">
+          <li key={i} aria-hidden={isCopy || undefined} className="whitespace-nowrap px-6 text-[10px] font-bold uppercase tracking-[0.18em] md:text-xs md:font-medium md:normal-case md:tracking-normal">
             {item.link ? (
               <Link to={item.link} tabIndex={isCopy ? -1 : undefined} className="hover:underline underline-offset-4">{item.text}</Link>
             ) : item.text}

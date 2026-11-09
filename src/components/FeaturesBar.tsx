@@ -66,12 +66,12 @@ export default function FeaturesBar() {
   if (custom && (!custom.enabled || perks.length === 0)) return null;
 
   return (
-    <section aria-label="Store perks" className="container py-10 sm:py-14 md:py-20">
-      <ul className={cn("grid gap-3 sm:grid-cols-2 sm:gap-4 md:gap-5", perks.length === 3 && "lg:grid-cols-3", perks.length === 4 && "lg:grid-cols-4")}>
+    <section aria-label="Store perks" className="container pb-6 pt-2 sm:py-14 md:py-20">
+      <ul className={cn("no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 scroll-px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 md:gap-5", perks.length === 3 && "lg:grid-cols-3", perks.length === 4 && "lg:grid-cols-4")}>
         {perks.map(({ icon: Icon, title, text, to }) => {
           const body = (
             <>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-highlight text-highlight-foreground sm:rounded-xl sm:bg-primary sm:text-primary-foreground">
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
@@ -81,11 +81,11 @@ export default function FeaturesBar() {
             </>
           );
           return (
-            <li key={title} className={cn(perks.length === 3 && "sm:last:col-span-2 lg:last:col-span-1")}>
+            <li key={title} className={cn("w-[78%] shrink-0 snap-start sm:w-auto", perks.length === 3 && "sm:last:col-span-2 lg:last:col-span-1")}>
               {to ? (
-                <Link to={to} className="flex h-full items-start gap-4 rounded-2xl bg-secondary p-4 transition-colors hover:bg-accent sm:block sm:p-6">{body}</Link>
+                <Link to={to} className="flex h-full items-start gap-4 border-t-2 border-foreground pt-4 transition-colors hover:bg-accent sm:block sm:rounded-2xl sm:border-0 sm:bg-secondary sm:p-6">{body}</Link>
               ) : (
-                <div className="flex h-full items-start gap-4 rounded-2xl bg-secondary p-4 sm:block sm:p-6">{body}</div>
+                <div className="flex h-full items-start gap-4 border-t-2 border-foreground pt-4 sm:block sm:rounded-2xl sm:border-0 sm:bg-secondary sm:p-6">{body}</div>
               )}
             </li>
           );

@@ -84,7 +84,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </Link>
 
         {badgeLabel && (
-          <span className="absolute left-3 top-3 z-10 rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+          <span className="absolute left-2.5 top-3 z-10 -rotate-6 rounded-full bg-highlight px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-highlight-foreground shadow-md md:left-3 md:rotate-0 md:bg-neutral-950 md:font-bold md:text-white md:shadow-none">
             {badgeLabel}
           </span>
         )}

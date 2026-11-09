@@ -127,6 +127,7 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
   img,
   video,
@@ -140,6 +141,17 @@
 }
 
 @layer utilities {
+  /* Horizontal swipe rows on phones: scroll without a visible bar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Room for the floating phone tab bar (h-16 + 0.75rem gap) plus the home-indicator inset. */
+  .pb-tabbar {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
   .hero-gradient {
     background: var(--gradient-hero);
   }

@@ -24,18 +24,18 @@ export default function HomepageCollections() {
   const subtitle = custom ? custom.subtitle : DEFAULT_SUBTITLE;
 
   return (
-    <section className="container pb-16 md:pb-24">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-x-4 gap-y-2 md:mb-10">
+    <section className="container pb-8 md:pb-24">
+      <div className="mb-5 flex items-end justify-between gap-x-4 gap-y-2 border-b border-foreground pb-2 sm:mb-8 sm:flex-wrap sm:border-0 sm:pb-0 md:mb-10">
         <div className="min-w-0">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
-          {subtitle && <p className="mt-2 text-sm text-muted-foreground md:text-base">{subtitle}</p>}
+          <h2 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-foreground sm:text-3xl sm:leading-tight md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
+          {subtitle && <p className="mt-2 hidden text-sm text-muted-foreground sm:block md:text-base">{subtitle}</p>}
         </div>
-        <Link to="/collections" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
-          All collections <ArrowRight className="h-4 w-4" />
+        <Link to="/collections" className="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground underline-offset-4 hover:underline sm:text-sm sm:font-semibold sm:normal-case sm:tracking-normal">
+          <span className="sm:hidden">See all →</span><span className="hidden sm:inline">All collections</span> <ArrowRight className="hidden h-4 w-4 sm:block" />
         </Link>
       </div>
-      <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-        {featured.map((c, i) => <CollectionCard key={c.id} collection={c} index={i} />)}
+      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scroll-px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-8 sm:overflow-visible sm:px-0 lg:grid-cols-3">
+        {featured.map((c, i) => <CollectionCard key={c.id} collection={c} index={i} className="w-[72%] shrink-0 snap-start sm:w-auto" />)}
       </div>
     </section>
   );

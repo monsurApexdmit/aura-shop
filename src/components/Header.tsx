@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ShoppingBag, Search, Menu, X, Sun, Moon, User, ChevronDown, Heart, LogOut, Package, Settings, Truck } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShoppingBag, Search, Menu, X, Sun, Moon, User, ChevronDown, ChevronLeft, Heart, LogOut, Package, Settings, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -22,6 +22,7 @@ import { StoreClosureBanner } from "@/components/StoreHours";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { isTabRoot } from "@/lib/mobileNav";
 
 const MotionCard = motion.create(Card);
 
@@ -53,6 +54,13 @@ export default function Header() {
   const [mobileBrowse, setMobileBrowse] = useState<"categories" | "collections">("categories");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  // Phones: centred masthead; inner screens swap the left theme toggle for a back arrow.
+  const tabRoot = isTabRoot(pathname);
+  const goBack = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate("/"));
+
+  useEffect(() => setSearchOpen(false), [pathname]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -70,13 +78,18 @@ export default function Header() {
       <AnnouncementBar />
 
       {/* Main Header */}
-      <div className="relative z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="container grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-3 md:h-[72px]">
-          <div className="flex items-center gap-1">
-            <WithTooltip content={mobileOpen ? "Close menu" : "Open menu"}><Button variant="ghost" size="icon" className="-ml-2 rounded-full lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
+      <div className="relative z-50 border-b border-border bg-background/95 backdrop-blur max-md:border-foreground">
+        <div className="container grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-3 md:h-[72px]">
+          <div className="flex min-w-0 items-center gap-1">
+            {!tabRoot && (
+              <Button variant="ghost" size="icon" className="-ml-2 shrink-0 rounded-full md:hidden" aria-label="Back" onClick={goBack}>
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+            )}
+            <WithTooltip content={mobileOpen ? "Close menu" : "Open menu"}><Button variant="ghost" size="icon" className="-ml-2 hidden rounded-full md:inline-flex lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button></WithTooltip>
-            <Link to="/" className="flex min-w-0 items-center">
+            <Link to="/" className="hidden min-w-0 items-center md:flex">
               {bannerUrl ? (
                 <img src={bannerUrl} alt={storeName} className="h-9 w-auto max-w-[140px] object-contain sm:h-11 sm:max-w-[200px]" />
               ) : (
@@ -86,6 +99,15 @@ export default function Header() {
               )}
             </Link>
           </div>
+
+          {/* Phone masthead */}
+          <Link to="/" className="flex min-w-0 justify-center md:hidden">
+            {bannerUrl ? (
+              <img src={bannerUrl} alt={storeName} className="h-8 w-auto max-w-[160px] object-contain" />
+            ) : (
+              <span className="truncate font-display text-[22px] font-extrabold tracking-tight text-foreground">{storeName}</span>
+            )}
+          </Link>
 
           {/* Desktop Nav */}
           <nav aria-label="Main" className="hidden items-center gap-8 lg:flex">
@@ -108,11 +130,11 @@ export default function Header() {
             <WithTooltip content="Search"><Button variant="ghost" size="icon" className="rounded-full" aria-label="Search" aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-[18px] w-[18px]" />
             </Button></WithTooltip>
-            <WithTooltip content={theme === "light" ? "Dark mode" : "Light mode"}><Button variant="ghost" size="icon" className="hidden rounded-full sm:inline-flex" aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"} onClick={toggleTheme}>
+            <WithTooltip content={theme === "light" ? "Dark mode" : "Light mode"}><Button variant="ghost" size="icon" className="rounded-full max-md:-mr-2" aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"} onClick={toggleTheme}>
               {theme === "light" ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
             </Button></WithTooltip>
             {/* User Menu */}
-            <div ref={userMenuRef} className="relative block">
+            <div ref={userMenuRef} className="relative hidden md:block">
               <WithTooltip content={isLoggedIn ? "Account menu" : "Login"}><Button variant="ghost" size="icon" className="rounded-full" aria-label={isLoggedIn ? "Account menu" : "Login"} onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
                 {isLoggedIn ? (
                   <UserAvatar className="size-8" name={user?.name} fallback={user?.name?.charAt(0).toUpperCase() || "U"} />
@@ -156,13 +178,13 @@ export default function Header() {
                 )}
               </AnimatePresence>
             </div>
-            <WithTooltip content="Wishlist"><Button asChild variant="ghost" size="icon" className="relative hidden rounded-full sm:inline-flex">
+            <WithTooltip content="Wishlist"><Button asChild variant="ghost" size="icon" className="relative hidden rounded-full md:inline-flex">
               <Link to="/wishlist" aria-label={`Wishlist, ${totalWishlistItems} items`}>
                 <Heart className="h-[18px] w-[18px]" />
                 {totalWishlistItems > 0 && <span className={COUNT_BADGE}>{totalWishlistItems}</span>}
               </Link>
             </Button></WithTooltip>
-            <WithTooltip content="Bag"><Button variant="ghost" size="icon" className="relative rounded-full" aria-label={`Bag, ${totalItems} items`} onClick={() => setIsOpen(true)}>
+            <WithTooltip content="Bag"><Button variant="ghost" size="icon" className="relative hidden rounded-full md:inline-flex" aria-label={`Bag, ${totalItems} items`} onClick={() => setIsOpen(true)}>
               <ShoppingBag className="h-[18px] w-[18px]" />
               {totalItems > 0 && <span className={COUNT_BADGE}>{totalItems}</span>}
             </Button></WithTooltip>

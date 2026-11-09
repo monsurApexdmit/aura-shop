@@ -27,6 +27,7 @@ import { useState, useMemo, useEffect } from "react";
 import type { ProductAttribute } from "@/types/product";
 import { WithTooltip } from "@/components/common/WithTooltip"
 import { whatsAppLink } from "@/lib/bdPhone";
+import { toast } from "sonner";
 import { trackViewContent } from "@/lib/pixels";
 
 const MotionCard = motion.create(Card);
@@ -204,10 +205,25 @@ export default function ProductDetail() {
 
   const isColorAttribute = (name: string) => name.toLowerCase() === "color";
 
+  // Native share sheet on phones; copies the link elsewhere.
+  const share = async () => {
+    const url = `${window.location.origin}/product/${product.slug}`;
+    if (navigator.share) {
+      await navigator.share({ title: product.name, url }).catch(() => {});
+    } else {
+      await navigator.clipboard?.writeText(url);
+      toast.success("Link copied");
+    }
+  };
+  const onGalleryScroll = (el: HTMLDivElement) => {
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== selectedImage) setSelectedImage(i);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
-      <div className="bg-muted/40 border-b border-border">
+      <div className="hidden bg-muted/40 border-b border-border md:block">
         <div className="container py-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link to="/" className="hover:text-primary transition-colors">Home</Link>
@@ -223,10 +239,51 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      <div className="container py-8 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+      <div className="container pb-8 md:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-8 lg:gap-14">
           {/* Image Gallery */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+            {/* Phones: edge-to-edge swipe gallery with dots */}
+            <div className="relative -mx-4 bg-secondary md:hidden">
+              <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto" onScroll={(e) => onGalleryScroll(e.currentTarget)}>
+                {images.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={i === 0 ? product.name : ""}
+                    className="aspect-square w-full shrink-0 snap-center object-contain p-4"
+                    onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
+                  />
+                ))}
+              </div>
+              {discount > 0 && (
+                <Badge variant="destructive" className="absolute left-4 top-4 uppercase">{discount}% Off</Badge>
+              )}
+              <div className="absolute right-4 top-4 flex flex-col gap-2">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full bg-background/90 shadow-sm"
+                  aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-pressed={isInWishlist(product.id)}
+                  onClick={() => toggleWishlist(product.id)}
+                >
+                  <Heart className={cn("h-[18px] w-[18px]", isInWishlist(product.id) && "fill-highlight text-highlight")} />
+                </Button>
+                <Button variant="secondary" size="icon" className="rounded-full bg-background/90 shadow-sm" aria-label="Share" onClick={share}>
+                  <Share2 className="h-[18px] w-[18px]" />
+                </Button>
+              </div>
+              {images.length > 1 && (
+                <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5" aria-hidden="true">
+                  {images.map((_, i) => (
+                    <span key={i} className={cn("h-1.5 rounded-full transition-all", i === selectedImage ? "w-5 bg-foreground" : "w-1.5 bg-foreground/25")} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="hidden md:block">
             <Card className="relative aspect-square overflow-hidden mb-4 group">
               <AnimatePresence mode="wait">
                 <motion.img
@@ -266,7 +323,7 @@ export default function ProductDetail() {
                 >
                   <Heart className={cn("h-4 w-4", isInWishlist(product.id) ? "fill-current" : "")} />
                 </Button></WithTooltip>
-                <WithTooltip content="Share"><Button variant="outline" size="icon" aria-label="Share">
+                <WithTooltip content="Share"><Button variant="outline" size="icon" aria-label="Share" onClick={share}>
                   <Share2 className="h-4 w-4" />
                 </Button></WithTooltip>
               </div>
@@ -285,6 +342,7 @@ export default function ProductDetail() {
                   onImageError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
                 />
               ))}
+            </div>
             </div>
           </motion.div>
 
@@ -395,7 +453,7 @@ export default function ProductDetail() {
             <Separator className="mb-6" />
 
             {/* Add to Cart */}
-            <div className="flex flex-col gap-3 mb-6 min-[420px]:flex-row min-[420px]:items-center">
+            <div className="flex flex-col gap-3 mb-6 max-md:hidden min-[420px]:flex-row min-[420px]:items-center">
               {cartItem ? (
                 <MotionCard initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 p-1">
                   <WithTooltip content="Decrease quantity"><Button
@@ -555,6 +613,57 @@ export default function ProductDetail() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Phones: floating dark buy pill in place of the tab bar */}
+      <div className="h-28 md:hidden" aria-hidden="true" />
+      <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+        <div className="flex items-center gap-2 rounded-full bg-[#1C1917] p-2 pl-5 text-white shadow-[0_12px_32px_-8px_rgba(0,0,0,0.45)] ring-1 ring-white/10">
+          <div className="mr-auto min-w-0">
+            <p className="font-display text-xl font-extrabold leading-none tabular-nums">{formatCurrency(currentPrice)}</p>
+            {discount > 0 && originalPrice ? (
+              <p className="mt-1 text-[11px] tabular-nums text-white/50"><span className="line-through">{formatCurrency(originalPrice)}</span> <span className="font-bold text-highlight">−{discount}%</span></p>
+            ) : (
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">{currentStock > 0 ? "In stock" : "Sold out"}</p>
+            )}
+          </div>
+          {currentStock === 0 ? (
+            <Button disabled className="h-12 rounded-full bg-white/10 px-6 text-white">Sold out</Button>
+          ) : (
+            <>
+              {cartItem ? (
+                <div className="flex h-12 items-center rounded-full bg-white/10">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-11 rounded-full text-white hover:bg-white/10 hover:text-white"
+                    aria-label="Decrease quantity"
+                    onClick={() => cartItem.quantity <= 1 ? removeItem(cartItem.id) : updateQuantity(cartItem.id, cartItem.quantity - 1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-5 text-center text-sm font-bold tabular-nums">{cartItem.quantity}</span>
+                  <Button variant="ghost" size="icon" className="size-11 rounded-full text-white hover:bg-white/10 hover:text-white" aria-label="Increase quantity" onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-12 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                  aria-label="Add to bag"
+                  onClick={handleAdd}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </Button>
+              )}
+              <Button asChild className="h-12 rounded-full bg-highlight px-6 text-sm font-extrabold uppercase tracking-[0.1em] text-highlight-foreground hover:bg-highlight/90">
+                <Link to={`/order/${product.slug}`}>Buy now</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <Footer />

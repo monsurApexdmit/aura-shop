@@ -56,8 +56,9 @@ export default function Footer() {
   ].filter((x): x is { label: string; href: string; Icon: typeof Facebook } => !!x.href && /^https?:\/\//i.test(x.href));
   const year = new Date().getFullYear();
 
+  // Phones reach these links from the Categories tab instead.
   return (
-    <footer className="mt-8 bg-[#1C1917] text-white">
+    <footer className="mt-8 hidden bg-[#1C1917] text-white md:block">
       <div className="container py-14 md:py-16">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-12 md:gap-6">
           {/* Brand */}

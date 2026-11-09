@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LayoutGrid } from "lucide-react";
 import { getImageUrl } from "@/lib/api";
 import { useProducts } from "@/hooks/useProducts";
 import { useDepartments, type ResolvedDepartment } from "@/hooks/useDepartments";
@@ -33,7 +33,30 @@ interface Aisle {
 // Fewer cards get wider shapes so one or two cards don't turn into giant posters.
 const WIDE_ASPECT: Record<number, string> = { 1: "sm:aspect-[21/9]", 2: "sm:aspect-[4/3]" };
 
-function AisleCard({ aisle, index, compact, count = 3 }: { aisle: Aisle; index: number; compact?: boolean; count?: number }) {
+// Phone variant: tilted polaroid with the label hand-set underneath, in a swipe row.
+const TILTS = ["-rotate-3", "rotate-2", "-rotate-1", "rotate-3", "-rotate-2"];
+
+function AislePolaroid({ aisle, index }: { aisle: Aisle; index: number }) {
+  return (
+    <Link to={aisle.href} className={cn("w-[42%] shrink-0 snap-start transition-transform active:scale-95", TILTS[index % TILTS.length])}>
+      <div className="rounded-xl bg-white p-1.5 shadow-[0_10px_24px_-10px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+        <div className={cn("flex aspect-[4/5] items-center justify-center overflow-hidden rounded-lg", aisle.tone)}>
+          {aisle.image ? (
+            <img src={aisle.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+          ) : (
+            <span aria-hidden="true" className="text-5xl">
+              {aisle.emoji || <span className="font-display font-extrabold text-neutral-950/30">{aisle.label.charAt(0)}</span>}
+            </span>
+          )}
+        </div>
+        <p className="truncate px-1 pb-1 pt-2 text-center font-display text-[17px] font-bold italic text-neutral-950">{aisle.label}</p>
+      </div>
+    </Link>
+  );
+}
+
+function AisleCard({ aisle, index, compact, count = 3, circle }: { aisle: Aisle; index: number; compact?: boolean; count?: number; circle?: boolean }) {
+  if (circle) return <AislePolaroid aisle={aisle} index={index} />;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -79,7 +102,7 @@ interface AutoAisle {
 }
 
 // Automatic card: category image, else a photo from the latest products, else the aisle's newest product.
-function AutoAisleCard({ item, index, compact, count }: { item: AutoAisle; index: number; compact?: boolean; count: number }) {
+function AutoAisleCard({ item, index, compact, count, circle }: { item: AutoAisle; index: number; compact?: boolean; count: number; circle?: boolean }) {
   const { aisle, categoryId, search } = item;
   const { data } = useProducts(
     categoryId ? { limit: 1, category_id: categoryId } : { limit: 1, search },
@@ -88,7 +111,7 @@ function AutoAisleCard({ item, index, compact, count }: { item: AutoAisle; index
   const first = data?.data?.[0];
   const photo = first ? mapApiProduct(first).image : undefined;
   const image = aisle.image ?? (photo && !photo.includes("placeholder") ? photo : undefined);
-  return <AisleCard index={index} compact={compact} count={count} aisle={{ ...aisle, image }} />;
+  return <AisleCard index={index} compact={compact} count={count} circle={circle} aisle={{ ...aisle, image }} />;
 }
 
 // Card count decides the columns so 1–6 cards always fill the row neatly; 2 or 4+ cards sit two-up on phones.
@@ -163,8 +186,34 @@ export default function DepartmentAisles() {
     ? custom.subtitle
     : `${COUNT_WORDS[Math.min(count, MAX_AUTO)]} aisle${count === 1 ? "" : "s"}, one wardrobe philosophy.`;
 
+  const customAisle = (item: NonNullable<typeof custom>["items"][number], i: number): Aisle => ({
+    key: item.id, label: item.label, tagline: item.tagline, emoji: item.emoji, href: item.link, tone: pastel(i),
+    image: item.imagePath ? getImageUrl(item.imagePath) : undefined,
+  });
+
   return (
-    <section className="container py-10 sm:py-14 md:py-24">
+    <>
+    <section className="py-4 md:hidden">
+      <div className="container">
+        <div className="flex items-end justify-between gap-4 border-b border-foreground pb-2">
+          <h2 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-foreground">{custom?.title || DEFAULT_TITLE}</h2>
+          <Link to="/categories" className="shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">See all →</Link>
+        </div>
+      </div>
+      <div className="no-scrollbar flex snap-x gap-4 overflow-x-auto px-5 pb-4 pt-5 scroll-px-5">
+        {custom
+          ? custom.items.map((item, i) => <AisleCard key={item.id || i} index={i} circle aisle={customAisle(item, i)} />)
+          : auto.map((item, i) => <AutoAisleCard key={item.aisle.key} item={item} index={i} count={count} circle />)}
+        <Link to="/categories" className="w-[42%] shrink-0 snap-start rotate-2 active:scale-95">
+          <div className="flex h-full flex-col justify-between rounded-xl bg-[#1C1917] p-4 text-white shadow-[0_10px_24px_-10px_rgba(0,0,0,0.35)]">
+            <LayoutGrid className="h-6 w-6 text-highlight" aria-hidden="true" />
+            <span className="font-display text-2xl font-extrabold leading-[0.95]">Every<br /><em className="text-highlight">aisle</em> →</span>
+          </div>
+        </Link>
+      </div>
+    </section>
+
+    <section className="container hidden py-14 md:block md:py-24">
       <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
       {subtitle && <p className="mt-2 text-sm text-muted-foreground md:text-base">{subtitle}</p>}
       <div className={cn("mt-8 grid gap-3 sm:gap-4 md:mt-10 md:gap-5", GRID_COLS[Math.min(count, 6)])}>
@@ -175,14 +224,12 @@ export default function DepartmentAisles() {
                 index={i}
                 compact={compact}
                 count={count}
-                aisle={{
-                  key: item.id, label: item.label, tagline: item.tagline, emoji: item.emoji, href: item.link, tone: pastel(i),
-                  image: item.imagePath ? getImageUrl(item.imagePath) : undefined,
-                }}
+                aisle={customAisle(item, i)}
               />
             ))
           : auto.map((item, i) => <AutoAisleCard key={item.aisle.key} item={item} index={i} compact={compact} count={count} />)}
       </div>
     </section>
+    </>
   );
 }

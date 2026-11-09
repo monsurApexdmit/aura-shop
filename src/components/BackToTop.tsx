@@ -16,7 +16,7 @@ export default function BackToTop() {
   return (
     <AnimatePresence>
       {visible && (
-        <WithTooltip content="Back to top"><Button asChild size="icon" className="fixed bottom-[4.5rem] right-4 z-50 size-10 rounded-full shadow-lg sm:bottom-24 sm:right-6 sm:size-12 [&_svg]:size-4 sm:[&_svg]:size-5">
+        <WithTooltip content="Back to top"><Button asChild size="icon" className="fixed bottom-24 right-6 z-50 size-12 rounded-full shadow-lg max-md:hidden [&_svg]:size-5">
           <motion.button
             type="button"
             initial={{ opacity: 0, scale: 0.8 }}

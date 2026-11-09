@@ -75,12 +75,12 @@ export default function LookbookBanner() {
   const copy = custom ?? spotlight?.copy ?? FALLBACK;
 
   return (
-    <section className="container py-8 md:py-12">
+    <section className="container pb-6 md:py-12">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="grid items-center gap-8 overflow-hidden rounded-3xl border border-white/10 bg-[#1C1917] p-6 text-white sm:p-8 md:grid-cols-2 md:gap-10 md:p-14"
+        className="grid items-center gap-6 overflow-hidden rounded-3xl border border-white/10 bg-[#1C1917] p-5 text-white sm:gap-8 sm:p-8 md:grid-cols-2 md:gap-10 md:p-14"
       >
         <div className="min-w-0">
           {copy.tag && (
@@ -88,11 +88,11 @@ export default function LookbookBanner() {
               {copy.tag}
             </span>
           )}
-          <h2 className="mt-5 break-words font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+          <h2 className="mt-4 break-words font-display text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl">
             <AccentText text={copy.title} />
           </h2>
           {copy.text && <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 md:text-base">{copy.text}</p>}
-          <Button asChild className="mt-7 h-11 rounded-full bg-white px-6 font-semibold text-neutral-950 hover:bg-white/90">
+          <Button asChild className="mt-5 h-11 sm:mt-7 rounded-full bg-white px-6 font-semibold text-neutral-950 hover:bg-white/90">
             <Link to={copy.link || "/shop"}>
               {copy.cta || FALLBACK.cta} <ArrowRight className="h-4 w-4" />
             </Link>

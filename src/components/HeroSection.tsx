@@ -79,8 +79,115 @@ export default function HeroSection() {
     return Array.from(new Set([current.image, ...slideImages, ...productImages].filter((src): src is string => !!src))).slice(0, 3);
   }, [data, slides, current.image]);
 
+  // Phone cover: each slide brings its own photo (falls back to product photos).
+  const cards = useMemo(() => (slides.length > 0 ? slides : [DEFAULT_COPY]), [slides]);
+  const cardImages = useMemo(() => {
+    const productImages = (data?.data ?? []).map(mapApiProduct).map((p) => p.image).filter((src) => !src.includes("placeholder"));
+    return cards.map((c, i) => c.image ?? productImages[i % Math.max(productImages.length, 1)]);
+  }, [cards, data]);
+  // Swipe left/right on the cover to change slide.
+  const onSwipe = (dx: number) => {
+    if (cards.length < 2 || Math.abs(dx) < 40) return;
+    setActive((i) => (i + (dx < 0 ? 1 : -1) + cards.length) % cards.length);
+  };
+  const cover = cards[active] ?? cards[0];
+
   return (
-    <section className="border-b border-border" aria-roledescription={slides.length > 1 ? "carousel" : undefined}>
+    <>
+    {/* Phones: a full-bleed cover card. Photo fills the card, copy sits on a dark fade at the bottom,
+        story-style progress bars on top. Without a photo the card is a pastel tile with dark text. */}
+    <section className="px-4 pb-6 pt-4 md:hidden" aria-roledescription={cards.length > 1 ? "carousel" : undefined}>
+      <motion.div
+        drag={cards.length > 1 ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.12}
+        onDragEnd={(_, info) => onSwipe(info.offset.x)}
+        className={cn(
+          "relative isolate flex aspect-[4/5] max-h-[calc(100dvh-13rem)] min-h-[420px] w-full touch-pan-y flex-col overflow-hidden rounded-[28px] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)]",
+          PASTELS[active % PASTELS.length]
+        )}
+      >
+        {cardImages[active] ? (
+          <>
+            <motion.img
+              key={cardImages[active]}
+              src={cardImages[active]}
+              alt=""
+              initial={{ opacity: 0, scale: 1.06 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6 }}
+              className="absolute inset-0 -z-10 h-full w-full object-cover"
+              draggable={false}
+            />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/25 to-black/10" aria-hidden="true" />
+          </>
+        ) : (
+          <span className="absolute inset-x-0 top-[14%] -z-10 text-center text-[7rem] leading-none" aria-hidden="true">
+            {COLLAGE[active % COLLAGE.length].emoji}
+          </span>
+        )}
+
+        {/* Top: progress bars + tag */}
+        <div className="p-4">
+          {cards.length > 1 && (
+            <div className="mb-3 flex gap-1" role="group" aria-label="Choose slide">
+              {cards.map((c, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Show slide ${i + 1}: ${c.title.replace(/\*/g, "")}`}
+                  aria-current={i === active || undefined}
+                  onClick={() => setActive(i)}
+                  className="flex h-4 flex-1 items-center"
+                >
+                  <span className={cn(
+                    "block h-[3px] w-full rounded-full transition-colors",
+                    cardImages[active] ? (i === active ? "bg-white" : "bg-white/35") : (i === active ? "bg-neutral-950" : "bg-neutral-950/20")
+                  )} />
+                </button>
+              ))}
+            </div>
+          )}
+          <span className={cn(
+            "inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em]",
+            cardImages[active] ? "bg-white/15 text-white ring-1 ring-white/30 backdrop-blur-md" : "bg-white/70 text-neutral-950"
+          )}>
+            <span className="size-1.5 shrink-0 rounded-full bg-highlight" aria-hidden="true" />
+            {cover.tag || "New season"}
+          </span>
+        </div>
+
+        {/* Bottom: headline, subtitle, CTA */}
+        <motion.div
+          key={active}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className={cn("mt-auto p-5 pt-0", cardImages[active] ? "text-white" : "text-neutral-950")}
+        >
+          <h1 className="line-clamp-3 pb-1 font-display text-[2.6rem] font-extrabold leading-[0.95] tracking-[-0.02em]">
+            <AccentText text={cover.title} accentClassName={cn("italic", cardImages[active] ? "text-[#FFC2CF]" : "text-highlight")} />
+          </h1>
+          {cover.subtitle && (
+            <p className={cn("mt-2 line-clamp-2 text-[13px] leading-snug", cardImages[active] ? "text-white/80" : "text-neutral-950/70")}>{cover.subtitle}</p>
+          )}
+          <Link
+            to={cover.link}
+            className={cn(
+              "mt-4 flex h-12 w-full items-center justify-between rounded-full pl-5 pr-1.5 text-xs font-bold uppercase tracking-[0.14em] active:scale-[0.98]",
+              cardImages[active] ? "bg-white text-neutral-950" : "bg-neutral-950 text-white"
+            )}
+          >
+            {cover.cta}
+            <span className="flex size-9 items-center justify-center rounded-full bg-highlight text-highlight-foreground">
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </Link>
+        </motion.div>
+      </motion.div>
+    </section>
+
+    <section className="hidden border-b border-border md:block" aria-roledescription={slides.length > 1 ? "carousel" : undefined}>
       <div className="container grid items-center gap-6 py-8 sm:gap-10 sm:py-12 md:py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
         <div>
           <motion.div
@@ -150,5 +257,6 @@ export default function HeroSection() {
         </div>
       </div>
     </section>
+    </>
   );
 }

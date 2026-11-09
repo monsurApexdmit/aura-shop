@@ -1,0 +1,12 @@
+{
+  "name": "Store",
+  "short_name": "Store",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "430x270", "type": "image/png" }
+  ]
+}
