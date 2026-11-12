@@ -10,23 +10,26 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/EmptyState";
 import type { DealFilter } from "@/services/productApi";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
-const dealFilters: { label: string; value: DealFilter; icon: React.ElementType }[] = [
-  { label: "All Deals",    value: "all",         icon: Tag     },
-  { label: "Hot Deals",    value: "hot_deal",    icon: Flame   },
-  { label: "Best Sellers", value: "best_seller", icon: Clock   },
-  { label: "Featured",     value: "featured",    icon: Star    },
-  { label: "On Sale",      value: "on_sale",     icon: Percent },
+// labelKey is translated at render
+const dealFilters: { labelKey: string; value: DealFilter; icon: React.ElementType }[] = [
+  { labelKey: "shop:deals.filters.all",        value: "all",         icon: Tag     },
+  { labelKey: "shop:deals.filters.hotDeal",    value: "hot_deal",    icon: Flame   },
+  { labelKey: "shop:deals.filters.bestSeller", value: "best_seller", icon: Clock   },
+  { labelKey: "shop:deals.filters.featured",   value: "featured",    icon: Star    },
+  { labelKey: "shop:deals.filters.onSale",     value: "on_sale",     icon: Percent },
 ];
 
 export default function Deals() {
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<DealFilter>("all");
   const { formatCurrency, freeShippingThreshold } = useCurrency();
 
   const banners = [
-    { title: "Flash Sale — Up to 40% Off", subtitle: "Limited time deals on electronics & fashion", icon: Zap,  color: "bg-ink text-ink-foreground"  },
+    { title: t("shop:deals.flashTitle"), subtitle: t("shop:deals.flashText"), icon: Zap,  color: "bg-ink text-ink-foreground"  },
     ...(freeShippingThreshold != null
-      ? [{ title: `Free Shipping on Orders ${formatCurrency(freeShippingThreshold)}+`, subtitle: "Use code FREESHIP at checkout", icon: Gift, color: "bg-highlight text-highlight-foreground" }]
+      ? [{ title: t("shop:deals.freeShippingTitle", { amount: formatCurrency(freeShippingThreshold) }), subtitle: t("shop:deals.freeShippingText"), icon: Gift, color: "bg-highlight text-highlight-foreground" }]
       : []),
   ];
 
@@ -41,13 +44,13 @@ export default function Deals() {
       <section className="container text-center mb-10">
         <motion.div {...fadeUp} className="flex items-center justify-center gap-2 mb-3">
           <Flame className="h-5 w-5 text-foreground" />
-          <p className="text-foreground font-bold text-sm uppercase tracking-widest">Offers & Deals</p>
+          <p className="text-foreground font-bold text-sm uppercase tracking-widest">{t("shop:deals.kicker")}</p>
         </motion.div>
         <motion.h1 {...fadeUp} transition={{ delay: 0.1 }} className="font-display font-extrabold tracking-tight text-5xl sm:text-7xl text-foreground mb-4">
-          Today's Best Deals
+          {t("shop:deals.title")}
         </motion.h1>
         <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-muted-foreground max-w-xl mx-auto">
-          Grab incredible discounts before they're gone. New deals added daily!
+          {t("shop:deals.subtitle")}
         </motion.p>
       </section>
 
@@ -73,7 +76,7 @@ export default function Deals() {
       {/* Filters */}
       <section className="container mb-8">
         <div className="flex flex-wrap gap-2">
-          {dealFilters.map(({ label, value, icon: Icon }) => (
+          {dealFilters.map(({ labelKey, value, icon: Icon }) => (
             <Button
               key={value}
               variant={activeFilter === value ? "default" : "outline"}
@@ -81,7 +84,7 @@ export default function Deals() {
               onClick={() => setActiveFilter(value)}
             >
               <Icon className="h-3.5 w-3.5" />
-              {label}
+              {t(labelKey)}
             </Button>
           ))}
         </div>
@@ -97,8 +100,8 @@ export default function Deals() {
           <EmptyState
             className="py-16"
             icon={Tag}
-            title="No deals in this category"
-            description="Try a different filter or check back later!"
+            title={t("shop:deals.emptyTitle")}
+            description={t("shop:deals.emptyText")}
           />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
@@ -111,7 +114,7 @@ export default function Deals() {
         )}
         {!isLoading && dealProducts.length > 0 && (
           <motion.p {...fadeUp} className="text-center text-muted-foreground text-sm mt-8">
-            Showing {dealProducts.length} deal{dealProducts.length !== 1 ? "s" : ""}
+            {t("shop:deals.showing", { count: dealProducts.length })}
           </motion.p>
         )}
       </section>

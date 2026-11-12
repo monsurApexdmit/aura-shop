@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, Heart, Shirt, ShoppingBag } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Product } from "@/types/product";
@@ -23,6 +24,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+  const { t } = useTranslation();
   const { addItem, items, updateQuantity, removeItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { formatCurrency } = useCurrency();
@@ -89,11 +91,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </span>
         )}
 
-        <WithTooltip content={liked ? "Remove from wishlist" : "Add to wishlist"}>
+        <WithTooltip content={liked ? t("common:actions.removeFromWishlist") : t("common:actions.addToWishlist")}>
           <Button
             variant="ghost"
             size="icon"
-            aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+            aria-label={liked ? t("common:actions.removeFromWishlist") : t("common:actions.addToWishlist")}
             aria-pressed={liked}
             onClick={() => toggleWishlist(product.id)}
             className="absolute right-3 top-3 z-10 h-9 w-9 rounded-full bg-white text-neutral-950 shadow-sm hover:bg-white/90 hover:text-neutral-950"
@@ -112,11 +114,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           )}
         >
           {cartItem ? (
-            <div className="flex h-10 items-center justify-between rounded-pill bg-white px-1 text-neutral-950 shadow-md" role="group" aria-label="Quantity in bag">
-              <WithTooltip content="Decrease quantity"><Button
+            <div className="flex h-10 items-center justify-between rounded-pill bg-white px-1 text-neutral-950 shadow-md" role="group" aria-label={t("tpl_editorial:card.qtyInBag")}>
+              <WithTooltip content={t("common:actions.decrease")}><Button
                 variant="ghost"
                 size="icon"
-                aria-label="Decrease quantity"
+                aria-label={t("common:actions.decrease")}
                 className="h-8 w-8 rounded-full hover:bg-neutral-100 hover:text-neutral-950"
                 onClick={() =>
                   cartItem.quantity <= 1
@@ -126,11 +128,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               >
                 <Minus className="h-3.5 w-3.5" />
               </Button></WithTooltip>
-              <span className="text-xs font-semibold tabular-nums">{cartItem.quantity} in bag</span>
-              <WithTooltip content="Increase quantity"><Button
+              <span className="text-xs font-semibold tabular-nums">{t("tpl_editorial:card.inBag", { qty: cartItem.quantity })}</span>
+              <WithTooltip content={t("common:actions.increase")}><Button
                 variant="ghost"
                 size="icon"
-                aria-label="Increase quantity"
+                aria-label={t("common:actions.increase")}
                 className="h-8 w-8 rounded-full hover:bg-neutral-100 hover:text-neutral-950"
                 onClick={() => updateQuantity(String(product.id), cartItem.quantity + 1)}
               >
@@ -140,19 +142,19 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           ) : hasVariants ? (
             <>
               <Button asChild size="icon" className="h-10 w-10 rounded-full bg-white text-neutral-950 shadow-md hover:bg-white/90 md:hidden">
-                <Link to={`/product/${product.slug}`} aria-label={`Choose options for ${product.name}`}><ShoppingBag className="h-4 w-4" /></Link>
+                <Link to={`/product/${product.slug}`} aria-label={t("tpl_editorial:card.chooseOptionsFor", { name: product.name })}><ShoppingBag className="h-4 w-4" /></Link>
               </Button>
               <Button asChild className="hidden h-10 w-full rounded-pill bg-white text-xs font-semibold text-neutral-950 shadow-md hover:bg-white/90 md:inline-flex">
-                <Link to={`/product/${product.slug}`}>Choose options</Link>
+                <Link to={`/product/${product.slug}`}>{t("common:product.chooseOptions")}</Link>
               </Button>
             </>
           ) : (
             <>
-              <Button size="icon" onClick={handleAdd} aria-label={`Add ${product.name} to bag`} className="h-10 w-10 rounded-full bg-white text-neutral-950 shadow-md hover:bg-white/90 md:hidden">
+              <Button size="icon" onClick={handleAdd} aria-label={t("tpl_editorial:card.addNameToBag", { name: product.name })} className="h-10 w-10 rounded-full bg-white text-neutral-950 shadow-md hover:bg-white/90 md:hidden">
                 <ShoppingBag className="h-4 w-4" />
               </Button>
               <Button onClick={handleAdd} className="hidden h-10 w-full rounded-pill bg-white text-xs font-semibold text-neutral-950 shadow-md hover:bg-white/90 md:inline-flex">
-                Add to bag
+                {t("tpl_editorial:card.addToBag")}
               </Button>
             </>
           )}
@@ -177,7 +179,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           )}
         </div>
         {colours.length > 0 && (
-          <ul aria-label="Colours" className="mt-1 flex items-center gap-1.5">
+          <ul aria-label={t("tpl_editorial:card.colours")} className="mt-1 flex items-center gap-1.5">
             {colours.slice(0, MAX_SWATCHES).map((c) => (
               <li key={c} title={c} className="h-3 w-3 rounded-full ring-1 ring-inset ring-black/15" style={{ backgroundColor: c.trim().toLowerCase() }}>
                 <span className="sr-only">{c}</span>

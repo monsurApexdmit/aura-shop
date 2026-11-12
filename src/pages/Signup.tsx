@@ -13,18 +13,23 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { Trans, useTranslation } from "react-i18next";
+
+/** Error shape from the API client (axios) */
+type ApiErr = { response?: { data?: { message?: string } } };
 
 const passwordChecks = [
-  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
-  { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
-  { label: "One number", test: (p: string) => /\d/.test(p) },
+  { labelKey: "account:signup.check.length", test: (p: string) => p.length >= 8 },
+  { labelKey: "account:signup.check.uppercase", test: (p: string) => /[A-Z]/.test(p) },
+  { labelKey: "account:signup.check.number", test: (p: string) => /\d/.test(p) },
 ];
 
 const Signup = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { register } = useAuth();
-  const from = (location.state as any)?.from || "/account";
+  const from = (location.state as { from?: string } | null)?.from || "/account";
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,24 +40,25 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) {
-      toast.error("Please fill in all fields");
+      toast.error(t("account:signup.fillAll"));
       return;
     }
     if (!agreed) {
-      toast.error("Please agree to the terms");
+      toast.error(t("account:signup.agreeTerms"));
       return;
     }
     if (!passwordChecks.every((c) => c.test(password))) {
-      toast.error("Please meet all password requirements");
+      toast.error(t("account:signup.passwordRules"));
       return;
     }
     setLoading(true);
     try {
       await register(name, email, password);
-      toast.success("Account created! Welcome!");
+      toast.success(t("account:signup.success"));
       navigate(from, { replace: true });
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Registration failed. Please try again.");
+    } catch (e) {
+      const err = e as ApiErr;
+      toast.error(err?.response?.data?.message || t("account:signup.failed"));
     } finally {
       setLoading(false);
     }
@@ -74,8 +80,8 @@ const Signup = () => {
                 Shop<span className="text-primary">Hub</span>
               </h1>
             </Link>
-            <h2 className="text-2xl font-semibold text-foreground mb-2">Create your account</h2>
-            <p className="text-muted-foreground">Start shopping in just a few steps</p>
+            <h2 className="text-2xl font-semibold text-foreground mb-2">{t("account:signup.title")}</h2>
+            <p className="text-muted-foreground">{t("account:signup.subtitle")}</p>
           </div>
 
           {/* Social */}
@@ -102,18 +108,18 @@ const Signup = () => {
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-3 text-muted-foreground">or sign up with email</span>
+              <span className="bg-background px-3 text-muted-foreground">{t("account:signup.orEmail")}</span>
             </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FormField label="Full name" htmlFor="name">
+            <FormField label={t("common:form.fullName")} htmlFor="name">
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder={t("account:signup.namePlaceholder")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="pl-10"
@@ -121,7 +127,7 @@ const Signup = () => {
               </div>
             </FormField>
 
-            <FormField label="Email address" htmlFor="signup-email">
+            <FormField label={t("common:form.emailAddress")} htmlFor="signup-email">
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -135,7 +141,7 @@ const Signup = () => {
               </div>
             </FormField>
 
-            <FormField label="Password" htmlFor="signup-password">
+            <FormField label={t("common:form.password")} htmlFor="signup-password">
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -146,11 +152,11 @@ const Signup = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                 />
-                <WithTooltip content={showPassword ? "Hide password" : "Show password"}><Button
+                <WithTooltip content={showPassword ? t("account:password.hide") : t("account:password.show")}><Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("account:password.hide") : t("account:password.show")}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-1 top-1/2 -translate-y-1/2"
                 >
@@ -167,10 +173,10 @@ const Signup = () => {
                   {passwordChecks.map((check) => {
                     const pass = check.test(password);
                     return (
-                      <div key={check.label} className="flex items-center gap-2 text-xs">
+                      <div key={check.labelKey} className="flex items-center gap-2 text-xs">
                         <Check className={cn("h-3.5 w-3.5", pass ? "text-[hsl(var(--success))]" : "text-muted-foreground/40")} />
                         <span className={pass ? "text-foreground" : "text-muted-foreground"}>
-                          {check.label}
+                          {t(check.labelKey)}
                         </span>
                       </div>
                     );
@@ -187,24 +193,24 @@ const Signup = () => {
                 className="mt-0.5"
               />
               <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-snug">
-                I agree to the{" "}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>
+                <Trans
+                  i18nKey="account:signup.agree"
+                  components={{ link: <Link to="/privacy" className="text-primary hover:underline" /> }}
+                />
               </Label>
             </div>
 
             <Button type="submit" disabled={loading} size="lg" className="w-full gap-2">
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? t("account:signup.submitting") : t("account:signup.submit")}
               {!loading && <ArrowRight className="h-4 w-4" />}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Already have an account?{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">
-              Sign in
-            </Link>
+            <Trans
+              i18nKey="account:signup.haveAccount"
+              components={{ link: <Link to="/login" className="text-primary font-medium hover:underline" /> }}
+            />
           </p>
         </motion.div>
       </div>

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Home, LayoutGrid, Heart, ShoppingBag, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
@@ -40,6 +41,7 @@ function TabLink({ tab, active }: { tab: Tab; active: boolean }) {
 
 // Phone-only navigation: a floating dark pill with the bag raised in the middle as a crimson button.
 export default function MobileTabBar() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { totalItems, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
@@ -48,18 +50,18 @@ export default function MobileTabBar() {
   if (hidesTabBar(pathname)) return null;
 
   const left: Tab[] = [
-    { label: "Home", icon: Home, to: "/", match: (p) => p === "/" },
+    { label: t("common:nav.home"), icon: Home, to: "/", match: (p) => p === "/" },
     {
-      label: "Browse",
+      label: t("tpl_editorial:mobileNav.browse"),
       icon: LayoutGrid,
       to: "/categories",
       match: (p) => ["/categories", "/shop", "/collections", "/deals"].some((x) => p.startsWith(x)),
     },
   ];
   const right: Tab[] = [
-    { label: "Saved", icon: Heart, to: "/wishlist", match: (p) => p.startsWith("/wishlist"), badge: totalWishlistItems },
+    { label: t("tpl_editorial:mobileNav.saved"), icon: Heart, to: "/wishlist", match: (p) => p.startsWith("/wishlist"), badge: totalWishlistItems },
     {
-      label: "Me",
+      label: t("tpl_editorial:mobileNav.me"),
       icon: User,
       to: isLoggedIn ? "/account" : "/login",
       match: (p) => ["/account", "/login", "/signup"].some((x) => p.startsWith(x)),
@@ -67,14 +69,14 @@ export default function MobileTabBar() {
   ];
 
   return (
-    <nav aria-label="App" className="fixed inset-x-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 md:hidden">
+    <nav aria-label={t("tpl_editorial:mobileNav.label")} className="fixed inset-x-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 md:hidden">
       <div className="grid h-16 grid-cols-5 rounded-pill bg-ink px-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.45)] ring-1 ring-ink-foreground/10">
-        {left.map((t) => <TabLink key={t.label} tab={t} active={t.match(pathname)} />)}
+        {left.map((tab) => <TabLink key={tab.to} tab={tab} active={tab.match(pathname)} />)}
         <div className="flex justify-center">
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            aria-label={`Bag, ${totalItems} items`}
+            aria-label={t("tpl_editorial:header.bagCount", { count: totalItems })}
             className="relative -mt-5 flex size-[60px] items-center justify-center rounded-full bg-highlight text-highlight-foreground shadow-lg ring-[5px] ring-background transition-transform active:scale-90"
           >
             <ShoppingBag className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
@@ -85,7 +87,7 @@ export default function MobileTabBar() {
             )}
           </button>
         </div>
-        {right.map((t) => <TabLink key={t.label} tab={t} active={t.match(pathname)} />)}
+        {right.map((tab) => <TabLink key={tab.to} tab={tab} active={tab.match(pathname)} />)}
       </div>
     </nav>
   );

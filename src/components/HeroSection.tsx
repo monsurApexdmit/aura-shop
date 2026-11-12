@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import storefrontSettingsApi from "@/services/storefrontSettingsApi";
 import { getImageUrl } from "@/lib/api";
@@ -29,16 +30,16 @@ interface HeroCopy {
   image?: string;
 }
 
-// Shown until a hero slide is enabled in admin (Online store > Homepage hero).
-const DEFAULT_COPY: HeroCopy = {
-  tag: "The new season is here",
-  title: "Wear the\n*happy* stuff.",
-  subtitle: "Color-forward clothing for women, men and the kids who set the tone.",
-  cta: "Shop the drop",
-  link: "/shop",
-};
-
 export default function HeroSection() {
+  const { t } = useTranslation();
+  // Shown until a hero slide is enabled in admin (Online store > Homepage hero).
+  const defaultCopy = useMemo<HeroCopy>(() => ({
+    tag: t("home:hero.tag"),
+    title: t("home:hero.title"),
+    subtitle: t("home:hero.subtitle"),
+    cta: t("home:hero.cta"),
+    link: "/shop",
+  }), [t]);
   const reduceMotion = useReducedMotion();
   // Second button: the first shop aisle (admin aisle card, matching category, or top-level category).
   const firstAisle = useShopNavLinks()[0];
@@ -56,14 +57,14 @@ export default function HeroSection() {
         tag: s.tag,
         title: s.title,
         subtitle: s.subtitle,
-        cta: s.cta || "Shop now",
+        cta: s.cta || t("common:actions.shopNow"),
         link: s.link || "/shop",
         image: s.imagePath ? getImageUrl(s.imagePath) : undefined,
       })),
-    [hero]
+    [hero, t]
   );
   const [active, setActive] = useState(0);
-  const current = slides[active] ?? slides[0] ?? DEFAULT_COPY;
+  const current = slides[active] ?? slides[0] ?? defaultCopy;
   const autoplayMs = hero?.autoplayMs ?? 6000;
 
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function HeroSection() {
   }, [data, slides, current.image]);
 
   // Phone cover: each slide brings its own photo (falls back to product photos).
-  const cards = useMemo(() => (slides.length > 0 ? slides : [DEFAULT_COPY]), [slides]);
+  const cards = useMemo(() => (slides.length > 0 ? slides : [defaultCopy]), [slides, defaultCopy]);
   const cardImages = useMemo(() => {
     const productImages = (data?.data ?? []).map(mapApiProduct).map((p) => p.image).filter((src) => !src.includes("placeholder"));
     return cards.map((c, i) => c.image ?? productImages[i % Math.max(productImages.length, 1)]);
@@ -96,7 +97,7 @@ export default function HeroSection() {
     <>
     {/* Phones: a full-bleed cover card. Photo fills the card, copy sits on a dark fade at the bottom,
         story-style progress bars on top. Without a photo the card is a pastel tile with dark text. */}
-    <section className="px-4 pb-6 pt-4 md:hidden" aria-roledescription={cards.length > 1 ? "carousel" : undefined}>
+    <section className="px-4 pb-6 pt-4 md:hidden" aria-roledescription={cards.length > 1 ? t("home:hero.carousel") : undefined}>
       <motion.div
         drag={cards.length > 1 ? "x" : false}
         dragConstraints={{ left: 0, right: 0 }}
@@ -130,12 +131,12 @@ export default function HeroSection() {
         {/* Top: progress bars + tag */}
         <div className="p-4">
           {cards.length > 1 && (
-            <div className="mb-3 flex gap-1" role="group" aria-label="Choose slide">
+            <div className="mb-3 flex gap-1" role="group" aria-label={t("home:hero.chooseSlide")}>
               {cards.map((c, i) => (
                 <button
                   key={i}
                   type="button"
-                  aria-label={`Show slide ${i + 1}: ${c.title.replace(/\*/g, "")}`}
+                  aria-label={t("home:hero.showSlide", { number: i + 1, title: c.title.replace(/\*/g, "") })}
                   aria-current={i === active || undefined}
                   onClick={() => setActive(i)}
                   className="flex h-4 flex-1 items-center"
@@ -153,7 +154,7 @@ export default function HeroSection() {
             cardImages[active] ? "bg-white/15 text-white ring-1 ring-white/30 backdrop-blur-md" : "bg-white/70 text-neutral-950"
           )}>
             <span className="size-1.5 shrink-0 rounded-full bg-highlight" aria-hidden="true" />
-            {cover.tag || "New season"}
+            {cover.tag || t("home:hero.newSeason")}
           </span>
         </div>
 
@@ -187,7 +188,7 @@ export default function HeroSection() {
       </motion.div>
     </section>
 
-    <section className="hidden border-b border-border md:block" aria-roledescription={slides.length > 1 ? "carousel" : undefined}>
+    <section className="hidden border-b border-border md:block" aria-roledescription={slides.length > 1 ? t("home:hero.carousel") : undefined}>
       <div className="container grid items-center gap-6 py-8 sm:gap-10 sm:py-12 md:py-16 lg:grid-cols-2 lg:gap-12 lg:py-24">
         <div>
           <motion.div
@@ -214,19 +215,19 @@ export default function HeroSection() {
               </Button>
               {firstAisle && firstAisle.to !== current.link && (
                 <Button asChild size="lg" variant="outline" className="h-11 rounded-pill border-2 border-foreground px-6 sm:h-12 sm:px-7 font-semibold">
-                  <Link to={firstAisle.to}>Shop {firstAisle.label}</Link>
+                  <Link to={firstAisle.to}>{t("home:shopName", { name: firstAisle.label })}</Link>
                 </Button>
               )}
             </div>
           </motion.div>
 
           {slides.length > 1 && (
-            <div className="mt-8 flex items-center gap-2" role="group" aria-label="Choose slide">
+            <div className="mt-8 flex items-center gap-2" role="group" aria-label={t("home:hero.chooseSlide")}>
               {slides.map((s, i) => (
                 <button
                   key={i}
                   type="button"
-                  aria-label={`Show slide ${i + 1}: ${s.title.replace(/\*/g, "")}`}
+                  aria-label={t("home:hero.showSlide", { number: i + 1, title: s.title.replace(/\*/g, "") })}
                   aria-current={i === active || undefined}
                   onClick={() => setActive(i)}
                   className="flex h-6 items-center"

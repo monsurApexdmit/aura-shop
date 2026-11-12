@@ -18,6 +18,9 @@ import { supportApi, type SupportTicket } from "@/services/supportApi";
 import { subscribeToGuestSupportTicket } from "@/lib/reverb";
 import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import i18n, { localeTag } from "@/i18n";
 
 function playNotificationSound() {
   try {
@@ -33,34 +36,47 @@ function playNotificationSound() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);
-  } catch {}
+  } catch {
+    /* audio not available */
+  }
 }
 
-const STATUS_CONFIG = {
-  open:        { label: "Open",        icon: AlertCircle },
-  in_progress: { label: "In Progress", icon: Clock },
-  resolved:    { label: "Resolved",    icon: CheckCircle2 },
-  closed:      { label: "Closed",      icon: XCircle },
+const STATUS_ICON = {
+  open:        AlertCircle,
+  in_progress: Clock,
+  resolved:    CheckCircle2,
+  closed:      XCircle,
 } as const;
 
+/** Error text the API sent back, if any */
+const apiMessage = (err: unknown): string | undefined =>
+  (err as { response?: { data?: { message?: string } } } | null)?.response?.data?.message;
+
+/** The guest endpoint also returns who opened the ticket */
+type GuestTicket = SupportTicket & { customerName?: string | null; customerEmail?: string | null };
+
 function TicketStatusBadge({ status }: { status: SupportTicket["status"] }) {
-  const cfg = STATUS_CONFIG[status];
-  const Icon = cfg.icon;
+  const { t } = useTranslation();
+  const Icon = STATUS_ICON[status] ?? AlertCircle;
   return (
-    <StatusBadge status={status} className="gap-1" label={<><Icon className="w-3 h-3" /> {cfg.label}</>} />
+    <StatusBadge
+      status={status}
+      className="gap-1"
+      label={<><Icon className="w-3 h-3" /> {t(`support:status.${status}`, { defaultValue: status })}</>}
+    />
   );
 }
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, t: TFunction): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
   const h = Math.floor(diff / 3600000);
   const d = Math.floor(diff / 86400000);
-  if (m < 1) return "Just now";
-  if (m < 60) return `${m}m ago`;
-  if (h < 24) return `${h}h ago`;
-  if (d === 1) return "Yesterday";
-  return new Date(dateStr).toLocaleString();
+  if (m < 1) return t("support:time.justNow");
+  if (m < 60) return t("support:time.minutesAgo", { n: m });
+  if (h < 24) return t("support:time.hoursAgo", { n: h });
+  if (d === 1) return t("support:time.yesterday");
+  return new Date(dateStr).toLocaleString(localeTag());
 }
 
 function hasNewStaffMessage(previous: SupportTicket | null, next: SupportTicket): boolean {
@@ -73,16 +89,17 @@ function hasNewStaffMessage(previous: SupportTicket | null, next: SupportTicket)
 }
 
 export default function GuestSupport() {
+  const { t } = useTranslation();
   const { ticketNumber = "" } = useParams<{ ticketNumber: string }>();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
-  const [ticket, setTicket] = useState<SupportTicket | null>(null);
+  const [ticket, setTicket] = useState<GuestTicket | null>(null);
   const [reply, setReply] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ticketRef = useRef<SupportTicket | null>(null);
+  const ticketRef = useRef<GuestTicket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isRecording, start: startRecording, stop: stopRecording } = useVoiceRecorder();
@@ -95,7 +112,7 @@ export default function GuestSupport() {
 
   const loadTicket = useCallback(async (silent = false) => {
     if (!ticketNumber || !token) {
-      setError("This support link is incomplete or invalid.");
+      setError(i18n.t("support:guest.invalidLink"));
       setLoading(false);
       return;
     }
@@ -105,13 +122,13 @@ export default function GuestSupport() {
       const next = await supportApi.getGuest(ticketNumber, token);
       if (hasNewStaffMessage(ticketRef.current, next)) {
         playNotificationSound();
-        toast.success("Support replied to your message.");
+        toast.success(i18n.t("support:guest.replied"));
       }
       ticketRef.current = next;
       setTicket(next);
       setError(null);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Unable to load this conversation.");
+    } catch (err) {
+      setError(apiMessage(err) || i18n.t("support:guest.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -143,7 +160,7 @@ export default function GuestSupport() {
 
         if (message.senderType === "staff") {
           playNotificationSound();
-          toast.success("Support replied to your message.");
+          toast.success(i18n.t("support:guest.replied"));
         }
       },
       onStatusUpdated: (id, status) => {
@@ -173,9 +190,9 @@ export default function GuestSupport() {
       setTicket(updated);
       setReply("");
       setAttachments([]);
-      toast.success("Your reply has been sent.");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to send your reply.");
+      toast.success(t("support:guest.replySent"));
+    } catch (err) {
+      toast.error(apiMessage(err) || t("support:guest.replyFailed"));
     } finally {
       setSending(false);
     }
@@ -201,22 +218,22 @@ export default function GuestSupport() {
     try {
       await startRecording((file) => setAttachments((prev) => [...prev, file].slice(0, 5)));
     } catch {
-      toast.error("Microphone access failed.");
+      toast.error(t("support:micFailed"));
     }
   };
 
   return (
     <div className="min-h-screen bg-background pt-28">
       <div className="container pb-16">
-        <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-2">Guest Support</p>
+        <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-2">{t("support:guest.kicker")}</p>
         <PageHeader
           className="mb-6"
-          title="Support Conversation"
+          title={t("support:guest.title")}
           actions={
             <Button asChild variant="outline">
               <Link to="/contact">
                 <ArrowLeft className="w-4 h-4" />
-                Back to Contact
+                {t("support:guest.backToContact")}
               </Link>
             </Button>
           }
@@ -225,12 +242,12 @@ export default function GuestSupport() {
         {loading ? (
           <Card className="p-10 text-center text-muted-foreground">
             <Spinner className="mx-auto mb-3 size-5" />
-            Loading support conversation...
+            {t("support:guest.loading")}
           </Card>
         ) : error ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Unable to open this conversation</AlertTitle>
+            <AlertTitle>{t("support:guest.errorTitle")}</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : ticket ? (
@@ -241,7 +258,11 @@ export default function GuestSupport() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{ticket.ticketNumber}</p>
                   <h2 className="mt-1 text-xl font-semibold text-foreground">{ticket.subject}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {ticket.customerName || "Guest"} · {ticket.customerEmail || "No email"} · Created {relativeTime(ticket.createdAt)}
+                    {t("support:guest.meta", {
+                      name: ticket.customerName || t("support:guest.guestName"),
+                      email: ticket.customerEmail || t("support:guest.noEmail"),
+                      time: relativeTime(ticket.createdAt, t),
+                    })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -251,7 +272,7 @@ export default function GuestSupport() {
                     size="sm"
                     onClick={() => void loadTicket(true)}
                   >
-                    Refresh
+                    {t("support:guest.refresh")}
                   </Button>
                 </div>
               </div>
@@ -268,9 +289,9 @@ export default function GuestSupport() {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      {message.senderType === "staff" ? (message.senderName || "Support Team") : "You"}
+                      {message.senderType === "staff" ? (message.senderName || t("support:supportTeam")) : t("support:you")}
                     </p>
-                    <span className="text-[11px] text-muted-foreground">{relativeTime(message.createdAt)}</span>
+                    <span className="text-[11px] text-muted-foreground">{relativeTime(message.createdAt, t)}</span>
                   </div>
                   {message.body ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}
                   <MessageAttachments attachments={message.attachments} />
@@ -291,14 +312,14 @@ export default function GuestSupport() {
                     className="hidden"
                     onChange={handleFileSelect}
                   />
-                  <FormField label="Reply to support" htmlFor="guest-support-reply">
+                  <FormField label={t("support:guest.replyLabel")} htmlFor="guest-support-reply">
                     <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
                     <Textarea
                       id="guest-support-reply"
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
                       rows={4}
-                      placeholder="Write your follow-up message here..."
+                      placeholder={t("support:guest.replyPlaceholder")}
                       className="w-full resize-none"
                     />
                   </FormField>
@@ -306,11 +327,11 @@ export default function GuestSupport() {
                     <div className="flex gap-2">
                       <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                         <Paperclip className="w-4 h-4" />
-                        Attach
+                        {t("support:attach")}
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={handleVoiceToggle}>
                         {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        {isRecording ? "Stop" : "Voice"}
+                        {isRecording ? t("support:stop") : t("support:voice")}
                       </Button>
                     </div>
                     <Button
@@ -318,12 +339,12 @@ export default function GuestSupport() {
                       disabled={sending || (!reply.trim() && attachments.length === 0)}
                     >
                       {sending ? <Spinner /> : <Send className="w-4 h-4" />}
-                      Send Reply
+                      {t("support:guest.sendReply")}
                     </Button>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">This ticket is closed and can no longer receive replies.</p>
+                <p className="text-sm text-muted-foreground">{t("support:guest.closed")}</p>
               )}
             </div>
           </Card>

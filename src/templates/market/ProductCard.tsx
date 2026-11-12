@@ -1,20 +1,26 @@
 import { Link } from "react-router-dom";
-import { Heart, ImageOff, Minus, Plus, ShoppingCart, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Heart, ImageOff, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProductCard } from "@/templates/shared/useProductCard";
 import type { ProductCardProps } from "@/templates/types";
-import { FOCUS, compactNumber } from "./lib";
+import { Stars } from "./parts";
+import { FOCUS } from "./lib";
+
+const ICON_BTN = "relative flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors";
 
 /**
- * Dense marketplace tile: square photo, discount flag, two-line name, raspberry price,
- * rating · sold, and a one-tap cart button that turns into a stepper. Fits two across a 360px phone.
+ * Tech Store card: square photo with a red discount pill (or the product's own badge), two-line name,
+ * amber stars with the review count, price and strike price, and a small cart button. Products with
+ * options open their page from that button instead of adding.
  */
 export default function ProductCard({ product }: ProductCardProps) {
+  const { t } = useTranslation();
   const c = useProductCard(product);
 
   return (
-    <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card transition duration-200 hover:-translate-y-0.5 hover:border-transparent hover:card-shadow-hover">
-      <div className="relative aspect-square overflow-hidden bg-secondary">
+    <article className="group relative flex h-full min-w-0 flex-col rounded-xl border border-border bg-card p-2 card-shadow transition-[box-shadow,border-color] duration-200 hover:border-primary/30 hover:card-shadow-hover sm:p-2.5">
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-secondary">
         {c.image ? (
           <img
             src={c.image}
@@ -24,93 +30,106 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
           />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-muted-foreground/60" aria-hidden="true">
+          <span className="flex h-full w-full items-center justify-center text-muted-foreground/50" aria-hidden="true">
             <ImageOff className="h-8 w-8" />
           </span>
         )}
-        {c.discount > 0 && (
-          <span className="absolute left-0 top-2 rounded-r-sm bg-highlight px-1.5 py-0.5 text-[11px] font-bold leading-tight text-highlight-foreground">
-            -{c.discount}%
-          </span>
-        )}
-        {c.badge && (
-          <span className={cn("absolute left-0 max-w-[70%] truncate rounded-r-sm bg-ink px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-tight text-ink-foreground", c.discount > 0 ? "top-8" : "top-2")}>
-            {c.badge}
-          </span>
-        )}
+        <div className="absolute left-2 top-2 flex max-w-[70%] flex-col items-start gap-1">
+          {c.discount > 0 && (
+            <span className="rounded-pill bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-tight text-destructive-foreground sm:text-[11px]">
+              -{c.discount}%
+            </span>
+          )}
+          {c.badge && (
+            <span className="max-w-full truncate rounded-pill bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold leading-tight text-white sm:text-[11px]">
+              {c.badge}
+            </span>
+          )}
+        </div>
         {!c.inStock && (
-          <span className="absolute inset-x-0 bottom-0 bg-ink/75 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-foreground">
-            Sold out
+          <span className="absolute inset-x-0 bottom-0 bg-foreground/75 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-background">
+            {t("tpl_market:card.soldOut")}
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-2 sm:p-2.5">
-        <h3 className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-5 text-foreground sm:text-sm">
-          <Link to={c.href} className="rounded-sm outline-none after:absolute after:inset-0 after:content-[''] focus-visible:underline">
+      <div className="flex flex-1 flex-col px-0.5 pt-2.5">
+        <h3 className="line-clamp-2 min-h-[2.5em] text-[13px] font-semibold leading-[1.25] text-foreground">
+          <Link to={c.href} className="rounded-sm outline-none after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring">
             {product.name}
           </Link>
         </h3>
 
-        {(c.rating > 0 || c.sold > 0) && (
-          <p className="flex min-w-0 items-center gap-1 text-[11px] leading-none text-muted-foreground">
-            {c.rating > 0 && (
-              <>
-                <Star className="h-3 w-3 shrink-0 fill-highlight text-highlight" aria-hidden="true" />
-                <span className="font-medium text-foreground">{c.rating.toFixed(1)}</span>
-                {c.reviews > 0 && <span>({compactNumber(c.reviews)})</span>}
-              </>
-            )}
-            {c.rating > 0 && c.sold > 0 && <span aria-hidden="true">·</span>}
-            {c.sold > 0 && <span className="truncate">{compactNumber(c.sold)} sold</span>}
-          </p>
-        )}
+        <p className="mt-1.5 flex h-4 items-center gap-1 text-[11px] text-muted-foreground">
+          {c.reviews > 0 ? (
+            <>
+              <Stars rating={c.rating} />
+              <span className="font-semibold text-foreground">{c.rating.toFixed(1)}</span>
+              <span>({c.reviews})</span>
+              <span className="sr-only">{t("tpl_market:card.ratedFrom", { rating: c.rating.toFixed(1), count: c.reviews })}</span>
+            </>
+          ) : c.sold > 0 ? (
+            <span>{t("tpl_market:card.sold", { count: c.sold })}</span>
+          ) : null}
+        </p>
 
-        <div className="mt-auto flex items-end justify-between gap-1 pt-1">
-          <div className="min-w-0">
-            <p className="truncate text-[15px] font-bold leading-tight tabular-nums text-highlight sm:text-base">{c.price}</p>
-            {c.originalPrice ? (
-              <p className="truncate text-xs leading-tight tabular-nums text-muted-foreground line-through">{c.originalPrice}</p>
-            ) : (
-              <p className="text-xs leading-tight" aria-hidden="true">&nbsp;</p>
-            )}
-          </div>
-          <div className="relative z-10 shrink-0">
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2.5">
+          <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 tabular-nums">
+            {c.hasVariants && <span className="text-[11px] text-muted-foreground">{t("tpl_market:card.from")}</span>}
+            <span className="text-[15px] font-bold leading-tight text-foreground sm:text-base">{c.price}</span>
+            {c.originalPrice && <span className="text-[11px] text-muted-foreground line-through">{c.originalPrice}</span>}
+          </p>
+
+          {/* Above the stretched name link */}
+          <div className="relative z-10">
             {c.hasVariants ? (
-              <Link to={c.href} className={cn("flex h-8 items-center rounded-md border border-border px-2 text-[11px] font-semibold text-foreground hover:border-highlight hover:text-highlight", FOCUS)}>
-                Options
-              </Link>
-            ) : !c.inStock ? null : c.quantity > 0 ? (
-              <div className="flex h-8 items-center rounded-md border border-highlight bg-card">
-                <button type="button" onClick={c.decrement} aria-label={`Remove one ${product.name}`} className={cn("flex h-full w-6 items-center justify-center rounded-l-md text-highlight hover:bg-highlight/10", FOCUS)}>
-                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <span className="min-w-[1.125rem] text-center text-xs font-bold tabular-nums text-foreground" aria-live="polite">{c.quantity}</span>
-                <button type="button" onClick={c.increment} aria-label={`Add one more ${product.name}`} className={cn("flex h-full w-6 items-center justify-center rounded-r-md text-highlight hover:bg-highlight/10", FOCUS)}>
-                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
-            ) : (
-              <button type="button" onClick={c.add} aria-label={`Add ${product.name} to cart`} className={cn("flex size-8 items-center justify-center rounded-md bg-ink text-ink-foreground transition-colors hover:bg-highlight hover:text-highlight-foreground", FOCUS)}>
+              <Link
+                to={c.href}
+                aria-label={t("tpl_market:card.chooseOptionsFor", { name: product.name })}
+                className={cn(ICON_BTN, "border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground", FOCUS)}
+              >
                 <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            ) : !c.inStock ? (
+              <button type="button" disabled aria-label={t("tpl_market:card.isSoldOut", { name: product.name })} className={cn(ICON_BTN, "border-border text-muted-foreground/50")}>
+                <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={c.increment}
+                aria-label={c.quantity > 0 ? t("tpl_market:card.addAnother", { name: product.name, count: c.quantity }) : t("tpl_market:card.addNamed", { name: product.name })}
+                className={cn(
+                  ICON_BTN,
+                  c.quantity > 0 ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground",
+                  FOCUS,
+                )}
+              >
+                <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                {c.quantity > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-none text-destructive-foreground ring-2 ring-card" aria-hidden="true">
+                    {c.quantity}
+                  </span>
+                )}
               </button>
             )}
           </div>
         </div>
       </div>
 
+      {/* Wishlist: shows on hover/focus on desktop, always on touch screens and once saved */}
       <button
         type="button"
         onClick={c.toggleLike}
-        aria-label={c.liked ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
+        aria-label={c.liked ? t("tpl_market:card.removeNamed", { name: product.name }) : t("tpl_market:card.saveNamed", { name: product.name })}
         aria-pressed={c.liked}
         className={cn(
-          "absolute right-1.5 top-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm transition-opacity hover:text-highlight",
-          !c.liked && "md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100",
+          "absolute right-3.5 top-3.5 z-10 flex size-8 items-center justify-center rounded-full bg-card/95 text-foreground shadow-sm transition-opacity hover:text-destructive sm:right-4 sm:top-4",
+          !c.liked && "md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100",
           FOCUS,
         )}
       >
-        <Heart className={cn("h-3.5 w-3.5", c.liked && "fill-highlight text-highlight")} aria-hidden="true" />
+        <Heart className={cn("h-4 w-4", c.liked && "fill-destructive text-destructive")} aria-hidden="true" />
       </button>
     </article>
   );

@@ -1,75 +1,101 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreChrome, type NavLink } from "@/templates/shared/useStoreChrome";
-import Newsletter from "./Newsletter";
-import { EYEBROW, FOCUS } from "./lib";
+import { Brand } from "./parts";
+import { FOCUS_ON_INK, categoryLink } from "./lib";
 
-/** Quiet footer: the house name set huge, a newsletter line, three link columns, fine print. */
+const LINK = cn("rounded-sm text-sm text-ink-foreground/70 transition-colors hover:text-ink-foreground", FOCUS_ON_INK);
+
+function Column({ title, links }: { title: string; links: NavLink[] }) {
+  if (links.length === 0) return null;
+  return (
+    <div className="min-w-0">
+      <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-ink-foreground">{title}</h2>
+      <ul className="space-y-2.5">
+        {links.map((l) => (
+          <li key={`${l.label}-${l.to}`} className="truncate">
+            <Link to={l.to} className={LINK}>{l.label}</Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const dedupe = (links: NavLink[]) => links.filter((l, i) => links.findIndex((x) => x.to === l.to) === i);
+
+/** Navy footer: brand, tagline and socials; Explore, Company and Get in touch columns; © line. */
 export default function Footer() {
-  const chrome = useStoreChrome();
-  const columns: { title: string; links: NavLink[] }[] = [
-    { title: "Client services", links: chrome.helpLinks },
-    { title: "Shop", links: chrome.shopLinks },
-    { title: "The house", links: chrome.companyLinks },
+  const { t } = useTranslation();
+  const { storeName, logo, tagline, contact, categories, companyLinks, helpLinks, socials, year } = useStoreChrome();
+
+  const explore: NavLink[] = [
+    { label: t("tpl_luxe:footer.allProperties"), to: "/shop" },
+    ...categories.slice(0, 4).map((c) => ({ label: c.name, to: categoryLink(c) })),
+    { label: t("tpl_luxe:footer.savedListings"), to: "/wishlist" },
   ];
+  const company = dedupe([...companyLinks, ...helpLinks]);
 
   return (
-    <footer className="border-t border-border bg-background text-foreground">
-      <div className="container pt-16 md:pt-24">
-        <Link to="/" className={cn("block text-center", FOCUS)} aria-label={`${chrome.storeName} home`}>
-          <span className="block break-words font-display text-[clamp(2.75rem,12vw,10rem)] font-normal uppercase leading-[0.9] tracking-[0.04em]">
-            {chrome.storeName}
-          </span>
-        </Link>
-
-        <div className="mx-auto mt-14 grid max-w-5xl gap-12 md:mt-20 md:grid-cols-[1.2fr_repeat(3,1fr)] md:gap-10">
-          <div>
-            <h2 className={cn(EYEBROW, "mb-4 text-muted-foreground")}>Newsletter</h2>
-            <p className="mb-4 max-w-xs font-display text-lg leading-snug">
-              New arrivals and private sales, <em className="italic">first</em>.
-            </p>
-            <Newsletter compact className="max-w-sm" />
-          </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:col-span-3">
-            {columns.map((col) => (
-              <nav key={col.title} aria-label={col.title}>
-                <h2 className={cn(EYEBROW, "mb-5 text-muted-foreground")}>{col.title}</h2>
-                <ul className="space-y-3">
-                  {col.links.map((l) => (
-                    <li key={l.to + l.label}>
-                      <Link to={l.to} className={cn("text-sm text-foreground/85 underline-offset-4 hover:text-foreground hover:underline", FOCUS)}>
-                        {l.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            ))}
-          </div>
+    <footer className="relative mt-auto bg-ink text-ink-foreground">
+      <div className="h-[3px] bg-gradient-to-r from-primary via-highlight to-primary" aria-hidden="true" />
+      <div className="container grid grid-cols-2 gap-x-6 gap-y-10 py-12 md:grid-cols-12 md:py-16">
+        <div className="col-span-2 min-w-0 md:col-span-4">
+          <Brand logo={logo} storeName={storeName} onInk />
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-foreground/70">
+            {tagline || t("tpl_luxe:footer.tagline")}
+          </p>
+          {socials.length > 0 && (
+            <ul className="mt-5 flex gap-2">
+              {socials.map(({ label, href, Icon }) => (
+                <li key={label}>
+                  <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={cn("flex size-9 items-center justify-center rounded-full border border-ink-foreground/20 text-ink-foreground/80 transition-colors hover:border-highlight hover:text-highlight", FOCUS_ON_INK)}>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {(chrome.contact.email || chrome.contact.phone) && (
-          <p className="mx-auto mt-14 flex max-w-5xl flex-wrap justify-center gap-x-6 gap-y-2 text-center text-xs text-muted-foreground">
-            {chrome.contact.email && <a href={`mailto:${chrome.contact.email}`} className={cn("hover:text-foreground", FOCUS)}>{chrome.contact.email}</a>}
-            {chrome.contact.phone && <a href={`tel:${chrome.contact.phone}`} className={cn("hover:text-foreground", FOCUS)}>{chrome.contact.phone}</a>}
-          </p>
-        )}
+        <div className="md:col-span-2 md:col-start-6"><Column title={t("tpl_luxe:footer.explore")} links={explore} /></div>
+        <div className="md:col-span-2"><Column title={t("tpl_luxe:footer.company")} links={company} /></div>
 
-        <div className="mt-14 flex flex-col items-center gap-3 border-t border-border py-8 text-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground md:mt-20 md:flex-row md:justify-between md:text-left">
-          <p>© {chrome.year} {chrome.storeName}</p>
-          {chrome.socials.length > 0 && (
-            <p className="flex flex-wrap justify-center gap-x-2">
-              {chrome.socials.map((s, i) => (
-                <span key={s.label}>
-                  {i > 0 && <span aria-hidden="true" className="mr-2">·</span>}
-                  <a href={s.href} target="_blank" rel="noopener noreferrer" className={cn("hover:text-foreground", FOCUS)}>
-                    {s.label}
-                  </a>
-                </span>
-              ))}
-            </p>
-          )}
-          {chrome.paymentMethods.length > 0 && <p>{chrome.paymentMethods.join(" · ")}</p>}
+        <div className="col-span-2 min-w-0 md:col-span-3">
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-ink-foreground">{t("tpl_luxe:footer.getInTouch")}</h2>
+          <ul className="space-y-3 text-sm text-ink-foreground/70">
+            {contact.phone && (
+              <li>
+                <a href={`tel:${contact.phone}`} className={cn("inline-flex items-center gap-2.5 rounded-sm hover:text-ink-foreground", FOCUS_ON_INK)}>
+                  <Phone className="h-4 w-4 shrink-0 text-highlight" aria-hidden="true" /> {contact.phone}
+                </a>
+              </li>
+            )}
+            {contact.email && (
+              <li className="min-w-0">
+                <a href={`mailto:${contact.email}`} className={cn("inline-flex max-w-full items-center gap-2.5 rounded-sm hover:text-ink-foreground", FOCUS_ON_INK)}>
+                  <Mail className="h-4 w-4 shrink-0 text-highlight" aria-hidden="true" /> <span className="truncate">{contact.email}</span>
+                </a>
+              </li>
+            )}
+            {contact.address && (
+              <li className="flex items-start gap-2.5">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-highlight" aria-hidden="true" /> <span className="min-w-0 break-words">{contact.address}</span>
+              </li>
+            )}
+            <li>
+              <Link to="/contact" className={cn("inline-flex items-center rounded-sm font-semibold text-highlight hover:underline", FOCUS_ON_INK)}>{t("tpl_luxe:footer.sendMessage")}</Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="border-t border-ink-foreground/10">
+        <div className="container flex flex-col gap-1.5 py-5 text-xs text-ink-foreground/55 sm:flex-row sm:items-center sm:justify-between">
+          <p>{t("common:footer.rights", { year, store: storeName })}</p>
+          <p>{t("tpl_luxe:footer.strapline")}</p>
         </div>
       </div>
     </footer>

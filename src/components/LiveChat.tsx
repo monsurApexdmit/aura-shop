@@ -15,13 +15,15 @@ import { subscribeToSupportTicket, subscribeToGuestSupportTicket } from "@/lib/r
 import { Link } from "react-router-dom";
 import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { useTranslation } from "react-i18next";
+import { localeTag } from "@/i18n";
 
 const MotionCard = motion.create(Card);
 
 // ─── Notification beep via Web Audio API (no sound file needed) ──────────────
 function playNotificationBeep() {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -78,7 +80,7 @@ function toUiMessage(m: SupportMessage): UiMessage {
     id: String(m.id),
     text: m.body,
     sender: m.senderType === "staff" ? "staff" : "user",
-    time: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    time: new Date(m.createdAt).toLocaleTimeString(localeTag(), { hour: "2-digit", minute: "2-digit" }),
     attachments: m.attachments,
   };
 }
@@ -88,15 +90,15 @@ function systemMsg(text: string): UiMessage {
 }
 
 function now() {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date().toLocaleTimeString(localeTag(), { hour: "2-digit", minute: "2-digit" });
 }
 
-// ─── Quick reply options ─────────────────────────────────────────────────────
-const quickReplies: { label: string; category: TicketCategory; subject: string }[] = [
-  { label: "Track my order",  category: "order",    subject: "Track my order"    },
-  { label: "Return policy",   category: "general",  subject: "Return policy"     },
-  { label: "Payment issues",  category: "payment",  subject: "Payment issue"     },
-  { label: "Talk to agent",   category: "general",  subject: "Talk to an agent"  },
+// ─── Quick reply options (translation keys, translated when used) ────────────
+const quickReplies: { labelKey: string; category: TicketCategory; subjectKey: string }[] = [
+  { labelKey: "chat:quick.track",   category: "order",   subjectKey: "chat:quick.trackSubject"   },
+  { labelKey: "chat:quick.returns", category: "general", subjectKey: "chat:quick.returnsSubject" },
+  { labelKey: "chat:quick.payment", category: "payment", subjectKey: "chat:quick.paymentSubject" },
+  { labelKey: "chat:quick.agent",   category: "general", subjectKey: "chat:quick.agentSubject"   },
 ];
 
 // ─── Guest name/email prompt ─────────────────────────────────────────────────
@@ -106,22 +108,23 @@ interface GuestFormProps {
 }
 
 function GuestForm({ initialText, onSubmit }: GuestFormProps) {
+  const { t } = useTranslation();
   const [name, setName]   = useState("");
   const [email, setEmail] = useState("");
   return (
     <div className="p-4 space-y-3">
       <p className="text-sm text-muted-foreground">
-        Before we connect you, please share your name and email so our team can follow up.
+        {t("chat:guest.intro")}
       </p>
-      <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)} aria-label="Your name" />
-      <Input placeholder="Your email" type="email" value={email} onChange={e => setEmail(e.target.value)} aria-label="Your email" />
-      <p className="text-xs text-muted-foreground italic truncate">Message: "{initialText}"</p>
+      <Input placeholder={t("chat:guest.name")} value={name} onChange={e => setName(e.target.value)} aria-label={t("chat:guest.name")} />
+      <Input placeholder={t("chat:guest.email")} type="email" value={email} onChange={e => setEmail(e.target.value)} aria-label={t("chat:guest.email")} />
+      <p className="text-xs text-muted-foreground italic truncate">{t("chat:guest.message", { text: initialText })}</p>
       <Button
         className="w-full"
         disabled={!name.trim() || !email.trim()}
         onClick={() => onSubmit(name.trim(), email.trim())}
       >
-        Start chat
+        {t("chat:guest.start")}
       </Button>
     </div>
   );
@@ -129,6 +132,7 @@ function GuestForm({ initialText, onSubmit }: GuestFormProps) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export default function LiveChat() {
+  const { t } = useTranslation();
   const { isLoggedIn, user, isRestoring } = useAuth();
 
   const [open,      setOpen]      = useState(false);
@@ -189,7 +193,7 @@ export default function LiveChat() {
       onStatusUpdated: (_tid: number, status: string) => {
         if (status === "resolved" || status === "closed") {
           setPhase("resolved");
-          setMessages(prev => [...prev, systemMsg("This conversation has been resolved. Thank you! 🎉")]);
+          setMessages(prev => [...prev, systemMsg(t("chat:system.resolved"))]);
         }
       },
     };
@@ -199,7 +203,7 @@ export default function LiveChat() {
       : subscribeToSupportTicket(s.ticketId, handlers);
 
     unsubRef.current = unsub;
-  }, [open, minimized]);
+  }, [open, minimized, t]);
 
   // ── Restore session on mount (after auth restores) ──
   useEffect(() => {
@@ -244,7 +248,7 @@ export default function LiveChat() {
   const createAuthTicket = async (text: string, category: TicketCategory = "general", files: File[] = []) => {
     setPhase("creating");
     try {
-      const subject = (text.trim() || files[0]?.name || "New support request").substring(0, 80);
+      const subject = (text.trim() || files[0]?.name || t("chat:newRequest")).substring(0, 80);
       const ticket = await supportApi.create({ subject, message: text, category, attachments: files });
       const s: ChatSession = { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, isGuest: false };
       saveSession(s);
@@ -254,7 +258,7 @@ export default function LiveChat() {
       setPhase("chatting");
       subscribeToTicket(s);
     } catch {
-      setMessages(prev => [...prev, systemMsg("Failed to start chat. Please try again.")]);
+      setMessages(prev => [...prev, systemMsg(t("chat:system.startFailed"))]);
       setPhase("idle");
     }
   };
@@ -263,7 +267,7 @@ export default function LiveChat() {
   const createGuestTicket = async (text: string, name: string, email: string, category: TicketCategory = "general", files: File[] = []) => {
     setPhase("creating");
     try {
-      const subject = (text.trim() || files[0]?.name || "New support request").substring(0, 80);
+      const subject = (text.trim() || files[0]?.name || t("chat:newRequest")).substring(0, 80);
       const res = await supportApi.contact({ name, email, subject, message: text, category, attachments: files });
       const s: ChatSession = {
         ticketId: res.ticket.id,
@@ -278,7 +282,7 @@ export default function LiveChat() {
       setPhase("chatting");
       subscribeToTicket(s);
     } catch {
-      setMessages(prev => [...prev, systemMsg("Failed to start chat. Please try again.")]);
+      setMessages(prev => [...prev, systemMsg(t("chat:system.startFailed"))]);
       setPhase("idle");
     }
   };
@@ -302,7 +306,7 @@ export default function LiveChat() {
     } catch {
       setInput(text);
       setAttachments(files);
-      setMessages(prev => [...prev, systemMsg("Failed to send. Please try again.")]);
+      setMessages(prev => [...prev, systemMsg(t("chat:system.sendFailed"))]);
     } finally {
       setSending(false);
     }
@@ -311,9 +315,9 @@ export default function LiveChat() {
   // ── Handle quick reply buttons ──
   const handleQuickReply = (q: typeof quickReplies[number]) => {
     if (isLoggedIn) {
-      createAuthTicket(q.subject, q.category);
+      createAuthTicket(t(q.subjectKey), q.category);
     } else {
-      pendingText.current = q.subject;
+      pendingText.current = t(q.subjectKey);
       setPhase("guest_form");
     }
   };
@@ -372,7 +376,7 @@ export default function LiveChat() {
         setAttachments((prev) => [...prev, file].slice(0, 5));
       });
     } catch {
-      setMessages((prev) => [...prev, systemMsg("Microphone access failed. Please allow microphone access and try again.")]);
+      setMessages((prev) => [...prev, systemMsg(t("chat:system.micFailed"))]);
     }
   };
 
@@ -392,10 +396,10 @@ export default function LiveChat() {
       {/* ── Floating button ── */}
       <AnimatePresence>
         {!open && (
-          <WithTooltip content="Open chat"><Button asChild size="icon" className="fixed bottom-[calc(var(--fab-bottom,6.25rem)+env(safe-area-inset-bottom))] right-4 z-[100] size-12 rounded-full shadow-xl sm:right-6 md:bottom-6 sm:size-14 [&_svg]:size-5 sm:[&_svg]:size-6">
+          <WithTooltip content={t("chat:open")}><Button asChild size="icon" className="fixed bottom-[calc(var(--fab-bottom,6.25rem)+env(safe-area-inset-bottom))] right-4 z-[100] size-12 rounded-full shadow-xl sm:right-6 md:bottom-6 sm:size-14 [&_svg]:size-5 sm:[&_svg]:size-6">
             <motion.button
               type="button"
-              aria-label="Open chat"
+              aria-label={t("chat:open")}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
@@ -438,39 +442,39 @@ export default function LiveChat() {
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-none">Customer Support</p>
+                <p className="text-sm font-semibold leading-none">{t("chat:header.title")}</p>
                 <p className="text-[11px] opacity-80 mt-0.5">
-                  {phase === "creating" ? "Connecting…" : "We typically reply instantly"}
+                  {phase === "creating" ? t("chat:header.connecting") : t("chat:header.replyTime")}
                 </p>
               </div>
               <div className="flex items-center gap-1">
                 {session && !minimized && (
-                  <WithTooltip content="Open full support page">
+                  <WithTooltip content={t("chat:header.openFull")}>
                     <Button asChild variant="ghost" size="icon">
                       <Link
                         to={session.isGuest
                           ? `/support-guest/${session.ticketNumber}?token=${session.guestToken}`
                           : `/support`}
                         onClick={() => setOpen(false)}
-                        aria-label="Open full support page"
+                        aria-label={t("chat:header.openFull")}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Link>
                     </Button>
                   </WithTooltip>
                 )}
-                <WithTooltip content="Minimize chat"><Button
+                <WithTooltip content={t("chat:header.minimize")}><Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Minimize chat"
+                  aria-label={t("chat:header.minimize")}
                   onClick={e => { e.stopPropagation(); setMinimized(m => !m); }}
                 >
                   <Minus className="h-4 w-4" />
                 </Button></WithTooltip>
-                <WithTooltip content="Close chat"><Button
+                <WithTooltip content={t("chat:header.close")}><Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Close chat"
+                  aria-label={t("chat:header.close")}
                   onClick={e => { e.stopPropagation(); setOpen(false); }}
                 >
                   <X className="h-4 w-4" />
@@ -490,7 +494,7 @@ export default function LiveChat() {
                 {phase === "creating" && (
                   <div className="flex-1 flex items-center justify-center">
                     <Spinner className="size-5 text-primary" />
-                    <span className="ml-2 text-sm text-muted-foreground">Connecting…</span>
+                    <span className="ml-2 text-sm text-muted-foreground">{t("chat:header.connecting")}</span>
                   </div>
                 )}
 
@@ -502,7 +506,7 @@ export default function LiveChat() {
                       {phase === "idle" && messages.length === 0 && (
                         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
                           <div className="max-w-[80%] rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed bg-card text-card-foreground border border-border shadow-sm">
-                            <p>Hi there! 👋 Welcome to StoreFront. How can I help you today?</p>
+                            <p>{t("chat:welcome", { store: "StoreFront" })}</p>
                             <p className="text-[10px] mt-1 text-muted-foreground">{now()}</p>
                           </div>
                         </motion.div>
@@ -523,7 +527,7 @@ export default function LiveChat() {
                                 ? "gradient-primary text-primary-foreground rounded-br-md"
                                 : "bg-card text-card-foreground border border-border rounded-bl-md shadow-sm")}>
                               {msg.sender === "staff" && (
-                                <p className="text-[10px] font-semibold text-primary mb-0.5">Support Agent</p>
+                                <p className="text-[10px] font-semibold text-primary mb-0.5">{t("chat:agent")}</p>
                               )}
                               {msg.text ? <p>{msg.text}</p> : null}
                               <MessageAttachments attachments={msg.attachments} />
@@ -556,12 +560,12 @@ export default function LiveChat() {
                       <div className="px-4 py-2 border-t border-border flex flex-wrap gap-1.5 bg-background">
                         {quickReplies.map(q => (
                           <Button
-                            key={q.label}
+                            key={q.labelKey}
                             variant="outline"
                             size="sm"
                             onClick={() => handleQuickReply(q)}
                           >
-                            {q.label}
+                            {t(q.labelKey)}
                           </Button>
                         ))}
                       </div>
@@ -570,9 +574,9 @@ export default function LiveChat() {
                     {/* Resolved state — new chat button */}
                     {phase === "resolved" && (
                       <div className="px-4 py-3 border-t border-border bg-background text-center">
-                        <p className="text-xs text-muted-foreground mb-2">Ticket resolved</p>
+                        <p className="text-xs text-muted-foreground mb-2">{t("chat:resolved.title")}</p>
                         <Button variant="outline" size="sm" className="w-full text-xs h-8" onClick={handleNewChat}>
-                          Start a new conversation
+                          {t("chat:resolved.newChat")}
                         </Button>
                       </div>
                     )}
@@ -590,20 +594,20 @@ export default function LiveChat() {
                         />
                         <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
                         <div className="mt-2 flex items-center gap-2">
-                          <WithTooltip content="Attach files"><Button
+                          <WithTooltip content={t("chat:input.attach")}><Button
                             size="icon"
                             variant="outline"
-                            aria-label="Attach files"
+                            aria-label={t("chat:input.attach")}
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isCreating || sending}
                             className="shrink-0"
                           >
                             <Paperclip className="h-4 w-4" />
                           </Button></WithTooltip>
-                          <WithTooltip content={isRecording ? "Stop recording" : "Record voice note"}><Button
+                          <WithTooltip content={isRecording ? t("chat:input.stop") : t("chat:input.record")}><Button
                             size="icon"
                             variant={isRecording ? "destructive" : "outline"}
-                            aria-label={isRecording ? "Stop recording" : "Record voice note"}
+                            aria-label={isRecording ? t("chat:input.stop") : t("chat:input.record")}
                             onClick={handleVoiceToggle}
                             disabled={isCreating || sending}
                             className="shrink-0"
@@ -615,13 +619,13 @@ export default function LiveChat() {
                           value={input}
                           onChange={e => setInput(e.target.value)}
                           onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
-                          placeholder={phase === "idle" ? "Type to start a conversation…" : "Type a message…"}
+                          placeholder={phase === "idle" ? t("chat:input.placeholderStart") : t("chat:input.placeholder")}
                           className="flex-1"
                           disabled={isCreating || sending}
                         />
-                        <WithTooltip content="Send message"><Button
+                        <WithTooltip content={t("chat:input.send")}><Button
                           size="icon"
-                          aria-label="Send message"
+                          aria-label={t("chat:input.send")}
                           onClick={handleSend}
                           disabled={(!input.trim() && attachments.length === 0) || isCreating || sending}
                           className="shrink-0"
@@ -629,7 +633,7 @@ export default function LiveChat() {
                           <Send className="h-4 w-4" />
                         </Button></WithTooltip>
                         </div>
-                        <p className="mt-2 text-[11px] text-muted-foreground">Attach up to 5 files or record a voice note.</p>
+                        <p className="mt-2 text-[11px] text-muted-foreground">{t("chat:input.hint", { max: 5 })}</p>
                       </div>
                     )}
                   </>

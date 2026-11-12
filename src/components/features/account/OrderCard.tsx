@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ReactNode } from "react";
 import { Package, ChevronRight, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { bn } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -69,16 +71,16 @@ interface OrderCardProps {
 
 const statusConfig = {
   processing: {
-    label: "Processing",
+    labelKey: "account:orderStatus.processing",
   },
   shipped: {
-    label: "Shipped",
+    labelKey: "account:orderStatus.shipped",
   },
   delivered: {
-    label: "Delivered",
+    labelKey: "account:orderStatus.delivered",
   },
   cancelled: {
-    label: "Cancelled",
+    labelKey: "account:orderStatus.cancelled",
   },
 };
 
@@ -105,9 +107,13 @@ export default function OrderCard({
   actions,
   className = "",
 }: OrderCardProps) {
+  const { t, i18n } = useTranslation();
   const statusInfo = statusConfig[order.status];
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const timeAgo = formatDistanceToNow(new Date(order.date), { addSuffix: true });
+  const timeAgo = formatDistanceToNow(new Date(order.date), {
+    addSuffix: true,
+    locale: i18n.language === "bn" ? bn : undefined,
+  });
   const { formatCurrency } = useCurrency();
 
   return (
@@ -119,7 +125,7 @@ export default function OrderCard({
             <Package className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground text-sm">{order.id}</span>
           </div>
-          <StatusBadge status={order.status} label={statusInfo.label} />
+          <StatusBadge status={order.status} label={statusInfo ? t(statusInfo.labelKey) : order.status} />
         </div>
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -135,7 +141,7 @@ export default function OrderCard({
       {/* Items Summary */}
       <div>
         <p className="text-xs text-muted-foreground mb-3">
-          {itemCount} item{itemCount !== 1 ? "s" : ""}
+          {t("common:product.items", { count: itemCount })}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {order.items.slice(0, 3).map((item) => (
@@ -154,7 +160,7 @@ export default function OrderCard({
           {order.items.length > 3 && (
             <Item variant="muted" size="sm" className="justify-center p-2">
               <p className="text-xs font-medium text-muted-foreground">
-                +{order.items.length - 3} more
+                {t("account:orderCard.more", { count: order.items.length - 3 })}
               </p>
             </Item>
           )}
@@ -165,7 +171,7 @@ export default function OrderCard({
 
       {/* Order Total */}
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">Order Total</span>
+        <span className="text-sm text-muted-foreground">{t("account:orderCard.total")}</span>
         <span className="font-bold text-lg text-foreground">
           {formatCurrency(order.total)}
         </span>
@@ -181,7 +187,7 @@ export default function OrderCard({
             onClick={() => onView(order.id)}
             className="flex-1 sm:flex-none gap-1"
           >
-            View Details
+            {t("common:actions.viewDetails")}
             <ChevronRight className="h-4 w-4" />
           </Button>
         )}
@@ -191,7 +197,7 @@ export default function OrderCard({
             onClick={() => onTrack(order.id)}
             className="flex-1 sm:flex-none gap-1"
           >
-            Track Order
+            {t("common:nav.trackOrder")}
             <ChevronRight className="h-4 w-4" />
           </Button>
         )}
@@ -200,7 +206,7 @@ export default function OrderCard({
             onClick={() => onReorder(order.id)}
             className="flex-1 sm:flex-none"
           >
-            Reorder
+            {t("account:orderCard.reorder")}
           </Button>
         )}
         {actions && <div className="ml-auto">{actions}</div>}

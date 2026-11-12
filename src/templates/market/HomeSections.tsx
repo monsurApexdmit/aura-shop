@@ -1,301 +1,259 @@
-import { useEffect, useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
-import { Banknote, Copy, ImageOff, LayoutGrid, RotateCcw, ShieldCheck, Ticket, Truck, Zap, type LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import {
+  BadgeCheck, Clock, Gift, Headset, Heart, ImageOff, Package, Phone, RotateCcw, ShieldCheck, Sparkles, Star, Truck, type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getImageUrl } from "@/lib/api";
 import { useCategories } from "@/hooks/useCategories";
-import { useCollections } from "@/hooks/useCollections";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { useActiveCoupons, useProductList } from "@/templates/shared/useHomeContent";
+import type { HomepagePerkIcon } from "@/services/storefrontSettingsApi";
+import { SOURCE_LINK, useHomeProducts, useProductList } from "@/templates/shared/useHomeContent";
 import { useProductCard } from "@/templates/shared/useProductCard";
 import type { Product } from "@/types/product";
-import { CategoryThumb, Panel, SectionHeading } from "./parts";
-import { FOCUS, PERK_ICONS, categoryLink, compactNumber, copyText, couponCondition, couponOffer, tile } from "./lib";
+import ProductCard from "./ProductCard";
+import { LATEST_LIMIT } from "./HeroSlider";
+import { CardSkeletons, CategoryThumb, PRODUCT_GRID, SectionHeader, Stars } from "./parts";
+import { FOCUS, PANEL, WRAP, categoryLink } from "./lib";
 
-/* ───────────── Service strip ───────────── */
+/** Shared by the Featured tabs and the Best Sellers list so they read one cached request each. */
+const DEAL_LIMIT = 10;
 
-const MD_COLS: Record<number, string> = { 1: "md:grid-cols-1", 2: "md:grid-cols-2", 3: "md:grid-cols-3", 4: "md:grid-cols-4" };
+/* ------------------------------------------------------------------ Perks */
 
-interface Perk { Icon: LucideIcon; title: string; text: string; to?: string | null }
+const PERK_ICONS: Record<HomepagePerkIcon, LucideIcon> = {
+  truck: Truck, rotate: RotateCcw, shield: ShieldCheck, heart: Heart, gift: Gift,
+  star: Star, sparkles: Sparkles, package: Package, clock: Clock, phone: Phone,
+};
 
-export function ServiceStrip() {
+/** Service strip under the hero: admin perks (up to 4), else five built-in ones. */
+export function Perks() {
+  const { t } = useTranslation();
   const { data: sections, isLoading } = useHomepageSections();
   const { formatCurrency, freeShippingThreshold } = useCurrency();
   const custom = sections?.perks;
-  if (isLoading || (custom && !custom.enabled)) return null;
+  if (isLoading) return <div className={WRAP}><Skeleton className="h-[74px] w-full rounded-xl" /></div>;
+  if (custom && (!custom.enabled || custom.items.length === 0)) return null;
 
-  const defaults: Perk[] = [
-    { Icon: Truck, title: "Fast delivery", text: freeShippingThreshold != null ? `Free over ${formatCurrency(freeShippingThreshold)}` : "Right to your door" },
-    { Icon: Banknote, title: "Cash on delivery", text: "Pay when it arrives" },
-    { Icon: RotateCcw, title: "Easy returns", text: "Hassle-free exchanges" },
-    { Icon: ShieldCheck, title: "Secure payment", text: "Your data stays safe" },
-  ];
-  const perks: Perk[] = custom?.items.length
-    ? custom.items.slice(0, 4).map((p) => ({ Icon: PERK_ICONS[p.icon] ?? Truck, title: p.title, text: p.text, to: p.link }))
-    : defaults;
+  const perks: { Icon: LucideIcon; title: string; text: string; to?: string }[] = custom
+    ? custom.items.slice(0, 4).map((p) => ({ Icon: PERK_ICONS[p.icon] ?? Sparkles, title: p.title, text: p.text, to: p.link ?? undefined }))
+    : [
+        freeShippingThreshold != null
+          ? { Icon: Truck, title: t("tpl_market:perks.freeShipping"), text: t("tpl_market:perks.ordersOver", { amount: formatCurrency(freeShippingThreshold) }) }
+          : { Icon: Truck, title: t("tpl_market:perks.homeDelivery"), text: t("tpl_market:perks.deliveryOptions"), to: "/shipping" },
+        { Icon: ShieldCheck, title: t("tpl_market:perks.securePayments"), text: t("tpl_market:perks.protectedCheckout") },
+        { Icon: RotateCcw, title: t("tpl_market:perks.returns"), text: t("tpl_market:perks.returnPolicy"), to: "/returns" },
+        { Icon: Clock, title: t("tpl_market:perks.orderTracking"), text: t("tpl_market:perks.trackOnline"), to: "/track-order" },
+        { Icon: Headset, title: t("tpl_market:perks.support"), text: t("tpl_market:perks.supportText") },
+      ];
 
   return (
-    <div className="container">
-      <ul className={cn("grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card", MD_COLS[perks.length] ?? "md:grid-cols-4")} aria-label="Why shop with us">
-        {perks.map(({ Icon, title, text, to }, i) => {
+    <section aria-label={t("tpl_market:perks.label")} className={WRAP}>
+      <ul
+        className="no-scrollbar -mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 md:-mx-6 md:px-6 lg:mx-0 lg:grid lg:gap-0 lg:divide-x lg:divide-border lg:overflow-visible lg:rounded-xl lg:border lg:border-border lg:bg-card lg:px-0"
+        style={{ gridTemplateColumns: `repeat(${perks.length}, minmax(0, 1fr))` }}
+      >
+        {perks.map(({ Icon, title, text, to }) => {
           const body = (
             <>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-highlight sm:size-10" aria-hidden="true">
-                <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-xs font-semibold text-foreground sm:text-sm">{title}</span>
-                <span className="block truncate text-[11px] text-muted-foreground sm:text-xs">{text}</span>
+                <span className="block truncate text-[13px] font-bold text-foreground">{title}</span>
+                {text && <span className="block truncate text-xs text-muted-foreground">{text}</span>}
               </span>
             </>
           );
-          const cls = "flex h-full items-center gap-2.5 px-3 py-3 sm:px-4";
+          const cls = "flex h-full items-center gap-3 px-4 py-3.5 lg:px-5 lg:py-4";
           return (
-            <li key={title + i} className={cn("min-w-0 border-border", i % 2 === 0 && "border-r", i < 2 && "border-b md:border-b-0", i === 1 && i < perks.length - 1 && "md:border-r", i === 2 && i < perks.length - 1 && "md:border-r")}>
-              {to ? <Link to={to} className={cn(cls, "hover:bg-secondary", FOCUS)}>{body}</Link> : <div className={cls}>{body}</div>}
+            <li key={title} className="min-w-[210px] shrink-0 snap-start rounded-xl border border-border bg-card lg:min-w-0 lg:rounded-none lg:border-0 lg:bg-transparent">
+              {to ? <Link to={to} className={cn(cls, "rounded-xl hover:bg-accent/60", FOCUS)}>{body}</Link> : <div className={cls}>{body}</div>}
             </li>
           );
         })}
       </ul>
-    </div>
+    </section>
   );
 }
 
-/* ───────────── Category grid ───────────── */
+/* ------------------------------------------------------------------ Shop by category */
 
-export function CategoryGrid() {
+/** Up to eight category cards with their photo. */
+export function ShopByCategory() {
+  const { t } = useTranslation();
   const { data: categories = [], isLoading } = useCategories();
   if (!isLoading && categories.length === 0) return null;
-  const shown = categories.slice(0, 16);
 
   return (
-    <div className="container">
-      <Panel labelledBy="mk-cats">
-        <SectionHeading id="mk-cats" title="Shop by category" icon={<LayoutGrid className="h-5 w-5 shrink-0 text-highlight" aria-hidden="true" />} to="/categories" />
-        <ul className="no-scrollbar grid auto-cols-[78px] grid-flow-col grid-rows-2 gap-x-1 gap-y-3 overflow-x-auto p-3 sm:auto-cols-[92px] md:auto-cols-auto md:grid-flow-row md:grid-cols-6 md:grid-rows-none md:gap-y-4 md:overflow-visible md:p-4 lg:grid-cols-8">
-          {isLoading
-            ? Array.from({ length: 16 }, (_, i) => (
-                <li key={i} className="flex flex-col items-center gap-2">
-                  <Skeleton className="size-14 rounded-lg md:size-16" />
-                  <Skeleton className="h-3 w-12" />
-                </li>
-              ))
-            : shown.map((cat, i) => (
-                <li key={cat.id} className="min-w-0">
-                  <Link to={categoryLink(cat)} className={cn("group flex flex-col items-center gap-1.5 rounded-md p-1 text-center", FOCUS)}>
-                    <CategoryThumb
-                      category={cat}
-                      index={i}
-                      className="size-14 rounded-lg ring-1 ring-border transition-transform group-hover:-translate-y-0.5 group-hover:ring-highlight md:size-16"
-                      letterClassName="text-2xl"
-                    />
-                    <span className="line-clamp-2 w-full text-[11px] leading-tight text-foreground group-hover:text-highlight sm:text-xs">{cat.name}</span>
-                  </Link>
-                </li>
-              ))}
-        </ul>
-      </Panel>
-    </div>
+    <section aria-labelledby="ts-cats" className={WRAP}>
+      <SectionHeader id="ts-cats" title={t("tpl_market:home.shopByCategory")} to="/categories" linkLabel={t("tpl_market:home.viewAllCategories")} />
+      <ul className="grid grid-cols-4 gap-2 sm:gap-3 lg:grid-cols-8">
+        {isLoading
+          ? Array.from({ length: 8 }, (_, i) => <li key={i}><Skeleton className="aspect-[4/5] rounded-xl" /></li>)
+          : categories.slice(0, 8).map((cat, i) => (
+              <li key={cat.id}>
+                <Link
+                  to={categoryLink(cat)}
+                  className={cn("group flex h-full flex-col rounded-xl border border-border bg-card p-1.5 text-center transition-[box-shadow,border-color] hover:border-primary/40 hover:card-shadow-hover sm:p-2", FOCUS)}
+                >
+                  <CategoryThumb category={cat} index={i} className="aspect-square w-full rounded-lg" letterClassName="text-2xl sm:text-3xl" />
+                  <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight text-foreground group-hover:text-primary sm:text-[13px]">{cat.name}</span>
+                  <span className="mb-0.5 mt-0.5 hidden text-[11px] text-muted-foreground sm:block">
+                    {cat.children?.length ? t("tpl_market:home.types", { count: cat.children.length }) : t("common:actions.shopNow")}
+                  </span>
+                </Link>
+              </li>
+            ))}
+      </ul>
+    </section>
   );
 }
 
-/* ───────────── Flash sale ───────────── */
+/* ------------------------------------------------------------------ Featured products (tabs) */
 
-function useCountdownToMidnight() {
-  const calc = () => {
-    const now = new Date();
-    const end = new Date(now);
-    end.setHours(24, 0, 0, 0);
-    return Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
-  };
-  const [left, setLeft] = useState(calc);
-  useEffect(() => {
-    const t = window.setInterval(() => setLeft(calc()), 1000);
-    return () => window.clearInterval(t);
-  }, []);
-  return [Math.floor(left / 3600), Math.floor((left % 3600) / 60), left % 60].map((n) => String(n).padStart(2, "0"));
-}
+type TabKey = "top" | "best" | "sale";
 
-function Countdown() {
-  const [h, m, s] = useCountdownToMidnight();
-  return (
-    <p className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" role="timer" aria-label={`Ends in ${h} hours ${m} minutes`}>
-      <span className="mr-0.5 hidden sm:inline">Ends in</span>
-      {[h, m, s].map((v, i) => (
-        <span key={i} className="flex items-center gap-1" aria-hidden="true">
-          {i > 0 && <span className="font-bold text-foreground">:</span>}
-          <span className="flex h-6 min-w-[1.75rem] items-center justify-center rounded bg-ink px-1 font-display text-xs font-bold tabular-nums text-ink-foreground sm:h-7 sm:text-sm">{v}</span>
-        </span>
-      ))}
-    </p>
-  );
-}
+/** Featured Products with three tabs: the admin's product block, best sellers and on sale. */
+export function FeaturedProducts() {
+  const { t } = useTranslation();
+  const baseId = useId();
+  const home = useHomeProducts();
+  const best = useProductList("best_seller", { limit: DEAL_LIMIT });
+  const sale = useProductList("on_sale", { limit: DEAL_LIMIT });
+  const [active, setActive] = useState<TabKey>("top");
+  const tabRefs = useRef<Partial<Record<TabKey, HTMLButtonElement | null>>>({});
 
-function FlashDealCard({ product }: { product: Product }) {
-  const c = useProductCard(product);
-  // How much of the run is gone: sold vs what's left (a floor keeps brand-new deals from looking empty)
-  const stock = product.stock;
-  const pct = stock === undefined
-    ? (c.sold > 0 ? 60 : 8)
-    : c.sold + stock > 0 ? Math.max(8, Math.min(100, Math.round((c.sold / (c.sold + stock)) * 100))) : 8;
-  return (
-    <li className="w-[128px] shrink-0 sm:w-[156px] lg:w-[calc((100%-2.5rem)/6)]">
-      <Link to={c.href} className={cn("group block rounded-md p-1", FOCUS)}>
-        <span className="relative block aspect-square overflow-hidden rounded-md bg-secondary">
-          {c.image ? (
-            <img src={c.image} alt="" loading="lazy" onError={c.onImageError} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-muted-foreground/60" aria-hidden="true"><ImageOff className="h-7 w-7" /></span>
-          )}
-          {c.discount > 0 && (
-            <span className="absolute right-0 top-0 rounded-bl-md bg-highlight px-1.5 py-0.5 text-[11px] font-bold text-highlight-foreground">-{c.discount}%</span>
-          )}
-        </span>
-        <span className="mt-1.5 block truncate text-xs text-foreground">{product.name}</span>
-        <span className="block truncate text-[15px] font-bold tabular-nums text-highlight">{c.price}</span>
-        {c.originalPrice && <span className="block truncate text-[11px] tabular-nums text-muted-foreground line-through">{c.originalPrice}</span>}
-        <span className="relative mt-1.5 block h-4 overflow-hidden rounded-full bg-highlight/15">
-          <span className="absolute inset-y-0 left-0 rounded-full bg-highlight" style={{ width: `${pct}%` }} />
-          <span className="relative flex h-full items-center justify-center text-[10px] font-semibold text-foreground">
-            {c.sold > 0 ? `${compactNumber(c.sold)} sold` : "Just started"}
-          </span>
-        </span>
-      </Link>
-    </li>
-  );
-}
+  const all: { key: TabKey; label: string; products: Product[]; isLoading: boolean; link: string; show: boolean }[] = [
+    { key: "top", label: home.title || t("tpl_market:home.topPicks"), products: home.products, isLoading: home.isLoading, link: SOURCE_LINK[home.source] ?? "/shop", show: home.enabled },
+    { key: "best", label: t("tpl_market:home.bestRated"), products: best.products, isLoading: best.isLoading, link: SOURCE_LINK.best_seller, show: true },
+    { key: "sale", label: t("tpl_market:home.onSale"), products: sale.products, isLoading: sale.isLoading, link: SOURCE_LINK.on_sale, show: true },
+  ];
+  const tabs = all.filter((tab) => tab.show && (tab.isLoading || tab.products.length > 0));
+  if (tabs.length === 0) return null;
+  const current = tabs.find((tab) => tab.key === active) ?? tabs[0];
 
-export function FlashSale() {
-  const hot = useProductList("hot_deal", { limit: 12 });
-  const sale = useProductList("on_sale", { limit: 12, enabled: !hot.isLoading && hot.products.length === 0 });
-  const loading = hot.isLoading || (hot.products.length === 0 && sale.isLoading);
-  const products = hot.products.length ? hot.products : sale.products;
-  if (!loading && products.length === 0) return null;
-
-  return (
-    <div className="container">
-      <Panel labelledBy="mk-flash">
-        <SectionHeading
-          id="mk-flash"
-          title={<span className="text-highlight">Flash Sale</span>}
-          icon={<Zap className="h-5 w-5 shrink-0 fill-highlight text-highlight" aria-hidden="true" />}
-          extra={<Countdown />}
-          to="/deals"
-          linkLabel="Shop all"
-        />
-        <ul className="no-scrollbar flex gap-1.5 overflow-x-auto p-2 sm:gap-2 sm:p-3">
-          {loading
-            ? Array.from({ length: 6 }, (_, i) => (
-                <li key={i} className="w-[128px] shrink-0 space-y-2 p-1 sm:w-[156px] lg:w-auto">
-                  <Skeleton className="aspect-square w-full" />
-                  <Skeleton className="h-3 w-4/5" />
-                  <Skeleton className="h-4 w-1/2" />
-                </li>
-              ))
-            : products.slice(0, 12).map((p) => <FlashDealCard key={p.id} product={p} />)}
-        </ul>
-      </Panel>
-    </div>
-  );
-}
-
-/* ───────────── Vouchers ───────────── */
-
-export function Vouchers() {
-  const coupons = useActiveCoupons();
-  const { formatCurrency } = useCurrency();
-  const [copied, setCopied] = useState<string | null>(null);
-  if (coupons.length === 0) return null;
-
-  const copy = async (code: string) => {
-    await copyText(code);
-    setCopied(code);
-    toast.success(`Code ${code} copied`, { description: "Paste it at checkout to save." });
-    window.setTimeout(() => setCopied((c) => (c === code ? null : c)), 2000);
+  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const i = tabs.findIndex((tab) => tab.key === current.key);
+    const next = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : null;
+    if (next == null) return;
+    e.preventDefault();
+    const tab = tabs[(next + tabs.length) % tabs.length];
+    setActive(tab.key);
+    tabRefs.current[tab.key]?.focus();
   };
 
   return (
-    <div className="container">
-      <Panel labelledBy="mk-vouchers">
-        <SectionHeading id="mk-vouchers" title="Collect vouchers" icon={<Ticket className="h-5 w-5 shrink-0 text-highlight" aria-hidden="true" />} />
-        <ul className="no-scrollbar flex gap-3 overflow-x-auto p-3 sm:p-4 lg:grid lg:grid-cols-4 lg:overflow-visible">
-          {coupons.map((c) => (
-            <li key={c.code} className="relative flex w-[264px] shrink-0 overflow-hidden rounded-md border border-highlight/30 bg-highlight/5 lg:w-auto">
-              <div className="flex w-[92px] shrink-0 flex-col items-center justify-center bg-highlight px-2 py-3 text-center text-highlight-foreground">
-                <span className="font-display text-lg font-extrabold leading-tight">{couponOffer(c, formatCurrency)}</span>
-              </div>
-              {/* Ticket notches */}
-              <span aria-hidden="true" className="absolute left-[85px] top-0 size-3.5 -translate-y-1/2 rounded-full border border-highlight/30 bg-card" />
-              <span aria-hidden="true" className="absolute bottom-0 left-[85px] size-3.5 translate-y-1/2 rounded-full border border-highlight/30 bg-card" />
-              <div className="flex min-w-0 flex-1 flex-col gap-1 border-l border-dashed border-highlight/40 p-3">
-                <span className="truncate text-sm font-semibold text-foreground">{c.campaign_name || "Store voucher"}</span>
-                <span className="truncate text-[11px] text-muted-foreground">{couponCondition(c, formatCurrency)}</span>
-                <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-                  <span className="truncate font-mono text-xs font-bold text-highlight">{c.code}</span>
-                  <button
-                    type="button"
-                    onClick={() => copy(c.code)}
-                    aria-label={`Copy code ${c.code}`}
-                    className={cn("inline-flex h-7 shrink-0 items-center gap-1 rounded-md bg-highlight px-2.5 text-[11px] font-bold text-highlight-foreground hover:bg-highlight/90", FOCUS)}
-                  >
-                    <Copy className="h-3 w-3" aria-hidden="true" /> {copied === c.code ? "Copied" : "Copy"}
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Panel>
-    </div>
-  );
-}
-
-/* ───────────── Collections ───────────── */
-
-function CollectionBanner({ name, slug, src, count, index }: { name: string; slug: string; src: string | null; count: number; index: number }) {
-  const [failed, setFailed] = useState(false);
-  const image = src && !failed ? getImageUrl(src) : null;
-  return (
-    <li className="w-[82%] shrink-0 sm:w-[46%] md:w-auto">
-      <Link to={`/collections/${slug}`} className={cn("group relative block aspect-[21/9] overflow-hidden rounded-lg", image ? "bg-secondary" : tile(index), FOCUS)}>
-        {image ? (
-          <img src={image} alt="" loading="lazy" onError={() => setFailed(true)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        ) : (
-          <span aria-hidden="true" className="absolute -right-2 -top-6 font-display text-[8rem] font-extrabold leading-none text-ink/10">{name.charAt(0)}</span>
+    <section aria-labelledby={`${baseId}-h`} className={WRAP}>
+      <SectionHeader id={`${baseId}-h`} title={t("tpl_market:home.featured")} to={current.link}>
+        {tabs.length > 1 && (
+          <div role="tablist" aria-label={t("tpl_market:home.featuredLists")} className="no-scrollbar flex max-w-full gap-4 overflow-x-auto sm:gap-5">
+            {tabs.map((tab) => {
+              const selected = tab.key === current.key;
+              return (
+                <button
+                  key={tab.key}
+                  ref={(el) => { tabRefs.current[tab.key] = el; }}
+                  type="button"
+                  role="tab"
+                  id={`${baseId}-${tab.key}`}
+                  aria-selected={selected}
+                  aria-controls={`${baseId}-panel`}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActive(tab.key)}
+                  onKeyDown={onKeyDown}
+                  className={cn(
+                    "relative shrink-0 whitespace-nowrap rounded-sm pb-1.5 text-[13px] font-semibold transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full",
+                    selected ? "text-primary after:bg-primary" : "text-muted-foreground hover:text-foreground",
+                    FOCUS,
+                  )}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         )}
-        <span className={cn("absolute inset-0 flex flex-col justify-end p-4", image && "bg-gradient-to-t from-black/70 via-black/20 to-transparent")}>
-          <span className={cn("truncate font-display text-lg font-bold leading-tight", image ? "text-white" : "text-ink")}>{name}</span>
-          <span className={cn("mt-0.5 flex items-center gap-2 text-xs", image ? "text-white/80" : "text-ink/70")}>
-            {count} {count === 1 ? "product" : "products"}
-            <span className="rounded-sm bg-highlight px-1.5 py-0.5 text-[10px] font-bold uppercase text-highlight-foreground">Shop now</span>
+      </SectionHeader>
+      {current.key === "top" && home.subtitle && <p className="-mt-2 mb-4 text-sm text-muted-foreground">{home.subtitle}</p>}
+      <div
+        id={`${baseId}-panel`}
+        role={tabs.length > 1 ? "tabpanel" : undefined}
+        aria-labelledby={tabs.length > 1 ? `${baseId}-${current.key}` : undefined}
+        className={PRODUCT_GRID}
+      >
+        {current.isLoading ? <CardSkeletons count={5} /> : current.products.slice(0, 10).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ Best sellers + new arrivals */
+
+function BestSellerRow({ product, rank }: { product: Product; rank: number }) {
+  const { t } = useTranslation();
+  const c = useProductCard(product);
+  return (
+    <li className="relative flex items-center gap-3 border-b border-border px-3 py-3 last:border-0 hover:bg-accent/50">
+      <span className="w-4 shrink-0 text-center text-xs font-bold tabular-nums text-primary" aria-hidden="true">{rank}</span>
+      <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+        {c.image ? <img src={c.image} alt="" loading="lazy" onError={c.onImageError} className="h-full w-full object-cover" /> : <ImageOff className="h-5 w-5 text-muted-foreground/50" aria-hidden="true" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <Link to={c.href} className="line-clamp-2 rounded-sm text-[13px] font-semibold leading-snug text-foreground outline-none after:absolute after:inset-0 after:content-[''] hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring">
+          <span className="sr-only">{t("tpl_market:home.rankPrefix", { rank })}</span>
+          {product.name}
+        </Link>
+        {c.reviews > 0 && (
+          <span className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Stars rating={c.rating} /> <span className="font-semibold text-foreground">{c.rating.toFixed(1)}</span> ({c.reviews})
+            <span className="sr-only">{t("tpl_market:home.ratedSuffix", { rating: c.rating.toFixed(1) })}</span>
           </span>
+        )}
+        <span className="mt-1 flex flex-wrap items-baseline gap-x-1.5 tabular-nums">
+          <span className="text-sm font-bold text-foreground">{c.price}</span>
+          {c.originalPrice && <span className="text-[11px] text-muted-foreground line-through">{c.originalPrice}</span>}
         </span>
-      </Link>
+      </span>
     </li>
   );
 }
 
-export function CollectionBanners() {
-  const { data: sections, isLoading: sectionsLoading } = useHomepageSections();
-  const { data: collections = [], isLoading } = useCollections();
-  const custom = sections?.collections;
-  if (sectionsLoading || isLoading || (custom && !custom.enabled)) return null;
-  const featured = collections.filter((c) => c.showOnHomepage).slice(0, 6);
-  if (featured.length === 0) return null;
+/** Numbered best-seller list beside a New Arrivals grid (stacked below xl). */
+export function BestAndNew() {
+  const { t } = useTranslation();
+  const best = useProductList("best_seller", { limit: DEAL_LIMIT });
+  const latest = useProductList("latest", { limit: LATEST_LIMIT });
+  const showBest = best.isLoading || best.products.length > 0;
+  const showNew = latest.isLoading || latest.products.length > 0;
+  if (!showBest && !showNew) return null;
 
   return (
-    <div className="container">
-      <Panel labelledBy="mk-collections">
-        <SectionHeading id="mk-collections" title={custom?.title || "Shop by collection"} to="/collections" />
-        <ul className="no-scrollbar flex gap-3 overflow-x-auto p-3 sm:p-4 md:grid md:grid-cols-3 md:overflow-visible">
-          {featured.map((c, i) => (
-            <CollectionBanner key={c.slug} name={c.name} slug={c.slug} src={c.imageUrl || c.coverImageUrl || null} count={c.productCount} index={i} />
-          ))}
-        </ul>
-      </Panel>
+    <div className={cn(WRAP, "grid gap-8 xl:gap-6", showBest && showNew && "xl:grid-cols-[340px_minmax(0,1fr)]")}>
+      {showBest && (
+        <section aria-labelledby="ts-best" className="min-w-0">
+          <SectionHeader id="ts-best" title={t("tpl_market:home.bestSellers")} to={SOURCE_LINK.best_seller} />
+          <div className={cn(PANEL, "overflow-hidden")}>
+            {best.isLoading ? (
+              <div className="space-y-3 p-3">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+            ) : (
+              <ol className="md:grid md:grid-cols-2 xl:block">
+                {best.products.slice(0, 4).map((p, i) => <BestSellerRow key={p.id} product={p} rank={i + 1} />)}
+              </ol>
+            )}
+          </div>
+        </section>
+      )}
+      {showNew && (
+        <section aria-labelledby="ts-new" className="min-w-0">
+          <SectionHeader id="ts-new" title={t("tpl_market:home.newArrivals")} to="/shop" />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+            {latest.isLoading ? <CardSkeletons count={4} /> : latest.products.slice(0, 4).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

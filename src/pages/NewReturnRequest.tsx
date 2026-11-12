@@ -24,6 +24,29 @@ import { RETURN_REASONS } from "@/services/returnApi"
 import type { ApiOrder } from "@/services/orderApi"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next"
+import { localeTag } from "@/i18n"
+
+/** Error shape from the API client (axios) */
+type ApiErr = { response?: { data?: { message?: string } } }
+
+// RETURN_REASONS values are sent to the API in English; only the label is translated
+const REASON_KEY: Record<string, string> = {
+  "Defective / Damaged":   "account:returnReason.defective",
+  "Wrong item received":   "account:returnReason.wrongItem",
+  "Item not as described": "account:returnReason.notAsDescribed",
+  "Size / fit issue":      "account:returnReason.sizeFit",
+  "Changed my mind":       "account:returnReason.changedMind",
+  "Other":                 "account:returnReason.other",
+}
+
+const REFUND_OPTIONS = [
+  { value: "original_payment", labelKey: "account:refundMethod.original_payment", descKey: "account:newReturn.refundDesc.original_payment" },
+  { value: "store_credit",     labelKey: "account:refundMethod.store_credit",     descKey: "account:newReturn.refundDesc.store_credit" },
+  { value: "cash",             labelKey: "account:refundMethod.cash",             descKey: "account:newReturn.refundDesc.cash" },
+]
+
+type OrderItem = ApiOrder["items"][0] & { variant_id?: number | null }
 
 interface SelectedItem {
   product_id: number
@@ -37,6 +60,7 @@ interface SelectedItem {
 }
 
 export default function NewReturnRequest() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { isLoggedIn } = useAuth()
@@ -62,13 +86,13 @@ export default function NewReturnRequest() {
     }
   }, [searchParams, orders])
 
-  const toggleItem = (item: ApiOrder['items'][0]) => {
+  const toggleItem = (item: OrderItem) => {
     setSelectedItems(prev => {
-      const exists = prev.find(s => s.product_id === item.product_id && s.variant_id === (item as any).variant_id)
+      const exists = prev.find(s => s.product_id === item.product_id && s.variant_id === item.variant_id)
       if (exists) return prev.filter(s => s !== exists)
       return [...prev, {
         product_id: item.product_id,
-        variant_id: (item as any).variant_id ?? null,
+        variant_id: item.variant_id ?? null,
         product_name: item.product_name,
         variant_name: item.variant_name,
         unit_price: item.unit_price,
@@ -93,9 +117,9 @@ export default function NewReturnRequest() {
 
   const handleSubmit = async () => {
     setError("")
-    if (!selectedOrder) { setError("Select an order first"); return }
-    if (selectedItems.length === 0) { setError("Select at least one item to return"); return }
-    if (selectedItems.some(s => !s.reason)) { setError("Select a reason for each item"); return }
+    if (!selectedOrder) { setError(t("account:newReturn.errSelectOrder")); return }
+    if (selectedItems.length === 0) { setError(t("account:newReturn.errSelectItem")); return }
+    if (selectedItems.some(s => !s.reason)) { setError(t("account:newReturn.errSelectReason")); return }
 
     try {
       await createReturn({
@@ -112,8 +136,9 @@ export default function NewReturnRequest() {
         })),
       })
       navigate("/account/returns")
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Failed to submit return request. Please try again.")
+    } catch (e) {
+      const err = e as ApiErr
+      setError(err?.response?.data?.message ?? t("account:newReturn.errSubmit"))
     }
   }
 
@@ -124,28 +149,28 @@ export default function NewReturnRequest() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-              <Link to="/account" className="hover:text-primary">My Account</Link>
+              <Link to="/account" className="hover:text-primary">{t("common:nav.myAccount")}</Link>
               <ChevronRight className="h-3 w-3" />
-              <Link to="/account/returns" className="hover:text-primary">Returns</Link>
+              <Link to="/account/returns" className="hover:text-primary">{t("common:nav.returns")}</Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-foreground font-medium">New Request</span>
+              <span className="text-foreground font-medium">{t("account:breadcrumb.newRequest")}</span>
             </div>
 
             <PageHeader
               className="mb-8"
-              title="New Return Request"
-              description="Select the order and items you'd like to return."
+              title={t("account:returns.newRequest")}
+              description={t("account:newReturn.description")}
             />
 
             {/* Step 1: Select order */}
-            <SectionCard title="Step 1 — Select Order" className="mb-5">
+            <SectionCard title={t("account:newReturn.step1")} className="mb-5">
               {isLoading ? (
                 <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
               ) : deliveredOrders.length === 0 ? (
-                <EmptyState className="py-6" icon={Package} title="No delivered orders eligible for return." />
+                <EmptyState className="py-6" icon={Package} title={t("account:newReturn.noEligible")} />
               ) : (
                 <ChoiceCardGroup
-                  aria-label="Order"
+                  aria-label={t("account:newReturn.orderLabel")}
                   value={selectedOrder ? String(selectedOrder.id) : undefined}
                   onValueChange={(v) => {
                     const order = deliveredOrders.find(o => String(o.id) === v)
@@ -158,8 +183,8 @@ export default function NewReturnRequest() {
                       value={String(order.id)}
                       title={<span className="font-mono">{order.invoice_no}</span>}
                       description={<>
-                        {new Date(order.order_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        {" · "}{order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                        {new Date(order.order_time).toLocaleDateString(localeTag(), { month: "short", day: "numeric", year: "numeric" })}
+                        {" · "}{t("common:product.items", { count: order.items.length })}
                       </>}
                     />
                   ))}
@@ -169,17 +194,17 @@ export default function NewReturnRequest() {
 
             {/* Step 2: Select items */}
             {selectedOrder && (
-              <SectionCard title="Step 2 — Select Items to Return" className="mb-5">
+              <SectionCard title={t("account:newReturn.step2")} className="mb-5">
                 <div className="space-y-3">
-                  {selectedOrder.items.map((item) => {
-                    const sel = selectedItems.find(s => s.product_id === item.product_id && s.variant_id === ((item as any).variant_id ?? null))
+                  {selectedOrder.items.map((item: OrderItem) => {
+                    const sel = selectedItems.find(s => s.product_id === item.product_id && s.variant_id === (item.variant_id ?? null))
                     return (
                       <Card key={item.id} className={cn("p-4 transition-colors", sel && "border-primary bg-primary/5")}>
                         <div className="flex items-start gap-3">
                           <Checkbox
                             checked={!!sel}
                             onCheckedChange={() => toggleItem(item)}
-                            aria-label={`Return ${item.product_name}`}
+                            aria-label={t("account:newReturn.returnItem", { name: item.product_name })}
                             className="mt-0.5"
                           />
                           <div className="flex-1 min-w-0">
@@ -193,13 +218,13 @@ export default function NewReturnRequest() {
                           <div className="mt-4 space-y-3 pl-8">
                             {/* Quantity */}
                             <div className="flex items-center gap-3">
-                              <span className="text-xs text-muted-foreground w-16">Qty</span>
+                              <span className="text-xs text-muted-foreground w-16">{t("account:newReturn.qty")}</span>
                               <div className="flex items-center gap-2">
-                                <WithTooltip content="Decrease quantity"><Button variant="outline" size="icon" aria-label="Decrease quantity" onClick={() => updateQty(selectedItems.indexOf(sel), -1)}>
+                                <WithTooltip content={t("common:actions.decrease")}><Button variant="outline" size="icon" aria-label={t("common:actions.decrease")} onClick={() => updateQty(selectedItems.indexOf(sel), -1)}>
                                   <Minus className="h-3 w-3" />
                                 </Button></WithTooltip>
                                 <span className="w-8 text-center text-sm font-semibold">{sel.quantity}</span>
-                                <WithTooltip content="Increase quantity"><Button variant="outline" size="icon" aria-label="Increase quantity" onClick={() => updateQty(selectedItems.indexOf(sel), 1)}>
+                                <WithTooltip content={t("common:actions.increase")}><Button variant="outline" size="icon" aria-label={t("common:actions.increase")} onClick={() => updateQty(selectedItems.indexOf(sel), 1)}>
                                   <Plus className="h-3 w-3" />
                                 </Button></WithTooltip>
                                 <span className="text-xs text-muted-foreground">/ {sel.max_qty}</span>
@@ -207,16 +232,16 @@ export default function NewReturnRequest() {
                             </div>
                             {/* Reason */}
                             <div className="flex items-start gap-3">
-                              <span className="text-xs text-muted-foreground w-16 mt-2">Reason</span>
+                              <span className="text-xs text-muted-foreground w-16 mt-2">{t("account:newReturn.reason")}</span>
                               <Select
                                 value={sel.reason}
                                 onValueChange={v => updateReason(selectedItems.indexOf(sel), v)}
                               >
-                                <SelectTrigger className="flex-1" aria-label="Return reason">
+                                <SelectTrigger className="flex-1" aria-label={t("account:newReturn.reasonLabel")}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {RETURN_REASONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                  {RETURN_REASONS.map(r => <SelectItem key={r} value={r}>{REASON_KEY[r] ? t(REASON_KEY[r]) : r}</SelectItem>)}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -231,24 +256,20 @@ export default function NewReturnRequest() {
 
             {/* Step 3: Refund method + notes */}
             {selectedItems.length > 0 && (
-              <SectionCard title="Step 3 — Refund Preference" className="mb-5">
-                <ChoiceCardGroup aria-label="Refund method" value={refundMethod} onValueChange={setRefundMethod} className="mb-5">
-                  {[
-                    { value: "original_payment", label: "Original Payment Method", desc: "Refund to how you originally paid" },
-                    { value: "store_credit",     label: "Store Credit",            desc: "Get credit to use on future orders" },
-                    { value: "cash",             label: "Cash Refund",             desc: "Cash refund via bank transfer" },
-                  ].map(opt => (
-                    <ChoiceCard key={opt.value} value={opt.value} title={opt.label} description={opt.desc} />
+              <SectionCard title={t("account:newReturn.step3")} className="mb-5">
+                <ChoiceCardGroup aria-label={t("account:newReturn.refundLabel")} value={refundMethod} onValueChange={setRefundMethod} className="mb-5">
+                  {REFUND_OPTIONS.map(opt => (
+                    <ChoiceCard key={opt.value} value={opt.value} title={t(opt.labelKey)} description={t(opt.descKey)} />
                   ))}
                 </ChoiceCardGroup>
 
-                <FormField label="Additional Notes (optional)" htmlFor="return-notes">
+                <FormField label={t("account:newReturn.notes")} htmlFor="return-notes">
                   <Textarea
                     id="return-notes"
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     rows={3}
-                    placeholder="Any additional information about your return..."
+                    placeholder={t("account:newReturn.notesPlaceholder")}
                     className="w-full resize-none"
                   />
                 </FormField>
@@ -266,7 +287,7 @@ export default function NewReturnRequest() {
             {/* Submit */}
             <div className="flex items-center gap-4">
               <Button asChild variant="outline">
-                <Link to="/account/returns">Cancel</Link>
+                <Link to="/account/returns">{t("common:actions.cancel")}</Link>
               </Button>
               <Button
                 onClick={handleSubmit}
@@ -274,9 +295,9 @@ export default function NewReturnRequest() {
                 className="flex-1"
               >
                 {isPending ? (
-                  <><Spinner />Submitting...</>
+                  <><Spinner />{t("account:newReturn.submitting")}</>
                 ) : (
-                  <><RotateCcw className="h-4 w-4" />Submit Return Request</>
+                  <><RotateCcw className="h-4 w-4" />{t("account:newReturn.submit")}</>
                 )}
               </Button>
             </div>

@@ -8,8 +8,10 @@ import ProductPage from "./ProductPage";
 import MobileNav from "./MobileNav";
 
 /**
- * Daily Fresh: grocery / quick-commerce. Category chips and rails for fast repeat buying,
- * an inline [− qty +] on every card, and an always-visible cart total (header pill, phone cart bar).
+ * Fresh Mart: a full supermarket storefront. Green announcement bar, search with a category scope,
+ * "All categories" menu, photo hero with side tiles, category circles, a peach weekly-deals panel,
+ * product rows per category, promo banners, perks and a green newsletter panel. Cards have an
+ * outlined "+ Add" that turns into a [− qty +] stepper; phones get a bottom nav and a cart pill.
  */
 const fresh: StoreTemplate = {
   Header,

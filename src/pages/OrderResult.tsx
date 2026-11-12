@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, AlertCircle, ShoppingBag, Home, Truck } from "lu
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
+import { Trans, useTranslation } from "react-i18next";
 
 const MotionCard = motion.create(Card);
 
@@ -13,32 +14,33 @@ type ResultStatus = "success" | "fail" | "cancel";
 const CONFIG: Record<ResultStatus, {
   icon: typeof CheckCircle2;
   iconClass: string;
-  title: string;
-  message: string;
+  titleKey: string;
+  messageKey: string;
 }> = {
   success: {
     icon: CheckCircle2,
     iconClass: "text-green-500",
-    title: "Payment Successful!",
-    message: "Your payment was confirmed and your order is being processed.",
+    titleKey: "checkout:result.successTitle",
+    messageKey: "checkout:result.successMessage",
   },
   fail: {
     icon: XCircle,
     iconClass: "text-red-500",
-    title: "Payment Failed",
-    message: "Your payment could not be completed. No amount was charged. Please try again.",
+    titleKey: "checkout:result.failTitle",
+    messageKey: "checkout:result.failMessage",
   },
   cancel: {
     icon: AlertCircle,
     iconClass: "text-amber-500",
-    title: "Payment Cancelled",
-    message: "You cancelled the payment. Your order has not been placed.",
+    titleKey: "checkout:result.cancelTitle",
+    messageKey: "checkout:result.cancelMessage",
   },
 };
 
 export default function OrderResult() {
   const [params] = useSearchParams();
   const navigate  = useNavigate();
+  const { t } = useTranslation();
 
   const rawStatus = params.get("status") ?? "fail";
   const status: ResultStatus = rawStatus in CONFIG ? (rawStatus as ResultStatus) : "fail";
@@ -46,12 +48,12 @@ export default function OrderResult() {
   const reason    = params.get("reason");
   const isDeposit = params.get("deposit") === "1";
 
-  const { icon: Icon, iconClass, title: baseTitle, message: baseMessage } = CONFIG[status];
+  const { icon: Icon, iconClass, titleKey, messageKey } = CONFIG[status];
 
-  const title   = isDeposit && status === "success" ? "Shipping Deposit Paid!" : baseTitle;
+  const title   = isDeposit && status === "success" ? t("checkout:result.depositTitle") : t(titleKey);
   const message = isDeposit && status === "success"
-    ? "Your shipping deposit was received. Your order is confirmed — pay the remaining balance on delivery."
-    : baseMessage;
+    ? t("checkout:result.depositMessage")
+    : t(messageKey);
 
   return (
     <div className="min-h-screen bg-muted/30 pt-32 pb-16 flex items-start justify-center px-4">
@@ -73,18 +75,22 @@ export default function OrderResult() {
 
         {isDeposit && status === "success" && (
           <Alert className="mt-3 text-left">
-            <AlertDescription>Pay the rest of your order amount when it arrives at your door.</AlertDescription>
+            <AlertDescription>{t("checkout:result.depositNote")}</AlertDescription>
           </Alert>
         )}
 
         {invoice && (
           <p className="text-xs text-muted-foreground mt-3">
-            Order: <span className="font-semibold text-foreground">{invoice}</span>
+            <Trans
+              i18nKey="checkout:result.order"
+              values={{ invoice }}
+              components={{ b: <span className="font-semibold text-foreground" /> }}
+            />
           </p>
         )}
 
         {reason === "order_not_found" && (
-          <p className="text-xs text-destructive mt-2">Order not found. Contact support if you were charged.</p>
+          <p className="text-xs text-destructive mt-2">{t("checkout:result.notFound")}</p>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 mt-8">
@@ -93,14 +99,14 @@ export default function OrderResult() {
               onClick={() => navigate(`/account/orders`)}
               className="flex-1"
             >
-              <ShoppingBag className="h-4 w-4" /> View Orders
+              <ShoppingBag className="h-4 w-4" /> {t("checkout:result.viewOrders")}
             </Button>
           ) : (
             <Button
               onClick={() => navigate("/checkout")}
               className="flex-1"
             >
-              <ShoppingBag className="h-4 w-4" /> Try Again
+              <ShoppingBag className="h-4 w-4" /> {t("common:actions.retry")}
             </Button>
           )}
           <Button
@@ -108,7 +114,7 @@ export default function OrderResult() {
             onClick={() => navigate("/")}
             className="flex-1"
           >
-            <Home className="h-4 w-4" /> Home
+            <Home className="h-4 w-4" /> {t("common:nav.home")}
           </Button>
         </div>
       </MotionCard>

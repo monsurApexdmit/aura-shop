@@ -24,6 +24,7 @@ import { SegmentedControl } from "@/components/common/SegmentedControl";
 import { EmptyState } from "@/components/common/EmptyState";
 import { SlideDots } from "@/components/common/SlideDots";
 import { WithTooltip } from "@/components/common/WithTooltip";
+import { Trans, useTranslation } from "react-i18next";
 
 type FieldKey = "name" | "phone" | "address" | "district" | "area" | "delivery" | "payment" | "transactionId" | "note" | "product";
 
@@ -59,13 +60,13 @@ function mapServerErrors(errors: unknown): { fields: Partial<Record<FieldKey, st
   return { fields, rest };
 }
 
+/** Used when the store returns no payment methods; `name` is replaced by the translated label at render */
 const COD_FALLBACK: QuickOrderPaymentMethod = {
   slug: "cod", name: "Cash on delivery", type: "cod", account: null, accountName: null, bankName: null, requiresTransactionId: false,
 };
 
 const MAX_QTY = 50; // server limit
 
-const stockHint = (stock: number) => (stock <= 0 ? "Out of stock" : stock <= 5 ? `${stock} left` : null);
 
 export default function QuickOrder() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -79,6 +80,8 @@ export default function QuickOrder() {
  */
 export function QuickOrderForm({ slug, embedded = false }: { slug: string; embedded?: boolean }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const stockHint = (stock: number) => (stock <= 0 ? t("common:product.outOfStock") : stock <= 5 ? t("checkout:quick.stockLeft", { count: stock }) : null);
   const { formatCurrency, settings, storePhone, onlineStore, storeName } = useCurrency();
   const { data, isLoading, isError, error } = useQuickOrder(slug || null);
   const placeOrder = usePlaceQuickOrder();
@@ -99,7 +102,7 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
   const product = data?.product;
   const variants = useMemo(() => product?.variants ?? [], [product]);
   const deliveryOptions = useMemo(() => data?.deliveryOptions ?? [], [data]);
-  const paymentMethods = useMemo(() => (data?.paymentMethods.length ? data.paymentMethods : [COD_FALLBACK]), [data]);
+  const paymentMethods = useMemo(() => (data?.paymentMethods.length ? data.paymentMethods : [{ ...COD_FALLBACK, name: t("checkout:quick.codFallback") }]), [data, t]);
   const currency = data?.store.currency || settings?.currency || "BDT";
 
   // Defaults: first in-stock variant, first delivery option, COD
@@ -175,15 +178,15 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
 
   const validate = (): boolean => {
     const next: Partial<Record<FieldKey, string>> = {};
-    if (form.name.trim().length < 2) next.name = "Enter your name";
-    if (!form.phone.trim()) next.phone = "Enter your mobile number";
-    else if (!isValidBdPhone(form.phone)) next.phone = "Enter a valid mobile number, e.g. 01712345678";
-    if (form.address.trim().length < 5) next.address = "Enter your full delivery address";
-    if (deliveryOptions.length && !selectedDelivery) next.delivery = "Choose a delivery option";
-    if (!selectedPayment) next.payment = "Choose how you'll pay";
-    else if (selectedPayment.type === "cod" && codBlocked && cod) next.payment = `Cash on delivery is only available for orders under ${formatCurrency(cod.limit)}. Please choose another payment method.`;
-    if (needsTxn && form.transactionId.trim().length < 4) next.transactionId = "Enter the Transaction ID from your payment";
-    if (outOfStock) next.product = "This option is out of stock";
+    if (form.name.trim().length < 2) next.name = t("checkout:quick.validation.name");
+    if (!form.phone.trim()) next.phone = t("checkout:quick.validation.phone");
+    else if (!isValidBdPhone(form.phone)) next.phone = t("checkout:quick.validation.phoneInvalid");
+    if (form.address.trim().length < 5) next.address = t("checkout:quick.validation.address");
+    if (deliveryOptions.length && !selectedDelivery) next.delivery = t("checkout:validation.chooseDelivery");
+    if (!selectedPayment) next.payment = t("checkout:quick.validation.payment");
+    else if (selectedPayment.type === "cod" && codBlocked && cod) next.payment = t("checkout:quick.validation.codLimit", { amount: formatCurrency(cod.limit) });
+    if (needsTxn && form.transactionId.trim().length < 4) next.transactionId = t("checkout:quick.validation.transactionId");
+    if (outOfStock) next.product = t("checkout:quick.validation.outOfStock");
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -234,11 +237,11 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
       } else if (resp?.status === 422) {
         const { fields, rest } = mapServerErrors(resp.data?.errors);
         setErrors((cur) => ({ ...cur, ...fields }));
-        setGeneralError(rest[0] ?? (Object.keys(fields).length ? null : resp.data?.message ?? "Please check your details."));
+        setGeneralError(rest[0] ?? (Object.keys(fields).length ? null : resp.data?.message ?? t("checkout:quick.errors.checkDetails")));
       } else if (resp?.status === 429) {
-        setGeneralError(resp.data?.message ?? "Too many orders from this device. Please try again later or call us.");
+        setGeneralError(resp.data?.message ?? t("checkout:quick.errors.tooMany"));
       } else {
-        setGeneralError(resp?.data?.message ?? "Could not place your order. Please try again.");
+        setGeneralError(resp?.data?.message ?? t("checkout:quick.errors.placeFailed"));
       }
     }
   };
@@ -265,16 +268,18 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
       <div className="container max-w-xl py-16">
         <EmptyState
           icon={Package}
-          title={notFound ? "This product isn't available" : "Couldn't load this product"}
-          description={notFound ? "It may have been removed or the link is wrong." : "Check your connection and try again."}
-          action={<Button onClick={() => navigate("/shop")}>Continue shopping</Button>}
+          title={notFound ? t("checkout:quick.notAvailable") : t("checkout:quick.loadFailed")}
+          description={notFound ? t("checkout:quick.notAvailableText") : t("checkout:quick.loadFailedText")}
+          action={<Button onClick={() => navigate("/shop")}>{t("common:actions.continueShopping")}</Button>}
         />
       </div>
     );
   }
 
   if (result) {
-    const waText = `Hi${shopName ? ` ${shopName}` : ""}, I just placed order ${result.invoiceNo}.`;
+    const waText = shopName
+      ? t("checkout:quick.done.waMessage", { shop: shopName, invoice: result.invoiceNo })
+      : t("checkout:quick.done.waMessageNoShop", { invoice: result.invoiceNo });
     const waHref = whatsAppLink(contactWhatsApp, waText);
     const trackHref = result.trackingUrl
       ? result.trackingUrl
@@ -285,17 +290,17 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
         <Card className="flex flex-col items-center gap-4 p-6 text-center">
           <CheckCircle2 className="size-14 text-primary" aria-hidden="true" />
           <div className="space-y-1">
-            <h1 className="font-display text-2xl font-bold text-foreground">Order placed!</h1>
-            <p className="text-muted-foreground">We'll call you to confirm your order.</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("checkout:quick.done.title")}</h1>
+            <p className="text-muted-foreground">{t("checkout:quick.done.text")}</p>
           </div>
           <dl className="grid w-full grid-cols-2 gap-3 rounded-xl bg-muted/50 p-4 text-left text-sm">
-            <dt className="text-muted-foreground">Order number</dt>
+            <dt className="text-muted-foreground">{t("checkout:quick.done.orderNumber")}</dt>
             <dd className="text-right font-mono font-semibold text-foreground">{result.invoiceNo || "—"}</dd>
-            <dt className="text-muted-foreground">Total</dt>
+            <dt className="text-muted-foreground">{t("common:money.total")}</dt>
             <dd className="text-right font-semibold text-foreground">{formatCurrency(result.total || total)}</dd>
             {selectedPayment && (
               <>
-                <dt className="text-muted-foreground">Payment</dt>
+                <dt className="text-muted-foreground">{t("checkout:labels.payment")}</dt>
                 <dd className="text-right text-foreground">{selectedPayment.name}</dd>
               </>
             )}
@@ -303,20 +308,20 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
           <div className="grid w-full gap-2 sm:grid-cols-2">
             {waHref && (
               <Button asChild variant="outline" className="gap-2">
-                <a href={waHref} target="_blank" rel="noopener noreferrer"><Smartphone className="size-4" /> WhatsApp us</a>
+                <a href={waHref} target="_blank" rel="noopener noreferrer"><Smartphone className="size-4" /> {t("checkout:quick.done.whatsapp")}</a>
               </Button>
             )}
             {contactPhone && (
               <Button asChild variant="outline" className="gap-2">
-                <a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}><Phone className="size-4" /> Call us</a>
+                <a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}><Phone className="size-4" /> {t("checkout:quick.done.call")}</a>
               </Button>
             )}
           </div>
           <div className="grid w-full gap-2">
-            <Button asChild size="lg"><Link to="/shop">Continue shopping</Link></Button>
+            <Button asChild size="lg"><Link to="/shop">{t("common:actions.continueShopping")}</Link></Button>
             {result.invoiceNo && (
               <Button asChild variant="ghost">
-                {trackInternal ? <Link to={trackHref}>Track this order</Link> : <a href={trackHref}>Track this order</a>}
+                {trackInternal ? <Link to={trackHref}>{t("checkout:quick.done.track")}</Link> : <a href={trackHref}>{t("checkout:quick.done.track")}</a>}
               </Button>
             )}
           </div>
@@ -339,7 +344,7 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
                 <CarouselItem key={`${src}-${i}`} className="pl-0">
                   <img
                     src={src}
-                    alt={i === 0 ? product.name : `${product.name} photo ${i + 1}`}
+                    alt={i === 0 ? product.name : t("checkout:quick.photoAlt", { name: product.name, n: i + 1 })}
                     loading={i === 0 ? "eager" : "lazy"}
                     className="aspect-square w-full object-cover"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/placeholder.svg"; }}
@@ -349,7 +354,7 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
             </CarouselContent>
           </Carousel>
           {images.length > 1 && (
-            <SlideDots count={images.length} current={slide} onSelect={(i) => carouselApi?.scrollTo(i)} label="Show photo" className="justify-center" />
+            <SlideDots count={images.length} current={slide} onSelect={(i) => carouselApi?.scrollTo(i)} label={t("checkout:quick.showPhoto")} className="justify-center" />
           )}
         </div>
 
@@ -362,7 +367,7 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
               {hasDiscount && (
                 <>
                   <span className="text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
-                  <Badge variant="secondary">{Math.round(((originalPrice - unitPrice) / originalPrice) * 100)}% off</Badge>
+                  <Badge variant="secondary">{t("common:product.off", { value: `${Math.round(((originalPrice - unitPrice) / originalPrice) * 100)}%` })}</Badge>
                 </>
               )}
             </div>
@@ -370,16 +375,16 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
           </div>
 
           {variants.length > 0 && (
-            <FormField label="Choose option" error={errors.product}>
+            <FormField label={t("checkout:quick.chooseOption")} error={errors.product}>
               <SegmentedControl
-                aria-label="Choose option"
+                aria-label={t("checkout:quick.chooseOption")}
                 size="default"
                 value={variantId != null ? String(variantId) : ""}
                 onValueChange={(v) => { setVariantId(Number(v)); setErrors((e) => ({ ...e, product: undefined })); }}
                 options={variants.map((v) => ({
                   value: String(v.id),
                   disabled: v.stock <= 0,
-                  "aria-label": `${v.name}${v.stock <= 0 ? " (out of stock)" : ""}`,
+                  "aria-label": v.stock <= 0 ? t("checkout:quick.variantOutOfStock", { name: v.name }) : v.name,
                   label: (
                     <span className="flex flex-col items-center leading-tight">
                       <span className={cn(v.stock <= 0 && "line-through")}>{v.name}</span>
@@ -392,45 +397,45 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
             </FormField>
           )}
 
-          <FormField label="Quantity" error={variants.length ? undefined : errors.product}>
+          <FormField label={t("common:product.quantity")} error={variants.length ? undefined : errors.product}>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 rounded-lg border p-1">
-                <WithTooltip content="Decrease quantity">
-                  <Button type="button" variant="ghost" size="icon" aria-label="Decrease quantity" disabled={quantity <= 1} onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
+                <WithTooltip content={t("common:actions.decrease")}>
+                  <Button type="button" variant="ghost" size="icon" aria-label={t("common:actions.decrease")} disabled={quantity <= 1} onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
                     <Minus />
                   </Button>
                 </WithTooltip>
                 <span className="w-10 text-center text-lg font-semibold tabular-nums" aria-live="polite">{quantity}</span>
-                <WithTooltip content="Increase quantity">
-                  <Button type="button" variant="ghost" size="icon" aria-label="Increase quantity" disabled={outOfStock || quantity >= maxQty} onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}>
+                <WithTooltip content={t("common:actions.increase")}>
+                  <Button type="button" variant="ghost" size="icon" aria-label={t("common:actions.increase")} disabled={outOfStock || quantity >= maxQty} onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}>
                     <Plus />
                   </Button>
                 </WithTooltip>
               </div>
               <span className={cn("text-sm", outOfStock ? "font-medium text-destructive" : "text-muted-foreground")}>
-                {outOfStock ? "Out of stock" : stock <= 5 ? `Only ${stock} left` : "In stock"}
+                {outOfStock ? t("common:product.outOfStock") : stock <= 5 ? t("common:product.lowStock", { count: stock }) : t("common:product.inStock")}
               </span>
             </div>
           </FormField>
 
           {/* Customer */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Your details</h2>
-            <FormField label="Your name" htmlFor="qo-name" error={errors.name} required>
-              <Input id="qo-name" autoComplete="name" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Full name" aria-invalid={!!errors.name} />
+            <h2 className="text-lg font-semibold text-foreground">{t("checkout:quick.yourDetails")}</h2>
+            <FormField label={t("checkout:quick.yourName")} htmlFor="qo-name" error={errors.name} required>
+              <Input id="qo-name" autoComplete="name" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder={t("common:form.fullName")} aria-invalid={!!errors.name} />
             </FormField>
-            <FormField label="Mobile number" htmlFor="qo-phone" error={errors.phone} description={errors.phone ? undefined : "01XXXXXXXXX — +880 also works"} required>
+            <FormField label={t("checkout:quick.mobile")} htmlFor="qo-phone" error={errors.phone} description={errors.phone ? undefined : t("checkout:quick.phoneHint")} required>
               <Input id="qo-phone" type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} placeholder="01XXXXXXXXX" aria-invalid={!!errors.phone} />
             </FormField>
-            <FormField label="Full address" htmlFor="qo-address" error={errors.address} required>
-              <Textarea id="qo-address" autoComplete="street-address" rows={2} value={form.address} onChange={(e) => setField("address", e.target.value)} placeholder="House, road, area" aria-invalid={!!errors.address} />
+            <FormField label={t("checkout:quick.fullAddress")} htmlFor="qo-address" error={errors.address} required>
+              <Textarea id="qo-address" autoComplete="street-address" rows={2} value={form.address} onChange={(e) => setField("address", e.target.value)} placeholder={t("checkout:quick.addressPlaceholder")} aria-invalid={!!errors.address} />
             </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="District" htmlFor="qo-district" error={errors.district}>
-                <Input id="qo-district" autoComplete="address-level2" value={form.district} onChange={(e) => setField("district", e.target.value)} placeholder="Optional" />
+              <FormField label={t("checkout:quick.district")} htmlFor="qo-district" error={errors.district}>
+                <Input id="qo-district" autoComplete="address-level2" value={form.district} onChange={(e) => setField("district", e.target.value)} placeholder={t("common:status.optional")} />
               </FormField>
-              <FormField label="Area / thana" htmlFor="qo-area" error={errors.area}>
-                <Input id="qo-area" autoComplete="address-level3" value={form.area} onChange={(e) => setField("area", e.target.value)} placeholder="Optional" />
+              <FormField label={t("checkout:quick.area")} htmlFor="qo-area" error={errors.area}>
+                <Input id="qo-area" autoComplete="address-level3" value={form.area} onChange={(e) => setField("area", e.target.value)} placeholder={t("common:status.optional")} />
               </FormField>
             </div>
             {/* Honeypot: hidden from people and assistive tech; bots that fill every field get rejected server-side */}
@@ -442,9 +447,9 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
 
           {/* Delivery */}
           {deliveryOptions.length > 0 && (
-            <FormField label="Delivery" error={errors.delivery}>
+            <FormField label={t("checkout:labels.delivery")} error={errors.delivery}>
               <ChoiceCardGroup
-                aria-label="Delivery option"
+                aria-label={t("checkout:labels.deliveryOption")}
                 value={shippingMethodId != null ? String(shippingMethodId) : undefined}
                 onValueChange={(v) => { setShippingMethodId(Number(v)); setErrors((e) => ({ ...e, delivery: undefined })); }}
                 className="grid-cols-1 min-[400px]:grid-cols-2"
@@ -455,7 +460,7 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
                     value={String(d.id)}
                     icon={<Truck />}
                     title={d.name}
-                    description={[d.price > 0 ? formatCurrency(d.price) : "Free", d.estimatedTime].filter(Boolean).join(" · ")}
+                    description={[d.price > 0 ? formatCurrency(d.price) : t("common:money.free"), d.estimatedTime].filter(Boolean).join(" · ")}
                   />
                 ))}
               </ChoiceCardGroup>
@@ -463,9 +468,9 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
           )}
 
           {/* Payment */}
-          <FormField label="Payment" error={errors.payment}>
+          <FormField label={t("checkout:labels.payment")} error={errors.payment}>
             <ChoiceCardGroup
-              aria-label="Payment method"
+              aria-label={t("checkout:labels.paymentMethod")}
               value={paymentSlug || undefined}
               onValueChange={(v) => { setPaymentSlug(v); setErrors((e) => ({ ...e, payment: undefined, transactionId: undefined })); }}
             >
@@ -473,11 +478,13 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
                 const isCod = m.type === "cod";
                 const description = isCod
                   ? codBlocked && cod
-                    ? `Only for orders under ${formatCurrency(cod.limit)}`
-                    : `Pay when you receive the product${cod && cod.fee > 0 ? ` (+${formatCurrency(cod.fee)} fee)` : ""}`
+                    ? t("checkout:quick.codOnlyUnder", { amount: formatCurrency(cod.limit) })
+                    : cod && cod.fee > 0
+                      ? t("checkout:quick.codPayFee", { fee: formatCurrency(cod.fee) })
+                      : t("checkout:quick.codPay")
                   : m.type === "manual"
-                    ? m.account ? `Send money to ${m.account}` : undefined
-                    : "You'll be redirected to pay securely";
+                    ? m.account ? t("checkout:quick.sendMoneyTo", { account: m.account }) : undefined
+                    : t("checkout:labels.redirectSecure");
                 return (
                   <ChoiceCard
                     key={m.slug}
@@ -496,21 +503,33 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
             <Card className="space-y-3 p-4">
               <p className="text-sm text-foreground">
                 {selectedPayment.account ? (
-                  <>Send <span className="font-semibold">{formatCurrency(total)}</span> to <span className="font-mono font-semibold">{selectedPayment.account}</span> ({selectedPayment.name}{selectedPayment.accountName ? `, ${selectedPayment.accountName}` : ""}{selectedPayment.bankName ? `, ${selectedPayment.bankName}` : ""}), then enter the Transaction ID below.</>
+                  <Trans
+                    i18nKey="checkout:quick.manualSend"
+                    values={{
+                      amount: formatCurrency(total),
+                      account: selectedPayment.account,
+                      details: [selectedPayment.name, selectedPayment.accountName, selectedPayment.bankName].filter(Boolean).join(", "),
+                    }}
+                    components={{ b: <span className="font-semibold" />, mono: <span className="font-mono font-semibold" /> }}
+                  />
                 ) : (
-                  <>Pay <span className="font-semibold">{formatCurrency(total)}</span> with {selectedPayment.name}, then enter the Transaction ID below.</>
+                  <Trans
+                    i18nKey="checkout:quick.manualPay"
+                    values={{ amount: formatCurrency(total), method: selectedPayment.name }}
+                    components={{ b: <span className="font-semibold" /> }}
+                  />
                 )}
               </p>
               {needsTxn && (
-                <FormField label="Transaction ID" htmlFor="qo-txn" error={errors.transactionId} required>
-                  <Input id="qo-txn" autoComplete="off" value={form.transactionId} onChange={(e) => setField("transactionId", e.target.value)} placeholder="e.g. 8N7A6B5C4D" className="font-mono uppercase" aria-invalid={!!errors.transactionId} />
+                <FormField label={t("checkout:quick.transactionId")} htmlFor="qo-txn" error={errors.transactionId} required>
+                  <Input id="qo-txn" autoComplete="off" value={form.transactionId} onChange={(e) => setField("transactionId", e.target.value)} placeholder={t("checkout:quick.txnPlaceholder")} className="font-mono uppercase" aria-invalid={!!errors.transactionId} />
                 </FormField>
               )}
             </Card>
           )}
 
-          <FormField label="Note" htmlFor="qo-note" error={errors.note}>
-            <Textarea id="qo-note" rows={2} value={form.note} onChange={(e) => setField("note", e.target.value)} placeholder="Size, colour or delivery instructions (optional)" />
+          <FormField label={t("common:form.note")} htmlFor="qo-note" error={errors.note}>
+            <Textarea id="qo-note" rows={2} value={form.note} onChange={(e) => setField("note", e.target.value)} placeholder={t("checkout:quick.notePlaceholder")} />
           </FormField>
 
           {generalError && (
@@ -527,22 +546,22 @@ export function QuickOrderForm({ slug, embedded = false }: { slug: string; embed
         : "fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur"}>
         <div className={embedded ? "space-y-2" : "container max-w-5xl space-y-2 py-3"}>
           <dl className="grid grid-cols-[1fr_auto] gap-x-4 text-sm">
-            <dt className="text-muted-foreground">Subtotal ({quantity} × {formatCurrency(unitPrice)})</dt>
+            <dt className="text-muted-foreground">{t("checkout:quick.subtotalLine", { qty: quantity, price: formatCurrency(unitPrice) })}</dt>
             <dd className="text-right tabular-nums text-foreground">{formatCurrency(subtotal)}</dd>
-            <dt className="text-muted-foreground">Delivery{selectedDelivery ? ` (${selectedDelivery.name})` : ""}</dt>
+            <dt className="text-muted-foreground">{selectedDelivery ? t("checkout:quick.deliveryLine", { method: selectedDelivery.name }) : t("checkout:labels.delivery")}</dt>
             <dd className="text-right tabular-nums text-foreground">{formatCurrency(deliveryCharge)}</dd>
             {codFee > 0 && (
               <>
-                <dt className="text-muted-foreground">Cash on delivery fee</dt>
+                <dt className="text-muted-foreground">{t("checkout:quick.codFee")}</dt>
                 <dd className="text-right tabular-nums text-foreground">{formatCurrency(codFee)}</dd>
               </>
             )}
-            <dt className="font-semibold text-foreground">Total</dt>
+            <dt className="font-semibold text-foreground">{t("common:money.total")}</dt>
             <dd className="text-right text-base font-bold tabular-nums text-foreground">{formatCurrency(total)}</dd>
           </dl>
           <Button type="submit" size="lg" className="h-12 w-full gap-2 text-base" disabled={placeOrder.isPending || outOfStock}>
             {placeOrder.isPending ? <Spinner /> : <ShoppingBag className="size-5" />}
-            {outOfStock ? "Out of stock" : placeOrder.isPending ? "Placing order…" : "Confirm order"}
+            {outOfStock ? t("common:product.outOfStock") : placeOrder.isPending ? t("checkout:quick.placing") : t("checkout:quick.confirm")}
           </Button>
         </div>
       </div>

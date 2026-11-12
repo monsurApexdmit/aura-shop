@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Truck, RotateCcw, ShieldCheck, Heart, Gift, Star, Sparkles, Package, Clock, Phone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -30,6 +31,7 @@ interface Perk {
 // Admin can write these cards (Online store > Homepage sections > Perk cards). Otherwise they are built
 // from the free-shipping threshold, Online store policies, published pages and payment gateways.
 export default function FeaturesBar() {
+  const { t } = useTranslation();
   const { formatCurrency, freeShippingThreshold, onlineStore, paymentMethods } = useCurrency();
   const { data: pages = [] } = useStorefrontPages();
   const { data: sections, isLoading } = useHomepageSections();
@@ -40,22 +42,22 @@ export default function FeaturesBar() {
   const automatic: Perk[] = [
     {
       icon: Truck,
-      title: freeShippingThreshold != null ? `Free shipping over ${formatCurrency(freeShippingThreshold)}` : "Delivery to your door",
-      text: summary(policies?.shipping) || "See delivery areas, charges and timelines.",
+      title: freeShippingThreshold != null ? t("common:money.freeShippingOver", { amount: formatCurrency(freeShippingThreshold) }) : t("home:features.delivery"),
+      text: summary(policies?.shipping) || t("home:features.deliveryText"),
       to: hasPage("shipping") ? "/shipping" : undefined,
     },
     ...(policies?.returns || hasPage("returns")
       ? [{
           icon: RotateCcw,
-          title: "Returns & exchanges",
-          text: summary(policies?.returns) || "See what you can return and how.",
+          title: t("home:features.returns"),
+          text: summary(policies?.returns) || t("home:features.returnsText"),
           to: hasPage("returns") ? "/returns" : undefined,
         }]
       : []),
     {
       icon: ShieldCheck,
-      title: "Secure checkout",
-      text: paymentMethods.length > 0 ? `Pay with ${paymentMethods.join(", ")}.` : "Your payment details stay protected.",
+      title: t("home:features.secure"),
+      text: paymentMethods.length > 0 ? t("home:features.payWith", { methods: paymentMethods.join(", ") }) : t("home:features.secureText"),
     },
   ];
   const perks: Perk[] = custom
@@ -66,7 +68,7 @@ export default function FeaturesBar() {
   if (custom && (!custom.enabled || perks.length === 0)) return null;
 
   return (
-    <section aria-label="Store perks" className="container pb-6 pt-2 sm:py-14 md:py-20">
+    <section aria-label={t("home:features.label")} className="container pb-6 pt-2 sm:py-14 md:py-20">
       <ul className={cn("no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 scroll-px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 md:gap-5", perks.length === 3 && "lg:grid-cols-3", perks.length === 4 && "lg:grid-cols-4")}>
         {perks.map(({ icon: Icon, title, text, to }) => {
           const body = (

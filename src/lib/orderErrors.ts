@@ -1,3 +1,5 @@
+import i18n from "@/i18n";
+
 /** One order line the store could not cover (API 422 `errors[]` when stock ran out). */
 export interface StockShortage {
   product_id: number;
@@ -22,10 +24,10 @@ export function stockShortages(errors: unknown): StockShortage[] {
 }
 
 export function shortageText(s: StockShortage): string {
-  const name = s.product_name || "This item";
+  const name = s.product_name || i18n.t("checkout:stock.thisItem");
   return s.available_quantity <= 0
-    ? `${name} is sold out`
-    : `Only ${s.available_quantity} left of ${name} (you asked for ${s.requested_quantity})`;
+    ? i18n.t("checkout:stock.soldOut", { name })
+    : i18n.t("checkout:stock.onlyLeft", { name, available: s.available_quantity, requested: s.requested_quantity });
 }
 
 /** A readable message for a failed order request. */

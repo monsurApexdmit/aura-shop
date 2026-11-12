@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Trans, useTranslation } from "react-i18next";
 import { ArrowRight, LayoutGrid } from "lucide-react";
 import { getImageUrl } from "@/lib/api";
 import { useProducts } from "@/hooks/useProducts";
@@ -10,14 +11,22 @@ import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { mapApiProduct } from "@/lib/mappers";
 import { pastel, PASTELS } from "@/lib/pastels";
 
-const DEFAULT_TITLE = "Pick your aisle";
-const COUNT_WORDS = ["", "One", "Two", "Three", "Four", "Five", "Six"];
+// Spelled-out counts for the subtitle ("Three aisles, …"); translated at render.
+const COUNT_WORD_KEYS = [
+  "",
+  "home:aisles.numbers.one",
+  "home:aisles.numbers.two",
+  "home:aisles.numbers.three",
+  "home:aisles.numbers.four",
+  "home:aisles.numbers.five",
+  "home:aisles.numbers.six",
+];
 const MAX_AUTO = 6;
 
-const AISLE_COPY: Record<ResolvedDepartment["key"], { emoji: string; tagline: string; tone: string }> = {
-  women: { emoji: "🌸", tagline: "Soft power, loud color.", tone: PASTELS[0] },
-  men:   { emoji: "🌞", tagline: "Easy tailoring, sun-baked color.", tone: PASTELS[1] },
-  kids:  { emoji: "🎈", tagline: "Built for jumping, spinning, climbing.", tone: PASTELS[2] },
+const AISLE_COPY: Record<ResolvedDepartment["key"], { emoji: string; taglineKey: string; tone: string }> = {
+  women: { emoji: "🌸", taglineKey: "home:aisles.tagline.women", tone: PASTELS[0] },
+  men:   { emoji: "🌞", taglineKey: "home:aisles.tagline.men", tone: PASTELS[1] },
+  kids:  { emoji: "🎈", taglineKey: "home:aisles.tagline.kids", tone: PASTELS[2] },
 };
 
 interface Aisle {
@@ -56,6 +65,7 @@ function AislePolaroid({ aisle, index }: { aisle: Aisle; index: number }) {
 }
 
 function AisleCard({ aisle, index, compact, count = 3, circle }: { aisle: Aisle; index: number; compact?: boolean; count?: number; circle?: boolean }) {
+  const { t } = useTranslation();
   if (circle) return <AislePolaroid aisle={aisle} index={index} />;
   return (
     <motion.div
@@ -86,7 +96,7 @@ function AisleCard({ aisle, index, compact, count = 3, circle }: { aisle: Aisle;
           <h3 className={cn("font-display font-extrabold md:text-3xl lg:text-4xl", compact ? "text-lg sm:text-2xl" : "text-2xl")}>{aisle.label}</h3>
           {aisle.tagline && <p className={cn("mt-1 text-white/85", compact ? "line-clamp-2 text-xs sm:text-sm" : "text-sm")}>{aisle.tagline}</p>}
           <span className={cn("inline-flex items-center gap-1.5 font-semibold", compact ? "mt-2 text-xs sm:mt-4 sm:text-sm" : "mt-4 text-sm")}>
-            Explore <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            {t("home:aisles.explore")} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </span>
         </div>
       </Link>
@@ -129,6 +139,7 @@ const GRID_COLS: Record<number, string> = {
 // 2. otherwise its top-level categories, tagged with their subcategories;
 // 3. with no categories at all, Women/Men/Kids cards that search the catalogue.
 function useAutoAisles(): AutoAisle[] {
+  const { t } = useTranslation();
   const { departments } = useDepartments();
   const { data: categories = [] } = useCategories();
   // Products are usually filed under subcategories, so match the latest products by (sub)category name
@@ -147,7 +158,7 @@ function useAutoAisles(): AutoAisle[] {
     return latestProducts.find((p) => names.has(p.category) || names.has(p.subcategory))?.image;
   };
   const deptAisle = (d: ResolvedDepartment): Aisle => ({
-    key: d.key, label: d.label, tagline: AISLE_COPY[d.key].tagline, emoji: AISLE_COPY[d.key].emoji,
+    key: d.key, label: d.label, tagline: t(AISLE_COPY[d.key].taglineKey), emoji: AISLE_COPY[d.key].emoji,
     href: d.href, tone: AISLE_COPY[d.key].tone, image: imageOf(d.categoryId),
   });
 
@@ -158,7 +169,7 @@ function useAutoAisles(): AutoAisle[] {
       aisle: {
         key: c.slug,
         label: c.name,
-        tagline: c.children.length > 0 ? c.children.slice(0, 3).map((x) => x.name).join(" · ") : `Shop all ${c.name}`,
+        tagline: c.children.length > 0 ? c.children.slice(0, 3).map((x) => x.name).join(" · ") : t("home:aisles.shopAll", { name: c.name }),
         emoji: "",
         href: `/shop?cat=${c.slug}`,
         tone: pastel(i),
@@ -171,6 +182,7 @@ function useAutoAisles(): AutoAisle[] {
 }
 
 export default function DepartmentAisles() {
+  const { t } = useTranslation();
   const { data: sections, isLoading } = useHomepageSections();
   const { isLoading: categoriesLoading } = useCategories();
   const auto = useAutoAisles();
@@ -184,7 +196,7 @@ export default function DepartmentAisles() {
   const compact = count === 2 || count >= 4;
   const subtitle = custom
     ? custom.subtitle
-    : `${COUNT_WORDS[Math.min(count, MAX_AUTO)]} aisle${count === 1 ? "" : "s"}, one wardrobe philosophy.`;
+    : t("home:aisles.subtitle", { count, word: count > 0 ? t(COUNT_WORD_KEYS[Math.min(count, MAX_AUTO)]) : "" });
 
   const customAisle = (item: NonNullable<typeof custom>["items"][number], i: number): Aisle => ({
     key: item.id, label: item.label, tagline: item.tagline, emoji: item.emoji, href: item.link, tone: pastel(i),
@@ -196,8 +208,8 @@ export default function DepartmentAisles() {
     <section className="py-4 md:hidden">
       <div className="container">
         <div className="flex items-end justify-between gap-4 border-b border-foreground pb-2">
-          <h2 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-foreground">{custom?.title || DEFAULT_TITLE}</h2>
-          <Link to="/categories" className="shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">See all →</Link>
+          <h2 className="font-display text-[28px] font-extrabold leading-none tracking-tight text-foreground">{custom?.title || t("home:aisles.title")}</h2>
+          <Link to="/categories" className="shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">{t("common:actions.seeAll")} →</Link>
         </div>
       </div>
       <div className="no-scrollbar flex snap-x gap-4 overflow-x-auto px-5 pb-4 pt-5 scroll-px-5">
@@ -207,14 +219,16 @@ export default function DepartmentAisles() {
         <Link to="/categories" className="w-[42%] shrink-0 snap-start rotate-2 active:scale-95">
           <div className="flex h-full flex-col justify-between rounded-xl bg-ink p-4 text-ink-foreground shadow-[0_10px_24px_-10px_rgba(0,0,0,0.35)]">
             <LayoutGrid className="h-6 w-6 text-highlight" aria-hidden="true" />
-            <span className="font-display text-2xl font-extrabold leading-[0.95]">Every<br /><em className="text-highlight">aisle</em> →</span>
+            <span className="font-display text-2xl font-extrabold leading-[0.95]">
+              <Trans i18nKey="home:aisles.everyAisle" components={{ br: <br />, em: <em className="text-highlight" /> }} />
+            </span>
           </div>
         </Link>
       </div>
     </section>
 
     <section className="container hidden py-14 md:block md:py-24">
-      <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground md:text-5xl">{custom?.title || DEFAULT_TITLE}</h2>
+      <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground md:text-5xl">{custom?.title || t("home:aisles.title")}</h2>
       {subtitle && <p className="mt-2 text-sm text-muted-foreground md:text-base">{subtitle}</p>}
       <div className={cn("mt-8 grid gap-3 sm:gap-4 md:mt-10 md:gap-5", GRID_COLS[Math.min(count, 6)])}>
         {custom

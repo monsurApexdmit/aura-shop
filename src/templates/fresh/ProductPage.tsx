@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  Banknote, Bike, ChevronRight, MessageCircle, Package, RotateCcw, SearchX, ShoppingBasket, Star, Truck, Zap, type LucideIcon,
+  Banknote, Bike, ChevronRight, MessageCircle, Package, RotateCcw, SearchX, ShoppingBasket, Truck, Zap, type LucideIcon,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import ProductReviews from "@/components/ProductReviews";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -10,24 +11,25 @@ import { isColorAttribute, swatchColor, useProductPage, type ProductPageState } 
 import Footer from "./Footer";
 import Gallery from "./Gallery";
 import QtyStepper from "./QtyStepper";
-import Rail from "./Rail";
-import { tile } from "./helpers";
+import { ProductRow, SectionHeading } from "./Section";
+import { Stars } from "./ProductCard";
+import { FOCUS, tile } from "./lib";
 
-const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
-const BIG_BTN = cn("flex items-center justify-center gap-2 rounded-pill font-display font-extrabold transition-transform active:scale-[0.98]", FOCUS);
+const BIG_BTN = cn("flex items-center justify-center gap-2 rounded-pill font-semibold transition-colors active:scale-[0.98]", FOCUS);
 
 function Skeleton() {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-background" aria-busy="true" aria-label="Loading product">
+    <div className="min-h-screen bg-background" aria-busy="true" aria-label={t("tpl_fresh:product.loading")}>
       <div className="container grid gap-6 pt-4 md:grid-cols-2 md:gap-10 md:pt-8">
-        <div className="aspect-square animate-pulse rounded-[2rem] bg-secondary" />
+        <div className="aspect-square animate-pulse rounded-2xl bg-secondary" />
         <div className="space-y-4">
           <div className="h-6 w-28 animate-pulse rounded-pill bg-secondary" />
           <div className="h-9 w-4/5 animate-pulse rounded-pill bg-secondary" />
           <div className="h-4 w-1/3 animate-pulse rounded-pill bg-secondary" />
           <div className="h-10 w-1/2 animate-pulse rounded-pill bg-secondary" />
           <div className="h-14 w-full animate-pulse rounded-pill bg-secondary" />
-          <div className="h-40 w-full animate-pulse rounded-3xl bg-secondary" />
+          <div className="h-40 w-full animate-pulse rounded-xl bg-secondary" />
         </div>
       </div>
     </div>
@@ -35,17 +37,18 @@ function Skeleton() {
 }
 
 function NotFound() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background">
       <div className="container flex flex-col items-center py-16 text-center md:py-24">
         <span className="flex size-28 items-center justify-center rounded-full bg-tile-2 text-ink">
           <SearchX className="h-12 w-12" strokeWidth={1.75} aria-hidden="true" />
         </span>
-        <h1 className="mt-6 font-display text-3xl font-extrabold text-foreground">We couldn't find that item</h1>
-        <p className="mt-2 max-w-sm text-muted-foreground">It may be sold out or no longer stocked. Plenty of fresh picks are waiting in the shop.</p>
+        <h1 className="mt-6 font-display text-3xl font-bold text-foreground">{t("tpl_fresh:product.notFoundTitle")}</h1>
+        <p className="mt-2 max-w-sm text-muted-foreground">{t("tpl_fresh:product.notFoundText")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to="/shop" className={cn(BIG_BTN, "h-12 bg-primary px-6 text-primary-foreground")}>Browse the shop</Link>
-          <Link to="/categories" className={cn(BIG_BTN, "h-12 border-2 border-border bg-card px-6 text-card-foreground")}>All categories</Link>
+          <Link to="/shop" className={cn(BIG_BTN, "h-12 bg-primary px-6 text-primary-foreground")}>{t("tpl_fresh:product.browseShop")}</Link>
+          <Link to="/categories" className={cn(BIG_BTN, "h-12 border-2 border-border bg-card px-6 text-card-foreground")}>{t("common:nav.allCategories")}</Link>
         </div>
       </div>
       <Footer />
@@ -56,11 +59,11 @@ function NotFound() {
 function InfoTile({ Icon, title, text, index }: { Icon: LucideIcon; title: string; text: string; index: number }) {
   return (
     <li className="flex items-center gap-3">
-      <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl text-ink", tile(index))}>
+      <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full text-ink", tile(index))}>
         <Icon className="h-5 w-5" aria-hidden="true" />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-extrabold leading-tight text-card-foreground">{title}</span>
+        <span className="block text-sm font-bold leading-tight text-card-foreground">{title}</span>
         <span className="block text-xs text-muted-foreground">{text}</span>
       </span>
     </li>
@@ -69,20 +72,21 @@ function InfoTile({ Icon, title, text, index }: { Icon: LucideIcon; title: strin
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-6 rounded-3xl border border-border bg-card p-4 md:mt-8 md:p-6">
-      <h2 className="font-display text-xl font-bold text-card-foreground md:text-2xl">{title}</h2>
+    <section className="mt-6 rounded-2xl border border-border bg-card p-4 md:mt-8 md:p-6">
+      <h2 className="font-display text-xl font-bold text-card-foreground">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
   );
 }
 
 function BuyBox({ page }: { page: ProductPageState }) {
+  const { t } = useTranslation();
   const { product, cartItem, inStock, currentStock } = page;
   return (
     <div className="space-y-3">
       {!inStock ? (
-        <button type="button" disabled className={cn(BIG_BTN, "h-14 w-full cursor-not-allowed bg-secondary text-lg text-muted-foreground")}>
-          Out of stock
+        <button type="button" disabled className={cn(BIG_BTN, "h-12 w-full cursor-not-allowed bg-secondary text-base text-muted-foreground")}>
+          {t("common:product.outOfStock")}
         </button>
       ) : cartItem ? (
         <div className="flex gap-3">
@@ -93,30 +97,30 @@ function BuyBox({ page }: { page: ProductPageState }) {
             onIncrement={page.increment}
             onDecrement={page.decrement}
             max={currentStock}
-            className="w-40 shrink-0"
+            className="w-36 shrink-0"
           />
           <button
             type="button"
             onClick={page.openCart}
-            className={cn(BIG_BTN, "h-14 min-w-0 flex-1 border-2 border-primary bg-primary/10 px-4 text-lg text-primary")}
+            className={cn(BIG_BTN, "h-12 min-w-0 flex-1 border border-primary bg-accent px-4 text-base text-primary hover:bg-primary hover:text-primary-foreground")}
           >
-            <span className="truncate">In cart · {cartItem.quantity}</span>
+            <span className="truncate">{t("tpl_fresh:product.inCart", { count: cartItem.quantity })}</span>
             <ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />
           </button>
         </div>
       ) : (
-        <button type="button" onClick={page.add} className={cn(BIG_BTN, "h-14 w-full bg-primary text-lg text-primary-foreground shadow-md")}>
+        <button type="button" onClick={page.add} className={cn(BIG_BTN, "h-12 w-full bg-primary text-base text-primary-foreground hover:bg-primary/90")}>
           <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
-          Add to cart
+          {t("common:actions.addToCart")}
         </button>
       )}
 
       {(inStock || page.whatsAppHref) && (
         <div className="flex flex-wrap gap-3">
           {inStock && (
-            <Link to={page.quickOrderHref} className={cn(BIG_BTN, "h-12 min-w-[9rem] flex-1 bg-highlight text-base text-highlight-foreground")}>
+            <Link to={page.quickOrderHref} className={cn(BIG_BTN, "h-12 min-w-[9rem] flex-1 bg-highlight text-base text-highlight-foreground hover:bg-highlight/90")}>
               <Zap className="h-4 w-4" aria-hidden="true" />
-              Buy now
+              {t("common:actions.buyNow")}
             </Link>
           )}
           {page.whatsAppHref && (
@@ -124,10 +128,10 @@ function BuyBox({ page }: { page: ProductPageState }) {
               href={page.whatsAppHref}
               target="_blank"
               rel="noopener noreferrer"
-              className={cn(BIG_BTN, "h-12 min-w-[9rem] flex-1 border-2 border-border bg-card text-base text-card-foreground hover:border-primary")}
+              className={cn(BIG_BTN, "h-12 min-w-[9rem] flex-1 border border-border bg-card text-base text-card-foreground hover:border-primary")}
             >
               <MessageCircle className="h-4 w-4 text-primary" aria-hidden="true" />
-              Order on WhatsApp
+              {t("tpl_fresh:product.whatsApp")}
             </a>
           )}
         </div>
@@ -138,27 +142,28 @@ function BuyBox({ page }: { page: ProductPageState }) {
 
 /** Phones: price and the add/stepper control always within thumb reach. */
 function BottomBar({ page }: { page: ProductPageState }) {
+  const { t } = useTranslation();
   const { product, cartItem, inStock, formatCurrency, currentPrice, originalPrice } = page;
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-xl font-extrabold leading-none text-primary">{formatCurrency(currentPrice)}</p>
+          <p className={cn("truncate font-display text-xl font-bold leading-none", originalPrice ? "text-highlight" : "text-foreground")}>{formatCurrency(currentPrice)}</p>
           {originalPrice && <s className="text-xs text-muted-foreground">{formatCurrency(originalPrice)}</s>}
         </div>
         {!inStock ? (
-          <span className="flex h-12 items-center rounded-pill bg-secondary px-5 text-sm font-extrabold text-muted-foreground">Out of stock</span>
+          <span className="flex h-12 items-center rounded-pill bg-secondary px-5 text-sm font-semibold text-muted-foreground">{t("common:product.outOfStock")}</span>
         ) : cartItem ? (
           <>
             <QtyStepper size="md" name={product.name} quantity={cartItem.quantity} onIncrement={page.increment} onDecrement={page.decrement} max={page.currentStock} className="h-12 w-32" />
-            <button type="button" onClick={page.openCart} aria-label="View cart" className={cn(BIG_BTN, "size-12 shrink-0 bg-highlight text-highlight-foreground")}>
+            <button type="button" onClick={page.openCart} aria-label={t("tpl_fresh:shared.viewCart")} className={cn(BIG_BTN, "size-12 shrink-0 bg-highlight text-highlight-foreground")}>
               <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
             </button>
           </>
         ) : (
           <button type="button" onClick={page.add} className={cn(BIG_BTN, "h-12 flex-[1.4] bg-primary px-5 text-base text-primary-foreground")}>
             <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
-            Add to cart
+            {t("common:actions.addToCart")}
           </button>
         )}
       </div>
@@ -166,7 +171,20 @@ function BottomBar({ page }: { page: ProductPageState }) {
   );
 }
 
+function Related({ page }: { page: ProductPageState }) {
+  const { t } = useTranslation();
+  const id = useId();
+  if (page.relatedProducts.length === 0) return null;
+  return (
+    <section aria-labelledby={id} className="container pt-8 md:pt-12">
+      <SectionHeading id={id} title={t("tpl_fresh:product.youMayAlsoLike")} href={page.categoryHref} />
+      <ProductRow products={page.relatedProducts.slice(0, 6)} label={t("tpl_fresh:product.youMayAlsoLike")} tileOffset={2} />
+    </section>
+  );
+}
+
 function ProductView({ page }: { page: ProductPageState }) {
+  const { t } = useTranslation();
   const { product, attributes, selectedAttributes, formatCurrency, currentPrice, originalPrice, discount, currentStock, inStock, freeShippingThreshold } = page;
   const unit = product.subcategory || product.category;
   const lowStock = inStock && currentStock > 0 && currentStock <= 5;
@@ -174,9 +192,9 @@ function ProductView({ page }: { page: ProductPageState }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="container pt-3 md:pt-6">
-        <nav aria-label="Breadcrumb" className="mb-3 hidden text-sm text-muted-foreground md:block">
+        <nav aria-label={t("tpl_fresh:product.breadcrumb")} className="mb-4 hidden text-[13px] text-muted-foreground md:block">
           <ol className="flex items-center gap-1.5">
-            <li><Link to="/" className="hover:text-primary">Home</Link></li>
+            <li><Link to="/" className="hover:text-primary">{t("common:nav.home")}</Link></li>
             <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
             {product.category && (
               <>
@@ -189,7 +207,7 @@ function ProductView({ page }: { page: ProductPageState }) {
         </nav>
 
         <div className="grid gap-5 md:grid-cols-2 md:gap-8 lg:gap-12">
-          <div className="md:sticky md:top-44 md:self-start">
+          <div className="md:sticky md:top-48 md:self-start">
             <Gallery
               images={page.images}
               name={product.name}
@@ -204,41 +222,44 @@ function ProductView({ page }: { page: ProductPageState }) {
 
           <div className="min-w-0">
             {product.category && (
-              <Link to={page.categoryHref} className={cn("inline-flex rounded-pill bg-secondary px-3 py-1 text-xs font-extrabold text-primary hover:bg-primary/10", FOCUS)}>
+              <Link to={page.categoryHref} className={cn("inline-flex rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10", FOCUS)}>
                 {product.category}
               </Link>
             )}
-            <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-[1.1] text-foreground md:text-4xl">{product.name}</h1>
+            <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-[1.15] text-foreground md:text-[2.25rem]">{product.name}</h1>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
               {unit && <span>{unit}</span>}
               {product.reviews > 0 && (
-                <a href="#reviews" className="flex items-center gap-1 font-bold text-foreground hover:text-primary">
-                  <Star className="h-4 w-4 fill-highlight text-highlight" aria-hidden="true" />
+                <a href="#reviews" className={cn("flex items-center gap-1.5 rounded-sm font-semibold text-foreground hover:text-primary", FOCUS)}>
+                  <Stars rating={product.rating} reviews={product.reviews} />
                   {product.rating.toFixed(1)}
-                  <span className="font-normal text-muted-foreground">({product.reviews} reviews)</span>
                 </a>
               )}
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="font-display text-4xl font-extrabold leading-none text-primary">{formatCurrency(currentPrice)}</span>
+              <span className={cn("font-display text-4xl font-bold leading-none", originalPrice ? "text-highlight" : "text-foreground")}>{formatCurrency(currentPrice)}</span>
               {originalPrice && (
                 <>
-                  <s className="text-lg text-muted-foreground"><span className="sr-only">was </span>{formatCurrency(originalPrice)}</s>
-                  <span className="rounded-pill bg-highlight px-3 py-1 text-sm font-extrabold text-highlight-foreground">
-                    Save {formatCurrency(originalPrice - currentPrice)}
+                  <s className="text-lg text-muted-foreground"><span className="sr-only">{t("tpl_fresh:card.was")} </span>{formatCurrency(originalPrice)}</s>
+                  <span className="rounded-full bg-highlight px-3 py-1 text-sm font-semibold text-highlight-foreground">
+                    {t("common:product.save", { amount: formatCurrency(originalPrice - currentPrice) })}
                   </span>
                 </>
               )}
             </div>
             <p className={cn("mt-2 flex items-center gap-1.5 text-sm font-bold", !inStock || lowStock ? "text-destructive" : "text-primary")}>
               <span className={cn("size-2 rounded-full", !inStock || lowStock ? "bg-destructive" : "bg-primary")} aria-hidden="true" />
-              {!inStock ? "Out of stock" : lowStock ? `Only ${currentStock} left, order soon` : "In stock, ready to deliver"}
+              {!inStock
+                ? t("common:product.outOfStock")
+                : lowStock
+                  ? t("tpl_fresh:product.lowStock", { count: currentStock })
+                  : t("tpl_fresh:product.inStockReady")}
             </p>
 
             {attributes.map((attr) => (
               <fieldset key={attr.name} className="mt-5">
-                <legend className="text-sm font-bold text-foreground">
+                <legend className="text-sm font-semibold text-foreground">
                   {attr.displayName}: <span className="text-primary">{selectedAttributes[attr.name]}</span>
                 </legend>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -252,9 +273,9 @@ function ProductView({ page }: { page: ProductPageState }) {
                         aria-pressed={selected}
                         onClick={() => page.selectAttribute(attr.name, val)}
                         className={cn(
-                          "flex h-10 items-center gap-2 rounded-pill border-2 px-4 text-sm font-bold transition-colors",
+                          "flex h-10 items-center gap-2 rounded-pill border px-4 text-sm font-semibold transition-colors",
                           colour && "pl-1.5",
-                          selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-card-foreground hover:border-primary/50",
+                          selected ? "border-primary bg-accent text-primary ring-1 ring-primary" : "border-border bg-card text-card-foreground hover:border-primary/50",
                           FOCUS,
                         )}
                       >
@@ -273,35 +294,41 @@ function ProductView({ page }: { page: ProductPageState }) {
               <BuyBox page={page} />
             </div>
 
-            <ul className="mt-6 grid gap-4 rounded-3xl border border-border bg-card p-4 sm:grid-cols-2 md:p-5">
-              <InfoTile index={0} Icon={Truck} title="Delivery in 24 hours" text="Order now, at your door by tomorrow" />
+            <ul className="mt-6 grid gap-4 rounded-xl border border-border bg-secondary p-4 sm:grid-cols-2 md:p-5">
+              <InfoTile index={0} Icon={Truck} title={t("tpl_fresh:product.delivery24")} text={t("tpl_fresh:product.delivery24Text")} />
               <InfoTile
                 index={1}
                 Icon={Bike}
-                title={freeShippingThreshold != null ? `Free delivery over ${formatCurrency(freeShippingThreshold)}` : "Home delivery"}
-                text={freeShippingThreshold != null ? "Add a little more to save on delivery" : "Delivery charge shown at checkout"}
+                title={
+                  freeShippingThreshold != null
+                    ? t("tpl_fresh:product.freeDeliveryOver", { amount: formatCurrency(freeShippingThreshold) })
+                    : t("tpl_fresh:product.homeDelivery")
+                }
+                text={freeShippingThreshold != null ? t("tpl_fresh:product.freeDeliveryText") : t("tpl_fresh:product.homeDeliveryText")}
               />
-              <InfoTile index={3} Icon={Banknote} title="Cash on delivery" text="Pay when your order arrives" />
-              <InfoTile index={4} Icon={RotateCcw} title="Easy returns" text="Not right? We'll make it right" />
+              <InfoTile index={3} Icon={Banknote} title={t("tpl_fresh:product.cod")} text={t("tpl_fresh:product.codText")} />
+              <InfoTile index={4} Icon={RotateCcw} title={t("tpl_fresh:product.easyReturns")} text={t("tpl_fresh:product.easyReturnsText")} />
             </ul>
 
-            <Accordion type="multiple" defaultValue={["description"]} className="mt-6 rounded-3xl border border-border bg-card px-4 md:px-5">
+            <Accordion type="multiple" defaultValue={["description"]} className="mt-6 rounded-xl border border-border bg-card px-4 md:px-5">
               <AccordionItem value="description" className="border-border">
-                <AccordionTrigger className="font-display text-lg font-bold text-card-foreground hover:no-underline">Description</AccordionTrigger>
+                <AccordionTrigger className="font-display text-lg font-bold text-card-foreground hover:no-underline">{t("tpl_fresh:product.description")}</AccordionTrigger>
                 <AccordionContent className="whitespace-pre-line leading-relaxed text-muted-foreground">
-                  {product.description?.trim() || `${product.name}, picked fresh and packed with care.`}
+                  {product.description?.trim() || t("tpl_fresh:product.defaultDescription", { name: product.name })}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="specs" className="border-b-0">
-                <AccordionTrigger className="font-display text-lg font-bold text-card-foreground hover:no-underline">Specifications</AccordionTrigger>
+                <AccordionTrigger className="font-display text-lg font-bold text-card-foreground hover:no-underline">{t("tpl_fresh:product.specifications")}</AccordionTrigger>
                 <AccordionContent>
-                  <dl className="divide-y divide-border overflow-hidden rounded-2xl bg-secondary">
+                  <dl className="divide-y divide-border overflow-hidden rounded-lg bg-secondary">
                     {[
-                      ["Category", product.category],
-                      ["Type", product.subcategory],
-                      ["SKU", page.currentSku],
+                      [t("tpl_fresh:product.category"), product.category],
+                      [t("tpl_fresh:product.type"), product.subcategory],
+                      [t("tpl_fresh:product.sku"), page.currentSku],
                       ...attributes.map((a) => [a.displayName, a.values.join(", ")]),
-                      ...(product.variants?.length ? [["Options", `${product.variants.length} choices`]] : []),
+                      ...(product.variants?.length
+                        ? [[t("tpl_fresh:product.options"), t("tpl_fresh:product.choices", { count: product.variants.length })]]
+                        : []),
                     ]
                       .filter(([, v]) => !!v)
                       .map(([k, v]) => (
@@ -318,11 +345,11 @@ function ProductView({ page }: { page: ProductPageState }) {
         </div>
 
         {product.isBundle && product.bundleItems && product.bundleItems.length > 0 && (
-          <DetailSection title={`In this pack · ${product.bundleItems.length} items`}>
+          <DetailSection title={t("tpl_fresh:product.inPack", { count: product.bundleItems.length })}>
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {product.bundleItems.map((item, i) => (
-                <li key={`${item.productId}-${i}`} className="flex items-center gap-3 rounded-2xl bg-secondary p-2.5">
-                  <span className={cn("flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl text-ink", tile(i))}>
+                <li key={`${item.productId}-${i}`} className="flex items-center gap-3 rounded-xl bg-secondary p-2.5">
+                  <span className={cn("flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg text-ink", tile(i))}>
                     {item.image ? (
                       <img src={item.image} alt="" className="h-full w-full object-contain p-1 mix-blend-multiply" loading="lazy" />
                     ) : (
@@ -330,7 +357,7 @@ function ProductView({ page }: { page: ProductPageState }) {
                     )}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-foreground">{item.productName}</span>
-                  <span className="shrink-0 rounded-pill bg-primary px-2.5 py-1 text-xs font-extrabold text-primary-foreground">×{item.quantity}</span>
+                  <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">×{item.quantity}</span>
                 </li>
               ))}
             </ul>
@@ -338,15 +365,13 @@ function ProductView({ page }: { page: ProductPageState }) {
         )}
 
         <div id="reviews" className="scroll-mt-48">
-          <DetailSection title="Reviews">
+          <DetailSection title={t("tpl_fresh:product.reviews")}>
             <ProductReviews productSlug={product.slug} productRating={product.rating} reviewCount={product.reviews} />
           </DetailSection>
         </div>
       </div>
 
-      <div className="mt-4">
-        <Rail title="You may also need" href={page.categoryHref} products={page.relatedProducts} tileOffset={2} />
-      </div>
+      <Related page={page} />
 
       <Footer />
       {/* Room for the phone bottom bar */}

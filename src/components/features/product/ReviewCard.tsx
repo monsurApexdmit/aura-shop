@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import RatingDisplay from "@/components/common/RatingDisplay";
+import { useTranslation } from "react-i18next";
 
 export interface Review {
   id: string;
@@ -76,6 +77,7 @@ export default function ReviewCard({
   actions,
   className = "",
 }: ReviewCardProps) {
+  const { t } = useTranslation();
   // Format date - relative or absolute
   const formatDate = (dateString: string) => {
     try {
@@ -85,12 +87,12 @@ export default function ReviewCard({
         (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      if (daysAgo === 0) return "Today";
-      if (daysAgo === 1) return "Yesterday";
-      if (daysAgo < 7) return `${daysAgo} days ago`;
-      if (daysAgo < 30) return `${Math.floor(daysAgo / 7)} weeks ago`;
-      if (daysAgo < 365) return `${Math.floor(daysAgo / 30)} months ago`;
-      return `${Math.floor(daysAgo / 365)} years ago`;
+      if (daysAgo === 0) return t("product:reviewCard.today");
+      if (daysAgo === 1) return t("product:reviewCard.yesterday");
+      if (daysAgo < 7) return t("product:reviewCard.daysAgo", { count: daysAgo });
+      if (daysAgo < 30) return t("product:reviewCard.weeksAgo", { count: Math.floor(daysAgo / 7) });
+      if (daysAgo < 365) return t("product:reviewCard.monthsAgo", { count: Math.floor(daysAgo / 30) });
+      return t("product:reviewCard.yearsAgo", { count: Math.floor(daysAgo / 365) });
     } catch {
       return dateString;
     }
@@ -118,7 +120,7 @@ export default function ReviewCard({
                 {review.author.name}
               </p>
               {review.verified && (
-                <Badge variant="secondary">Verified Purchase</Badge>
+                <Badge variant="secondary">{t("product:reviewCard.verified")}</Badge>
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -152,7 +154,7 @@ export default function ReviewCard({
 
       {/* Helpful Buttons */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">Helpful?</span>
+        <span className="text-xs text-muted-foreground">{t("product:reviewCard.helpful")}</span>
 
         {onHelpful && (
           <Button
@@ -162,7 +164,7 @@ export default function ReviewCard({
             className="gap-1.5"
           >
             <ThumbsUp className="h-3.5 w-3.5" />
-            <span>Yes</span>
+            <span>{t("product:reviewCard.yes")}</span>
             {review.helpful > 0 && (
               <span className="text-[10px] text-muted-foreground">
                 ({review.helpful})
@@ -179,7 +181,7 @@ export default function ReviewCard({
             className="gap-1.5"
           >
             <ThumbsDown className="h-3.5 w-3.5" />
-            <span>No</span>
+            <span>{t("product:reviewCard.no")}</span>
             {review.notHelpful > 0 && (
               <span className="text-[10px] text-muted-foreground">
                 ({review.notHelpful})

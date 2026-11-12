@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,17 +11,21 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
 
 const MotionCard = motion.create(Card);
 
 interface SearchAutocompleteProps {
   /** Input hint; templates suit it to what the store sells */
   placeholder?: string;
+  /** Shows a search button inside the box with this label (e.g. "Search") */
+  submitLabel?: string;
   mobile?: boolean;
   onClose?: () => void;
 }
 
-export default function SearchAutocomplete({ mobile, onClose, placeholder = "Search dresses, jeans, panjabi…" }: SearchAutocompleteProps) {
+export default function SearchAutocomplete({ mobile, onClose, placeholder, submitLabel }: SearchAutocompleteProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -30,8 +35,8 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
 
   // Debounce the search query by 300ms
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
   }, [query]);
 
   const { data, isFetching } = useProducts(
@@ -58,15 +63,17 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
     navigate(`/product/${slug}`);
   };
 
+  const searchAll = () => {
+    if (!query.trim()) return;
+    setOpen(false);
+    onClose?.();
+    navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      if (results.length > 0) {
-        handleSelect(results[0].slug);
-      } else if (query.trim()) {
-        setOpen(false);
-        onClose?.();
-        navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
-      }
+      if (results.length > 0) handleSelect(results[0].slug);
+      else searchAll();
     }
   };
 
@@ -82,15 +89,20 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          aria-label="Search products"
-          className="h-11 w-full rounded-pill border-input bg-secondary pl-11 pr-11"
+          placeholder={placeholder ?? t("shop:searchAutocomplete.placeholder")}
+          aria-label={t("common:search.label")}
+          className={cn("h-11 w-full rounded-pill border-input bg-secondary pl-11", submitLabel ? "pr-32" : "pr-11")}
           autoFocus={mobile}
         />
         {query && (
-          <WithTooltip content="Clear search"><Button variant="ghost" size="icon" aria-label="Clear search" onClick={() => { setQuery(""); setDebouncedQuery(""); setOpen(false); }} className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded-full">
+          <WithTooltip content={t("shop:searchAutocomplete.clear")}><Button variant="ghost" size="icon" aria-label={t("shop:searchAutocomplete.clear")} onClick={() => { setQuery(""); setDebouncedQuery(""); setOpen(false); }} className={cn("absolute top-1/2 -translate-y-1/2 rounded-full", submitLabel ? "right-24" : "right-0.5")}>
             <X className="h-4 w-4" />
           </Button></WithTooltip>
+        )}
+        {submitLabel && (
+          <Button type="button" onClick={searchAll} className="absolute right-1 top-1/2 h-9 -translate-y-1/2 rounded-pill bg-highlight px-5 font-semibold text-highlight-foreground hover:bg-highlight/90">
+            {submitLabel}
+          </Button>
         )}
       </div>
 
@@ -103,7 +115,7 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
             className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden max-h-[360px] overflow-y-auto"
           >
             {isFetching && results.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-muted-foreground">Searching...</div>
+              <div className="px-4 py-3 text-sm text-muted-foreground">{t("shop:searchAutocomplete.searching")}</div>
             ) : (
               results.map((product) => (
                 <Button
@@ -112,7 +124,7 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
                   onClick={() => handleSelect(product.slug)}
                   className="h-auto w-full justify-start gap-3 text-left whitespace-normal"
                 >
-                  <img src={product.image} alt={product.name} className="w-10 h-10 shrink-0 object-contain" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }} />
+                  <img src={product.image} alt={product.name} className="w-10 h-10 shrink-0 object-contain" onError={(e) => { const img = e.target as HTMLImageElement; if (!img.src.includes('placeholder.svg')) img.src = '/placeholder.svg' }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{product.name}</p>
                     <p className="text-[11px] text-muted-foreground">{product.category} · {formatCurrency(product.price)}</p>
@@ -126,7 +138,7 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
                 to={`/shop?search=${encodeURIComponent(query.trim())}`}
                 onClick={() => { setOpen(false); onClose?.(); }}
               >
-                View all results for "{query}"
+                {t("shop:searchAutocomplete.viewAllFor", { query })}
               </Link>
             </Button>
           </MotionCard>
@@ -138,7 +150,7 @@ export default function SearchAutocomplete({ mobile, onClose, placeholder = "Sea
             exit={{ opacity: 0, y: -4 }}
             className="absolute top-full left-0 right-0 mt-2 z-50 p-6 text-center"
           >
-            <p className="text-sm text-muted-foreground">No products found for "{query}"</p>
+            <p className="text-sm text-muted-foreground">{t("shop:searchAutocomplete.noResultsFor", { query })}</p>
           </MotionCard>
         )}
       </AnimatePresence>

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useDeals, useProducts } from "@/hooks/useProducts";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { mapApiProduct } from "@/lib/mappers";
@@ -21,6 +22,7 @@ export interface HeroSlide {
 
 /** Enabled hero slides from admin (Online store > Homepage hero); [] until the owner adds one. */
 export function useHeroSlides() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ["homepage-hero"],
     queryFn: storefrontSettingsApi.getHomepageHero,
@@ -34,11 +36,11 @@ export function useHeroSlides() {
           tag: s.tag,
           title: s.title,
           subtitle: s.subtitle,
-          cta: s.cta || "Shop now",
+          cta: s.cta || t("common:actions.shopNow"),
           link: s.link || "/shop",
           image: s.imagePath ? getImageUrl(s.imagePath) : null,
         })),
-    [data],
+    [data, t],
   );
   return { slides, autoplayMs: data?.autoplayMs ?? 6000, isLoading };
 }

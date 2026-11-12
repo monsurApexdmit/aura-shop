@@ -4,18 +4,22 @@ import Footer from "./Footer";
 import ProductCard from "./ProductCard";
 import Home from "./Home";
 import ProductPage from "./ProductPage";
+import MobileNav from "./MobileNav";
+import { hidesTabBar } from "@/lib/mobileNav";
 
-/** Luxe Lookbook: image-led fashion house. Full-screen photography, Didone serif, hairlines, no phone tab bar. */
+const isProduct = (p: string) => /^\/product\/[^/]+\/?$/.test(p);
+
+/** Property Listings: real-estate style. Navy bars, photo hero with search, listing cards with specs, teal actions, gold accents. */
 const luxe: StoreTemplate = {
   Header,
   Footer,
   ProductCard,
   Home,
   ProductPage,
-  MobileNav: null,
-  mobileNavPadding: () => "",
-  // No tab bar: sit low, except above the product page's add-to-bag bar
-  fabBottom: (pathname) => (/^\/product\//.test(pathname) ? "5.5rem" : "1.5rem"),
+  MobileNav,
+  mobileNavPadding: (p) => (hidesTabBar(p) ? "" : "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"),
+  // Above the tab bar, and above the listing page's enquiry bar; low where neither shows (checkout)
+  fabBottom: (p) => (hidesTabBar(p) && !isProduct(p) ? "1.5rem" : "5rem"),
 };
 
 export default luxe;

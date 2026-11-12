@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { useProduct, useProducts } from "@/hooks/useProducts";
 import { mapApiProduct } from "@/lib/mappers";
 import { useCart } from "@/contexts/CartContext";
@@ -67,6 +68,7 @@ export const onProductImageError = (e: React.SyntheticEvent<HTMLImageElement>) =
  * Templates only decide how it looks.
  */
 export function useProductPage(slug: string | undefined, { relatedLimit = 4 }: { relatedLimit?: number } = {}) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addItem, items, updateQuantity, removeItem, setIsOpen } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -120,7 +122,7 @@ export function useProductPage(slug: string | undefined, { relatedLimit = 4 }: {
   const originalPrice = original && original > currentPrice ? original : undefined;
   const discount = originalPrice ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0;
   const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
-  const currentSku = selectedVariant?.sku ?? product.sku ?? "N/A";
+  const currentSku = selectedVariant?.sku ?? product.sku ?? t("product:page.skuNone");
   const images = product.images?.length ? product.images : [product.image];
   const inWishlist = isInWishlist(product.id);
 
@@ -147,13 +149,13 @@ export function useProductPage(slug: string | undefined, { relatedLimit = 4 }: {
     if (navigator.share) await navigator.share({ title: product.name, url: productUrl }).catch(() => {});
     else {
       await navigator.clipboard?.writeText(productUrl);
-      toast.success("Link copied");
+      toast.success(t("product:page.linkCopied"));
     }
   };
 
   const storeWhatsApp = onlineStore?.whatsappNumber || onlineStore?.social?.whatsapp || "";
   const variantText = selectedVariant && attributes.length ? ` (${Object.values(selectedAttributes).join(", ")})` : "";
-  const whatsAppHref = whatsAppLink(storeWhatsApp, `Hi, I'd like to order: ${product.name}${variantText} — ${formatCurrency(currentPrice)}\n${productUrl}`) || null;
+  const whatsAppHref = whatsAppLink(storeWhatsApp, t("product:page.whatsAppOrder", { product: product.name, variant: variantText, price: formatCurrency(currentPrice), url: productUrl })) || null;
 
   return {
     status: "ready" as const,

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ShoppingCart, Plus, Minus, ChevronRight, Truck, Shield, RotateCcw, Heart, Share2, Package, Tag, Zap, MessageCircle } from "lucide-react";
 import { categoryHref, isColorAttribute, swatchColor, useProductPage } from "@/templates/shared/useProductPage";
@@ -24,6 +25,7 @@ import { WithTooltip } from "@/components/common/WithTooltip"
 const MotionCard = motion.create(Card);
 
 export default function ProductDetail() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const page = useProductPage(slug);
@@ -63,9 +65,9 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <EmptyState
           icon={Package}
-          title="Product Not Found"
-          description="The product you're looking for doesn't exist."
-          action={<Button onClick={() => navigate("/shop")}>Back to Shop</Button>}
+          title={t("tpl_editorial:product.notFoundTitle")}
+          description={t("tpl_editorial:product.notFoundText")}
+          action={<Button onClick={() => navigate("/shop")}>{t("tpl_editorial:product.backToShop")}</Button>}
         />
       </div>
     );
@@ -88,9 +90,9 @@ export default function ProductDetail() {
       <div className="hidden bg-muted/40 border-b border-border md:block">
         <div className="container py-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link to="/" className="hover:text-primary transition-colors">{t("common:nav.home")}</Link>
             <ChevronRight className="h-3 w-3" />
-            <Link to="/shop" className="hover:text-primary transition-colors">Shop</Link>
+            <Link to="/shop" className="hover:text-primary transition-colors">{t("common:nav.shop")}</Link>
             <ChevronRight className="h-3 w-3" />
             <Link to={categoryHref(product.category)} className="hover:text-primary transition-colors">
               {product.category}
@@ -114,25 +116,25 @@ export default function ProductDetail() {
                     src={img}
                     alt={i === 0 ? product.name : ""}
                     className="aspect-square w-full shrink-0 snap-center object-contain p-4"
-                    onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
+                    onError={(e) => { const img = e.target as HTMLImageElement; if (!img.src.includes('placeholder.svg')) img.src = '/placeholder.svg' }}
                   />
                 ))}
               </div>
               {discount > 0 && (
-                <Badge variant="destructive" className="absolute left-4 top-4 uppercase">{discount}% Off</Badge>
+                <Badge variant="destructive" className="absolute left-4 top-4 uppercase">{t("common:product.off", { value: `${discount}%` })}</Badge>
               )}
               <div className="absolute right-4 top-4 flex flex-col gap-2">
                 <Button
                   variant="secondary"
                   size="icon"
                   className="rounded-full bg-background/90 shadow-sm"
-                  aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={inWishlist ? t("common:actions.removeFromWishlist") : t("common:actions.addToWishlist")}
                   aria-pressed={inWishlist}
                   onClick={() => toggleWishlist()}
                 >
                   <Heart className={cn("h-[18px] w-[18px]", inWishlist && "fill-highlight text-highlight")} />
                 </Button>
-                <Button variant="secondary" size="icon" className="rounded-full bg-background/90 shadow-sm" aria-label="Share" onClick={share}>
+                <Button variant="secondary" size="icon" className="rounded-full bg-background/90 shadow-sm" aria-label={t("common:actions.share")} onClick={share}>
                   <Share2 className="h-[18px] w-[18px]" />
                 </Button>
               </div>
@@ -153,7 +155,7 @@ export default function ProductDetail() {
                   src={images[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-contain p-8"
-                  onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
+                  onError={(e) => { const img = e.target as HTMLImageElement; if (!img.src.includes('placeholder.svg')) img.src = '/placeholder.svg' }}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.05 }}
@@ -164,7 +166,7 @@ export default function ProductDetail() {
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
                   {discount > 0 && (
                     <Badge variant="destructive" className="uppercase">
-                      {discount}% Off
+                      {t("common:product.off", { value: `${discount}%` })}
                     </Badge>
                   )}
                   {product.badge && (
@@ -176,16 +178,16 @@ export default function ProductDetail() {
               )}
               {/* Floating actions */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <WithTooltip content={inWishlist ? "Remove from wishlist" : "Add to wishlist"}><Button
+                <WithTooltip content={inWishlist ? t("common:actions.removeFromWishlist") : t("common:actions.addToWishlist")}><Button
                   variant={inWishlist ? "default" : "outline"}
                   size="icon"
-                  aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={inWishlist ? t("common:actions.removeFromWishlist") : t("common:actions.addToWishlist")}
                   aria-pressed={inWishlist}
                   onClick={() => toggleWishlist()}
                 >
                   <Heart className={cn("h-4 w-4", inWishlist ? "fill-current" : "")} />
                 </Button></WithTooltip>
-                <WithTooltip content="Share"><Button variant="outline" size="icon" aria-label="Share" onClick={share}>
+                <WithTooltip content={t("common:actions.share")}><Button variant="outline" size="icon" aria-label={t("common:actions.share")} onClick={share}>
                   <Share2 className="h-4 w-4" />
                 </Button></WithTooltip>
               </div>
@@ -196,12 +198,12 @@ export default function ProductDetail() {
                 <ImageThumbButton
                   key={i}
                   src={img}
-                  aria-label={`Show image ${i + 1}`}
+                  aria-label={t("tpl_editorial:product.showImage", { number: i + 1 })}
                   selected={selectedImage === i}
                   onClick={() => setSelectedImage(i)}
                   className="size-20"
                   imgClassName="object-contain p-2"
-                  onImageError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('placeholder.svg')) t.src = '/placeholder.svg' }}
+                  onImageError={(e) => { const img = e.target as HTMLImageElement; if (!img.src.includes('placeholder.svg')) img.src = '/placeholder.svg' }}
                 />
               ))}
             </div>
@@ -215,7 +217,7 @@ export default function ProductDetail() {
                 {product.category}
               </Badge>
               {currentStock > 0 && currentStock <= 5 && (
-                <Badge variant="destructive">Only {currentStock} left!</Badge>
+                <Badge variant="destructive">{t("common:product.lowStock", { count: currentStock })}</Badge>
               )}
             </div>
 
@@ -231,7 +233,7 @@ export default function ProductDetail() {
                 ))}
               </div>
               <span className="text-sm font-semibold text-foreground">{product.rating}</span>
-              <span className="text-sm text-muted-foreground">({product.reviews} reviews)</span>
+              <span className="text-sm text-muted-foreground">({t("common:product.reviews", { count: product.reviews })})</span>
             </div>
 
             {/* Price Block */}
@@ -243,18 +245,18 @@ export default function ProductDetail() {
                 )}
                 {discount > 0 && (
                   <Badge variant="secondary">
-                    Save {formatCurrency(originalPrice! - currentPrice)}
+                    {t("common:product.save", { amount: formatCurrency(originalPrice! - currentPrice) })}
                   </Badge>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> SKU: {currentSku}</span>
+                <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> {t("tpl_editorial:product.sku", { sku: currentSku })}</span>
                 <span className="flex items-center gap-1">
                   <Package className="h-3 w-3" />
                   {currentStock > 0 ? (
-                    <span className="text-primary font-medium">In Stock ({currentStock})</span>
+                    <span className="text-primary font-medium">{t("tpl_editorial:product.inStockCount", { qty: currentStock })}</span>
                   ) : (
-                    <span className="text-destructive font-medium">Out of Stock</span>
+                    <span className="text-destructive font-medium">{t("common:product.outOfStock")}</span>
                   )}
                 </span>
               </div>
@@ -300,11 +302,11 @@ export default function ProductDetail() {
                 <Card className="px-4 py-3">
                   <InfoList>
                     <InfoRow
-                      label="Available stock"
+                      label={t("tpl_editorial:product.availableStock")}
                       value={currentStock > 0 ? (
-                        <span className="text-primary">{currentStock} unit{currentStock === 1 ? "" : "s"}</span>
+                        <span className="text-primary">{t("tpl_editorial:product.units", { count: currentStock })}</span>
                       ) : (
-                        <span className="text-destructive">Out of stock</span>
+                        <span className="text-destructive">{t("common:product.outOfStock")}</span>
                       )}
                     />
                   </InfoList>
@@ -318,18 +320,18 @@ export default function ProductDetail() {
             <div className="flex flex-col gap-3 mb-6 max-md:hidden min-[420px]:flex-row min-[420px]:items-center">
               {cartItem ? (
                 <MotionCard initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-1 p-1">
-                  <WithTooltip content="Decrease quantity"><Button
+                  <WithTooltip content={t("common:actions.decrease")}><Button
                     variant="outline"
                     size="icon"
-                    aria-label="Decrease quantity"
+                    aria-label={t("common:actions.decrease")}
                     onClick={() => decrement()}
                   >
                     <Minus className="h-4 w-4" />
                   </Button></WithTooltip>
                   <span className="w-14 text-center text-base font-bold text-foreground">{cartItem.quantity}</span>
-                  <WithTooltip content="Increase quantity"><Button
+                  <WithTooltip content={t("common:actions.increase")}><Button
                     size="icon"
-                    aria-label="Increase quantity"
+                    aria-label={t("common:actions.increase")}
                     onClick={() => increment()}
                   >
                     <Plus className="h-4 w-4" />
@@ -343,14 +345,14 @@ export default function ProductDetail() {
                   className="gap-2 flex-1 min-[420px]:max-w-xs"
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  {currentStock === 0 ? "Out of Stock" : "Add to Cart"}
+                  {currentStock === 0 ? t("common:product.outOfStock") : t("common:actions.addToCart")}
                 </Button>
               )}
               {currentStock > 0 && (
                 <Button asChild size="lg" variant="secondary" className="gap-2 flex-1 min-[420px]:max-w-xs">
                   <Link to={`/order/${product.slug}`}>
                     <Zap className="h-5 w-5" />
-                    Quick order
+                    {t("tpl_editorial:product.quickOrder")}
                   </Link>
                 </Button>
               )}
@@ -359,7 +361,7 @@ export default function ProductDetail() {
               <Button asChild size="lg" variant="outline" className="mb-6 w-full gap-2 min-[420px]:w-fit">
                 <a href={whatsAppHref} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="h-5 w-5" />
-                  Order on WhatsApp
+                  {t("tpl_editorial:product.orderOnWhatsApp")}
                 </a>
               </Button>
             )}
@@ -369,9 +371,9 @@ export default function ProductDetail() {
             {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
-                { icon: Truck, title: "Free Shipping", sub: freeShippingThreshold != null ? `Orders ${formatCurrency(freeShippingThreshold)}+` : "Fast delivery" },
-                { icon: Shield, title: "Secure Payment", sub: "100% Protected" },
-                { icon: RotateCcw, title: "Easy Returns", sub: "30-Day Policy" },
+                { icon: Truck, title: t("tpl_editorial:product.freeShipping"), sub: freeShippingThreshold != null ? t("tpl_editorial:product.freeShippingOver", { amount: formatCurrency(freeShippingThreshold) }) : t("tpl_editorial:product.fastDelivery") },
+                { icon: Shield, title: t("tpl_editorial:product.securePayment"), sub: t("tpl_editorial:product.protected") },
+                { icon: RotateCcw, title: t("tpl_editorial:product.easyReturns"), sub: t("tpl_editorial:product.returnPolicy") },
               ].map(({ icon: Icon, title, sub }) => (
                 <Card key={title} className="flex flex-col items-center gap-1.5 rounded-2xl bg-secondary p-2.5 text-center shadow-none sm:gap-2 sm:p-3">
                   <Icon className="h-5 w-5 text-primary" />
@@ -388,8 +390,8 @@ export default function ProductDetail() {
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-1 h-5 bg-primary rounded-full" />
-              <h3 className="text-base font-semibold text-foreground">What's in this bundle</h3>
-              <Badge variant="secondary">{product.bundleItems.length} items</Badge>
+              <h3 className="text-base font-semibold text-foreground">{t("tpl_editorial:product.bundleTitle")}</h3>
+              <Badge variant="secondary">{t("common:product.items", { count: product.bundleItems.length })}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {product.bundleItems.map((item, i) => (
@@ -405,7 +407,7 @@ export default function ProductDetail() {
                   </ItemMedia>
                   <ItemContent className="min-w-0">
                     <ItemTitle className="block w-full truncate">{item.productName}</ItemTitle>
-                    {item.sku && <ItemDescription className="text-xs">SKU: {item.sku}</ItemDescription>}
+                    {item.sku && <ItemDescription className="text-xs">{t("tpl_editorial:product.sku", { sku: item.sku })}</ItemDescription>}
                   </ItemContent>
                   <ItemActions>
                     <Badge variant="secondary">×{item.quantity}</Badge>
@@ -420,26 +422,26 @@ export default function ProductDetail() {
         <div className="mt-16">
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="w-full justify-start overflow-x-auto">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="specifications">Specifications</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({product.reviews})</TabsTrigger>
+              <TabsTrigger value="description">{t("tpl_editorial:product.description")}</TabsTrigger>
+              <TabsTrigger value="specifications">{t("tpl_editorial:product.specifications")}</TabsTrigger>
+              <TabsTrigger value="reviews">{t("tpl_editorial:product.reviewsTab", { count: product.reviews })}</TabsTrigger>
             </TabsList>
             <TabsContent value="description" className="mt-6">
               <div className="prose prose-sm max-w-none text-muted-foreground">
                 <p className="leading-relaxed text-sm">
-                  {product.description || `Experience premium quality with the ${product.name}. Designed for everyday use with attention to detail and craftsmanship. This product combines functionality with modern aesthetics, making it the perfect choice for discerning customers.`}
+                  {product.description || t("tpl_editorial:product.fallbackDescription", { name: product.name })}
                 </p>
               </div>
             </TabsContent>
             <TabsContent value="specifications" className="mt-6">
               <InfoList className="grid-cols-1 gap-3 sm:grid-cols-2">
-                <InfoRow label="Category" value={product.category} />
-                <InfoRow label="SKU" value={currentSku} />
+                <InfoRow label={t("tpl_editorial:product.category")} value={product.category} />
+                <InfoRow label={t("tpl_editorial:product.skuLabel")} value={currentSku} />
                 {attributes.map((attr) => (
                   <InfoRow key={attr.name} label={attr.displayName} value={attr.values.join(", ")} />
                 ))}
                 {product.variants && product.variants.length > 0 && (
-                  <InfoRow label="Variants" value={`${product.variants.length} options`} />
+                  <InfoRow label={t("tpl_editorial:product.variants")} value={t("tpl_editorial:product.options", { count: product.variants.length })} />
                 )}
               </InfoList>
             </TabsContent>
@@ -453,10 +455,10 @@ export default function ProductDetail() {
         {relatedProducts.length > 0 && (
           <div className="mt-16">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">Related Products</h2>
+              <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">{t("tpl_editorial:product.related")}</h2>
               <Button asChild variant="ghost" size="sm" className="gap-1">
                 <Link to={categoryHref(product.category)}>
-                  View All <ChevronRight className="h-4 w-4" />
+                  {t("common:actions.viewAll")} <ChevronRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -478,11 +480,11 @@ export default function ProductDetail() {
             {discount > 0 && originalPrice ? (
               <p className="mt-1 text-[11px] tabular-nums text-ink-foreground/50"><span className="line-through">{formatCurrency(originalPrice)}</span> <span className="font-bold text-highlight">−{discount}%</span></p>
             ) : (
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-foreground/50">{currentStock > 0 ? "In stock" : "Sold out"}</p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-foreground/50">{currentStock > 0 ? t("common:product.inStock") : t("tpl_editorial:product.soldOut")}</p>
             )}
           </div>
           {currentStock === 0 ? (
-            <Button disabled className="h-12 rounded-pill bg-ink-foreground/10 px-6 text-ink-foreground">Sold out</Button>
+            <Button disabled className="h-12 rounded-pill bg-ink-foreground/10 px-6 text-ink-foreground">{t("tpl_editorial:product.soldOut")}</Button>
           ) : (
             <>
               {cartItem ? (
@@ -491,13 +493,13 @@ export default function ProductDetail() {
                     variant="ghost"
                     size="icon"
                     className="size-11 rounded-full text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground"
-                    aria-label="Decrease quantity"
+                    aria-label={t("common:actions.decrease")}
                     onClick={() => decrement()}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
                   <span className="w-5 text-center text-sm font-bold tabular-nums">{cartItem.quantity}</span>
-                  <Button variant="ghost" size="icon" className="size-11 rounded-full text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground" aria-label="Increase quantity" onClick={() => increment()}>
+                  <Button variant="ghost" size="icon" className="size-11 rounded-full text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground" aria-label={t("common:actions.increase")} onClick={() => increment()}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -506,14 +508,14 @@ export default function ProductDetail() {
                   variant="ghost"
                   size="icon"
                   className="size-12 rounded-full bg-ink-foreground/10 text-ink-foreground hover:bg-ink-foreground/20 hover:text-ink-foreground"
-                  aria-label="Add to bag"
+                  aria-label={t("tpl_editorial:card.addToBag")}
                   onClick={handleAdd}
                 >
                   <ShoppingCart className="h-5 w-5" />
                 </Button>
               )}
               <Button asChild className="h-12 rounded-pill bg-highlight px-6 text-sm font-extrabold uppercase tracking-[0.1em] text-highlight-foreground hover:bg-highlight/90">
-                <Link to={`/order/${product.slug}`}>Buy now</Link>
+                <Link to={`/order/${product.slug}`}>{t("common:actions.buyNow")}</Link>
               </Button>
             </>
           )}

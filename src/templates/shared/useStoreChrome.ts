@@ -1,4 +1,5 @@
 import { Facebook, Instagram, MessageCircle, Youtube, type LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -19,6 +20,7 @@ export interface NavLink {
  * Links come from admin (homepage aisles, categories, collections, published pages).
  */
 export function useStoreChrome() {
+  const { t } = useTranslation();
   const currency = useCurrency();
   const { storeName, bannerUrl, logoUrl, onlineStore, paymentMethods, storePhone, storeEmail, storeAddress } = currency;
   const cart = useCart();
@@ -61,20 +63,20 @@ export function useStoreChrome() {
     /** Shop links for menus: aisles, all products, collections (only when published), deals */
     shopLinks: [
       ...shopNav,
-      { label: "Shop all", to: "/shop" },
-      ...(collections.length > 0 ? [{ label: "Collections", to: "/collections" }] : []),
-      { label: "Deals", to: "/deals" },
+      { label: t("shop:links.shopAll"), to: "/shop" },
+      ...(collections.length > 0 ? [{ label: t("common:nav.collections"), to: "/collections" }] : []),
+      { label: t("common:nav.deals"), to: "/deals" },
     ] as NavLink[],
     /** Pages published to the header menu, plus Contact */
-    utilityLinks: [...headerPages, { label: "Contact", to: "/contact" }] as NavLink[],
+    utilityLinks: [...headerPages, { label: t("common:nav.contact"), to: "/contact" }] as NavLink[],
     helpLinks: [
       ...footerPages.filter((p) => p.type === "policy" || p.type === "faq").map(toLink),
-      { label: "Contact", to: "/contact" },
-      { label: "Track order", to: "/track-order" },
+      { label: t("common:nav.contact"), to: "/contact" },
+      { label: t("common:nav.trackOrder"), to: "/track-order" },
     ] as NavLink[],
     companyLinks: [
       ...footerPages.filter((p) => p.type !== "policy" && p.type !== "faq").map(toLink),
-      { label: "My account", to: "/account" },
+      { label: t("common:nav.myAccount"), to: "/account" },
     ] as NavLink[],
     categories,
     collections,

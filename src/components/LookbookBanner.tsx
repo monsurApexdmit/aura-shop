@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getImageUrl } from "@/lib/api";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
@@ -11,13 +12,6 @@ import { mapApiProduct } from "@/lib/mappers";
 import { PASTELS } from "@/lib/pastels";
 import { AccentText } from "@/components/common/AccentText";
 
-const FALLBACK = {
-  tag: "Lookbook",
-  title: "A year of *color*, no apologies.",
-  text: "Bold colour, easy shapes and pieces for the whole family. Find your next favourite in the full collection.",
-  cta: "Explore the collection",
-  link: "/shop",
-};
 const EMPTY_SLOT = ["🛍️", "✨"];
 
 const hasPhoto = (src: string) => !src.includes("placeholder");
@@ -25,6 +19,7 @@ const hasPhoto = (src: string) => !src.includes("placeholder");
 // Brand story block. Admin can write it (Online store > Homepage sections > Lookbook); otherwise it
 // spotlights the category most of the newest products belong to, with that category's photos.
 export default function LookbookBanner() {
+  const { t } = useTranslation();
   const { data: sections, isLoading } = useHomepageSections();
   const { data: categories = [] } = useCategories();
   const { data } = useProducts({ limit: 8 });
@@ -48,12 +43,12 @@ export default function LookbookBanner() {
     const subs = cat.children.slice(0, 3).map((x) => x.name);
     return {
       copy: {
-        tag: "Spotlight",
-        title: `Fresh in *${cat.name}*.`,
+        tag: t("home:lookbook.spotlightTag"),
+        title: t("home:lookbook.spotlightTitle", { name: cat.name }),
         text: subs.length > 0
-          ? `${subs.join(", ")} and more: new pieces in our ${cat.name} collection.`
-          : `New pieces in our ${cat.name} collection, picked for you.`,
-        cta: `Shop ${cat.name}`,
+          ? t("home:lookbook.spotlightTextSubs", { subs: subs.join(", "), name: cat.name })
+          : t("home:lookbook.spotlightText", { name: cat.name }),
+        cta: t("home:shopName", { name: cat.name }),
         link: `/shop?cat=${cat.slug}`,
       },
       images: [
@@ -61,7 +56,7 @@ export default function LookbookBanner() {
         ...products.filter(inCat).map((p) => p.image),
       ],
     };
-  }, [custom, categories, products]);
+  }, [custom, categories, products, t]);
 
   const images = useMemo(() => {
     const own = custom ? custom.images.map((p) => getImageUrl(p)) : spotlight?.images ?? [];
@@ -72,7 +67,15 @@ export default function LookbookBanner() {
 
   if (isLoading) return null;
   if (custom && !custom.enabled) return null;
-  const copy = custom ?? spotlight?.copy ?? FALLBACK;
+  // Shown until the owner writes the lookbook and no category can be spotlighted.
+  const fallback = {
+    tag: t("home:lookbook.tag"),
+    title: t("home:lookbook.title"),
+    text: t("home:lookbook.text"),
+    cta: t("home:lookbook.cta"),
+    link: "/shop",
+  };
+  const copy = custom ?? spotlight?.copy ?? fallback;
 
   return (
     <section className="container pb-6 md:py-12">
@@ -94,7 +97,7 @@ export default function LookbookBanner() {
           {copy.text && <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-foreground/75 md:text-base">{copy.text}</p>}
           <Button asChild className="mt-5 h-11 sm:mt-7 rounded-pill bg-ink-foreground px-6 font-semibold text-ink hover:bg-ink-foreground/90">
             <Link to={copy.link || "/shop"}>
-              {copy.cta || FALLBACK.cta} <ArrowRight className="h-4 w-4" />
+              {copy.cta || fallback.cta} <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>

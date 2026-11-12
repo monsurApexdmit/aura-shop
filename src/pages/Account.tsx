@@ -14,6 +14,8 @@ import { StatTile } from "@/components/common/StatTile";
 import { StatusBadge, type StatusVariant } from "@/components/common/StatusBadge";
 import Footer from "@/components/Footer";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
+import { localeTag } from "@/i18n";
 
 const statusIcons = { yellow: Clock, blue: Truck, green: CheckCircle2, red: XCircle, gray: Package };
 const statusVariants: Record<string, StatusVariant> = {
@@ -27,6 +29,7 @@ const statusVariants: Record<string, StatusVariant> = {
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
 
 export default function Account() {
+  const { t } = useTranslation();
   const { user, isLoggedIn, logout } = useAuth();
   const { data, isLoading, isError } = useOrders(isLoggedIn);
   const { formatCurrency } = useCurrency();
@@ -42,18 +45,18 @@ export default function Account() {
           {/* Welcome */}
           <motion.div {...fadeUp} className="mb-8">
             <PageHeader
-              title={`Welcome back, ${user?.name?.split(" ")[0] || "User"}!`}
-              description="Manage your account, orders, and addresses."
+              title={t("account:dashboard.welcome", { name: user?.name?.split(" ")[0] || t("account:dashboard.fallbackName") })}
+              description={t("account:dashboard.description")}
             />
           </motion.div>
 
           {/* Stats */}
           <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[
-              { label: "Total Orders", value: isLoading ? "..." : String(orders.length), icon: Package, link: "/account/orders" },
-              { label: "Total Spent", value: isLoading ? "..." : formatCurrency(totalSpent), icon: ShoppingBag, link: "/account/orders" },
-              { label: "Addresses", value: "Manage", icon: MapPin, link: "/account/addresses" },
-              { label: "Profile", value: "Edit", icon: User, link: "/account/profile" },
+              { label: t("account:dashboard.stats.totalOrders"), value: isLoading ? "..." : String(orders.length), icon: Package, link: "/account/orders" },
+              { label: t("account:dashboard.stats.totalSpent"), value: isLoading ? "..." : formatCurrency(totalSpent), icon: ShoppingBag, link: "/account/orders" },
+              { label: t("account:dashboard.stats.addresses"), value: t("account:dashboard.stats.manage"), icon: MapPin, link: "/account/addresses" },
+              { label: t("account:dashboard.stats.profile"), value: t("common:actions.edit"), icon: User, link: "/account/profile" },
             ].map((stat) => (
               <Link key={stat.label} to={stat.link} className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <StatTile
@@ -71,11 +74,11 @@ export default function Account() {
             {/* Quick Links */}
             <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="lg:col-span-1 space-y-3">
               {[
-                { label: "My Orders", desc: "View order history & status", icon: Package, to: "/account/orders" },
-                { label: "My Returns", desc: "Track return requests & refunds", icon: RotateCcw, to: "/account/returns" },
-                { label: "Addresses", desc: "Manage shipping addresses", icon: MapPin, to: "/account/addresses" },
-                { label: "Support", desc: "Get help with your orders", icon: Headphones, to: "/support" },
-                { label: "Profile Settings", desc: "Edit your personal info", icon: User, to: "/account/profile" },
+                { label: t("account:dashboard.links.orders"), desc: t("account:dashboard.links.ordersDesc"), icon: Package, to: "/account/orders" },
+                { label: t("account:dashboard.links.returns"), desc: t("account:dashboard.links.returnsDesc"), icon: RotateCcw, to: "/account/returns" },
+                { label: t("account:dashboard.links.addresses"), desc: t("account:dashboard.links.addressesDesc"), icon: MapPin, to: "/account/addresses" },
+                { label: t("account:dashboard.links.support"), desc: t("account:dashboard.links.supportDesc"), icon: Headphones, to: "/support" },
+                { label: t("account:dashboard.links.profile"), desc: t("account:dashboard.links.profileDesc"), icon: User, to: "/account/profile" },
               ].map((link) => (
                 <Item key={link.to} asChild variant="outline" className="bg-card">
                   <Link to={link.to}>
@@ -98,8 +101,8 @@ export default function Account() {
                   <LogOut />
                 </ItemMedia>
                 <span>
-                  <span className="block font-medium text-sm text-destructive">Log Out</span>
-                  <span className="block text-sm font-normal text-muted-foreground">Sign out of your account</span>
+                  <span className="block font-medium text-sm text-destructive">{t("account:dashboard.logout")}</span>
+                  <span className="block text-sm font-normal text-muted-foreground">{t("account:dashboard.logoutDesc")}</span>
                 </span>
               </Button>
             </motion.div>
@@ -107,10 +110,10 @@ export default function Account() {
             {/* Recent Orders */}
             <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="lg:col-span-2">
               <SectionCard
-                title="Recent Orders"
+                title={t("account:dashboard.recentOrders")}
                 actions={
                   <Button asChild variant="link" size="sm" className="h-auto p-0">
-                    <Link to="/account/orders">View All</Link>
+                    <Link to="/account/orders">{t("common:actions.viewAll")}</Link>
                   </Button>
                 }
               >
@@ -120,15 +123,15 @@ export default function Account() {
                     {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20" />)}
                   </div>
                 ) : isError ? (
-                  <EmptyState className="py-10" icon={Package} title="We could not load your orders right now." />
+                  <EmptyState className="py-10" icon={Package} title={t("account:dashboard.loadError")} />
                 ) : recentOrders.length === 0 ? (
                   <EmptyState
                     className="py-10"
                     icon={Package}
-                    title="No orders yet"
+                    title={t("account:dashboard.noOrders")}
                     action={
                       <Button asChild variant="link">
-                        <Link to="/shop">Start Shopping</Link>
+                        <Link to="/shop">{t("account:dashboard.startShopping")}</Link>
                       </Button>
                     }
                   />
@@ -141,8 +144,8 @@ export default function Account() {
                       const itemCount = Array.isArray(order.items) ? order.items.length : 0;
                       const orderDate = order.order_time ? new Date(order.order_time) : null;
                       const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
-                        ? orderDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                        : "Date unavailable";
+                        ? orderDate.toLocaleDateString(localeTag(), { month: "short", day: "numeric", year: "numeric" })
+                        : t("account:dateUnavailable");
                       return (
                         <Item key={order.id} asChild variant="outline" className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                           <Link to={`/account/orders/${order.id}`}>
@@ -150,13 +153,13 @@ export default function Account() {
                               <Icon />
                             </ItemMedia>
                             <ItemContent className="min-w-0">
-                              <ItemTitle className="font-mono">{order.invoice_no || `Order #${order.id}`}</ItemTitle>
+                              <ItemTitle className="font-mono">{order.invoice_no || t("account:orderNumber", { id: order.id })}</ItemTitle>
                               <ItemDescription>
-                                {orderDateLabel} · {itemCount} item{itemCount !== 1 ? "s" : ""}
+                                {orderDateLabel} · {t("common:product.items", { count: itemCount })}
                               </ItemDescription>
                             </ItemContent>
                             <ItemActions className="flex-col items-start gap-1 sm:items-end">
-                              <StatusBadge status={label} variant={statusVariant} />
+                              <StatusBadge status={label} label={t(`account:orderStatus.${order.fulfillment_status}`, { defaultValue: label })} variant={statusVariant} />
                               <p className="font-semibold text-sm tabular-nums">{formatCurrency(order.amount)}</p>
                             </ItemActions>
                           </Link>

@@ -18,11 +18,11 @@ describe("storeTheme", () => {
     const { applyStoreTheme, STORAGE_KEY } = await load();
     expect(applyStoreTheme("luxe")).toBe("luxe");
 
-    expect(styleText()).toContain("Bodoni Moda");
+    expect(styleText()).toContain("Playfair Display");
     expect(fontsLink()?.href).toContain("fonts.googleapis.com");
     const cached = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
     expect(cached.themeId).toBe("luxe");
-    expect(cached.layers.theme).toContain("--radius: 0rem");
+    expect(cached.layers.theme).toContain("--radius: 0.75rem");
   });
 
   it("falls back to the default theme for unknown ids and drops the extra fonts", async () => {
@@ -42,7 +42,7 @@ describe("storeTheme", () => {
     applyStoreTheme("market");
 
     const text = styleText();
-    expect(text.indexOf("Sora")).toBeLessThan(text.indexOf("/* accent */"));
+    expect(text.indexOf("Hind Siliguri")).toBeLessThan(text.indexOf("/* accent */"));
     expect(text.indexOf("/* accent */")).toBeLessThan(text.indexOf("/* brand */"));
   });
 
@@ -60,6 +60,6 @@ describe("storeTheme", () => {
     const { applyStoreTheme, currentThemeId } = await load();
     expect(currentThemeId()).toBe("editorial");
     applyStoreTheme("market");
-    expect(styleText()).toContain("Sora");
+    expect(styleText()).toContain("Hind Siliguri");
   });
 });

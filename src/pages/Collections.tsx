@@ -9,28 +9,31 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCollections } from "@/hooks/useCollections";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 export default function Collections() {
+  const { t } = useTranslation();
   const { data: collections = [], isLoading, isError, refetch } = useCollections();
   const { storeName } = useCurrency();
 
   useEffect(() => {
-    document.title = storeName ? `Collections | ${storeName}` : "Collections";
-  }, [storeName]);
+    const title = t("common:nav.collections");
+    document.title = storeName ? `${title} | ${storeName}` : title;
+  }, [storeName, t]);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-muted/40">
         <div className="container py-4">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link to="/" className="hover:text-primary transition-colors">{t("common:nav.home")}</Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-foreground font-medium" aria-current="page">Collections</span>
+            <span className="text-foreground font-medium" aria-current="page">{t("common:nav.collections")}</span>
           </nav>
           <PageHeader
             className="mt-2"
-            title="Collections"
-            description={isLoading ? "Loading..." : `${collections.length} collection${collections.length === 1 ? "" : "s"} to explore`}
+            title={t("common:nav.collections")}
+            description={isLoading ? t("common:status.loading") : t("shop:collections.count", { count: collections.length })}
           />
         </div>
       </div>
@@ -45,17 +48,17 @@ export default function Collections() {
           <EmptyState
             className="py-20"
             icon={LayoutGrid}
-            title="Collections could not be loaded"
-            description="Please check your connection and try again."
-            action={<Button variant="outline" onClick={() => refetch()}>Try again</Button>}
+            title={t("shop:collections.loadError")}
+            description={t("shop:collections.checkConnection")}
+            action={<Button variant="outline" onClick={() => refetch()}>{t("common:actions.retry")}</Button>}
           />
         ) : collections.length === 0 ? (
           <EmptyState
             className="py-20"
             icon={LayoutGrid}
-            title="No collections yet"
-            description="Browse the full catalogue in the meantime."
-            action={<Button asChild><Link to="/shop">Shop all</Link></Button>}
+            title={t("shop:collections.emptyTitle")}
+            description={t("shop:collections.emptyText")}
+            action={<Button asChild><Link to="/shop">{t("shop:links.shopAll")}</Link></Button>}
           />
         ) : (
           <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">

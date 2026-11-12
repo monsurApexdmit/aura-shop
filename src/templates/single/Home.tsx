@@ -1,43 +1,35 @@
-import { Link } from "react-router-dom";
-import { PackageOpen } from "lucide-react";
-import { useHomeProducts, useProductList } from "../shared/useHomeContent";
-import Landing from "./Landing";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useStoreChrome } from "@/templates/shared/useStoreChrome";
+import { useHomeProducts } from "@/templates/shared/useHomeContent";
+import HeroSlider from "./HeroSlider";
+import { CategoryCircles, Deals, NewArrivals, Newsletter, PerksBand, PopularPicks, PromoTiles, Testimonials } from "./HomeSections";
 import Footer from "./Footer";
-import { HeroSkeleton } from "./HeroSkeleton";
 
 /**
- * "/" is the landing page for the store's lead product: the admin's homepage product pick
- * (Homepage sections > Products: featured or a category), else the newest product.
+ * Kids & Baby home: scalloped hero, category circles, four pastel tiles, Popular Picks (admin product block),
+ * perks band, New Arrivals, Deals, parent reviews and the newsletter panel.
  */
 export default function Home() {
-  const home = useHomeProducts();
-  const latest = useProductList("latest", { limit: 6, enabled: !home.isLoading });
-  const lead = (home.enabled ? home.products[0] : undefined) ?? latest.products[0];
-
-  if (lead) return <Landing key={lead.slug} slug={lead.slug} />;
-
-  if (home.isLoading || latest.isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <HeroSkeleton />
-      </div>
-    );
-  }
+  const { t } = useTranslation();
+  const { storeName } = useStoreChrome();
+  const popular = useHomeProducts();
+  // New Arrivals skips what Popular Picks already shows (both default to the latest products)
+  const shownIds = useMemo(() => (popular.enabled ? popular.products.map((p) => p.id) : []), [popular.enabled, popular.products]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <div className="container flex flex-1 flex-col items-center justify-center py-20 text-center">
-        <span className="flex size-20 items-center justify-center rounded-[1.75rem] bg-tile-1 text-ink">
-          <PackageOpen className="size-9" aria-hidden="true" />
-        </span>
-        <h1 className="mt-6 font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-4xl">Something good is coming</h1>
-        <p className="mt-3 max-w-md text-muted-foreground">We're getting our products ready. Check back soon, or get in touch and we'll tell you first.</p>
-        <Link
-          to="/contact"
-          className="mt-8 inline-flex h-12 items-center rounded-pill bg-highlight px-7 font-bold text-highlight-foreground transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          Contact us
-        </Link>
+    <div className="min-h-screen bg-background">
+      <h1 className="sr-only">{storeName ? t("tpl_single:home.heading", { store: storeName }) : t("tpl_single:home.headingNoStore")}</h1>
+      <HeroSlider />
+      <div className="space-y-10 pt-8 sm:space-y-14 sm:pt-10">
+        <CategoryCircles />
+        <PromoTiles />
+        <PopularPicks {...popular} />
+        <PerksBand />
+        <NewArrivals exclude={shownIds} />
+        <Deals />
+        <Testimonials />
+        <Newsletter />
       </div>
       <Footer />
     </div>

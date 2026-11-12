@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { quickOrderApi, safeRelativeTarget } from "@/services/quickOrderApi";
 import { parseAttribution, recordCampaignCode, recordTouch } from "@/lib/attribution";
+import { useTranslation } from "react-i18next";
 
 /** Merge the incoming query (e.g. fbclid appended by Facebook) into the target, target params win. */
 function mergeQuery(target: string, incomingSearch: string): string {
@@ -20,6 +21,7 @@ function mergeQuery(target: string, incomingSearch: string): string {
 
 /** /l/:code — short campaign link: resolve (server records the click), then go to the target keeping utm params. */
 export default function CampaignLinkRedirect() {
+  const { t } = useTranslation();
   const { code = "" } = useParams<{ code: string }>();
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export default function CampaignLinkRedirect() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-muted-foreground" role="status" aria-live="polite">
       <Spinner className="size-6" />
-      <p className="text-sm">Opening…</p>
+      <p className="text-sm">{t("pages:campaignLink.opening")}</p>
     </div>
   );
 }

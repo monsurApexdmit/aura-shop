@@ -1,394 +1,31 @@
-import { useState, type ReactNode, type UIEvent } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Heart, Minus, Plus, Share2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Building2, CalendarCheck, Check, ChevronLeft, ChevronRight, Heart, Mail, MapPin, MessageCircle, Phone, Share2, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
-import ProductReviews from "@/components/ProductReviews";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  isColorAttribute,
-  onProductImageError,
-  swatchColor,
-  useProductPage,
-  type ProductPageState,
-} from "@/templates/shared/useProductPage";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { whatsAppLink } from "@/lib/bdPhone";
+import { onProductImageError, useProductPage, type ProductPageState } from "@/templates/shared/useProductPage";
+import { useStoreChrome } from "@/templates/shared/useStoreChrome";
+import ProductCard from "./ProductCard";
 import Footer from "./Footer";
-import { LuxeCard } from "./ProductCard";
-import { EYEBROW, FOCUS, TEXT_LINK } from "./lib";
+import { BadgePill } from "./parts";
+import { BTN_PRIMARY, FOCUS, hasPhoto, listingLocation, listingSpecs } from "./lib";
 
-const PRIMARY_BTN = cn(
-  "flex h-14 w-full items-center justify-center bg-primary px-6 text-[11px] uppercase tracking-[0.2em] text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
-  FOCUS,
-);
-const OUTLINE_BTN = cn(
-  "flex h-14 w-full items-center justify-center border border-foreground px-6 text-[11px] uppercase tracking-[0.2em] text-foreground transition-colors hover:bg-foreground hover:text-background",
-  FOCUS,
-);
-
-export default function ProductPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const page = useProductPage(slug);
-
-  if (page.status === "ready") return <ReadyPage page={page} />;
-  return page.status === "loading" ? <LoadingState /> : <MissingState />;
-}
-
-function ReadyPage({ page }: { page: ProductPageState }) {
-  const {
-    product, attributes, selectedAttributes, selectAttribute, images, currentPrice, originalPrice, discount,
-    currentStock, currentSku, inStock, cartItem, add, increment, decrement, openCart, inWishlist, toggleWishlist,
-    share, whatsAppHref, quickOrderHref, categoryHref, relatedProducts, formatCurrency, freeShippingThreshold,
-  } = page;
-  const gallery = images.filter(Boolean);
-  const price = formatCurrency(currentPrice);
-
-  return (
-    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
-      <PhoneGallery images={gallery} name={product.name} />
-
-      <div className="container md:pt-8 lg:pt-12">
-        <div className="md:grid md:grid-cols-12 md:gap-10 lg:gap-16">
-          <DesktopGallery images={gallery} name={product.name} />
-
-          <div className="md:col-span-5">
-            <div className="pt-8 md:sticky md:top-32 md:pt-0">
-              <nav aria-label="Breadcrumb">
-                <ol className={cn(EYEBROW, "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground")}>
-                  <li><Link to="/" className={cn("hover:text-foreground", FOCUS)}>Home</Link></li>
-                  <li aria-hidden="true">/</li>
-                  <li><Link to={categoryHref} className={cn("hover:text-foreground", FOCUS)}>{product.category}</Link></li>
-                  <li aria-hidden="true" className="hidden sm:block">/</li>
-                  <li aria-current="page" className="hidden max-w-[16rem] truncate text-foreground sm:block">{product.name}</li>
-                </ol>
-              </nav>
-
-              <h1 className="mt-6 break-words font-display text-3xl font-normal leading-tight md:text-4xl">{product.name}</h1>
-
-              <p className="mt-4 flex flex-wrap items-baseline gap-x-3 tabular-nums">
-                {originalPrice ? (
-                  <>
-                    <span className="sr-only">Sale price</span>
-                    <span className="text-lg text-highlight">{price}</span>
-                    <span className="sr-only">Original price</span>
-                    <span className="text-sm text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>
-                    {discount > 0 && <span className={cn(EYEBROW, "text-[10px] text-highlight")}>−{discount}%</span>}
-                  </>
-                ) : (
-                  <span className="text-lg">{price}</span>
-                )}
-              </p>
-
-              {product.description && (
-                <p className="mt-6 line-clamp-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{product.description}</p>
-              )}
-
-              {attributes.length > 0 && (
-                <div className="mt-8 space-y-7">
-                  {attributes.map((attr) => {
-                    const chosen = selectedAttributes[attr.name];
-                    const colour = isColorAttribute(attr.name);
-                    return (
-                      <fieldset key={attr.name}>
-                        <legend className={cn(EYEBROW, "mb-3 flex gap-2")}>
-                          <span>{attr.displayName}</span>
-                          {chosen && <span className="normal-case tracking-normal text-muted-foreground">— {chosen}</span>}
-                        </legend>
-                        <div role="radiogroup" aria-label={attr.displayName} className="flex flex-wrap gap-2">
-                          {attr.values.map((val) => {
-                            const selected = chosen === val;
-                            return colour ? (
-                              <button
-                                key={val}
-                                type="button"
-                                role="radio"
-                                aria-checked={selected}
-                                aria-label={val}
-                                title={val}
-                                onClick={() => selectAttribute(attr.name, val)}
-                                className={cn(
-                                  "h-10 w-10 border p-[3px] transition-colors",
-                                  selected ? "border-foreground" : "border-transparent hover:border-border",
-                                  FOCUS,
-                                )}
-                              >
-                                <span className="block h-full w-full ring-1 ring-inset ring-foreground/15" style={{ backgroundColor: swatchColor(val) }} />
-                              </button>
-                            ) : (
-                              <button
-                                key={val}
-                                type="button"
-                                role="radio"
-                                aria-checked={selected}
-                                onClick={() => selectAttribute(attr.name, val)}
-                                className={cn(
-                                  "h-11 min-w-[3rem] border px-3 text-xs uppercase tracking-[0.12em] transition-colors",
-                                  selected ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground",
-                                  FOCUS,
-                                )}
-                              >
-                                {val}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </fieldset>
-                    );
-                  })}
-                </div>
-              )}
-
-              <p className={cn(EYEBROW, "mt-8 text-[10px]", inStock && currentStock <= 5 ? "text-highlight" : "text-muted-foreground")} aria-live="polite">
-                {!inStock ? "Sold out" : currentStock <= 5 ? `Only ${currentStock} left` : "In stock"}
-              </p>
-
-              <div className="mt-3 space-y-3">
-                {!inStock ? (
-                  <button type="button" disabled className={PRIMARY_BTN}>Sold out</button>
-                ) : cartItem ? (
-                  <>
-                    <QuantityRow quantity={cartItem.quantity} onDecrement={decrement} onIncrement={increment} className="h-14" />
-                    <button type="button" onClick={openCart} className={PRIMARY_BTN}>View bag</button>
-                  </>
-                ) : (
-                  <button type="button" onClick={add} className={PRIMARY_BTN}>Add to bag</button>
-                )}
-                {inStock && (
-                  <Link to={quickOrderHref} className={OUTLINE_BTN}>Buy it now</Link>
-                )}
-              </div>
-
-              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <button type="button" onClick={toggleWishlist} aria-pressed={inWishlist} className={cn(TEXT_LINK, "no-underline hover:underline")}>
-                  <Heart className={cn("h-3.5 w-3.5", inWishlist && "fill-current")} strokeWidth={1.25} />
-                  {inWishlist ? "Saved" : "Save"}
-                </button>
-                <button type="button" onClick={share} className={cn(TEXT_LINK, "no-underline hover:underline")}>
-                  <Share2 className="h-3.5 w-3.5" strokeWidth={1.25} />
-                  Share
-                </button>
-                {whatsAppHref && (
-                  <a href={whatsAppHref} target="_blank" rel="noopener noreferrer" className={TEXT_LINK}>
-                    Order on WhatsApp
-                  </a>
-                )}
-              </div>
-
-              <Accordion type="multiple" defaultValue={["details"]} className="mt-10 border-t border-border">
-                <Section value="details" title="Details">
-                  <p className="whitespace-pre-line">
-                    {product.description || `${product.name}: a considered piece, finished with care and made to last.`}
-                  </p>
-                </Section>
-                <Section value="specs" title="Specifications">
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
-                    <dt className="text-foreground">Category</dt>
-                    <dd>{product.subcategory && product.subcategory !== product.category ? `${product.category} / ${product.subcategory}` : product.category}</dd>
-                    <dt className="text-foreground">Reference</dt>
-                    <dd className="break-all">{currentSku}</dd>
-                    {attributes.map((a) => (
-                      <SpecRow key={a.name} label={a.displayName} value={a.values.join(", ")} />
-                    ))}
-                  </dl>
-                </Section>
-                <Section value="delivery" title="Delivery & returns">
-                  <p>
-                    {freeShippingThreshold != null
-                      ? `Complimentary delivery on orders over ${formatCurrency(freeShippingThreshold)}. `
-                      : "Delivery options and costs are shown at checkout. "}
-                    Unworn pieces may be returned in their original condition.
-                  </p>
-                  <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-                    <Link to="/shipping" className={TEXT_LINK}>Shipping</Link>
-                    <Link to="/returns" className={TEXT_LINK}>Returns</Link>
-                  </p>
-                </Section>
-                <Section value="reviews" title={`Reviews (${product.reviews})`}>
-                  <ProductReviews productSlug={product.slug} productRating={product.rating} reviewCount={product.reviews} />
-                </Section>
-              </Accordion>
-            </div>
-          </div>
-        </div>
-
-        {product.isBundle && product.bundleItems && product.bundleItems.length > 0 && (
-          <section className="mt-20 md:mt-28">
-            <h2 className={cn(EYEBROW, "mb-8 border-b border-border pb-3")}>In this set — {product.bundleItems.length} pieces</h2>
-            <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {product.bundleItems.map((item, i) => (
-                <li key={`${item.productId}-${item.variantId ?? i}`} className="flex items-center gap-4">
-                  <div className="h-24 w-[4.5rem] shrink-0 overflow-hidden bg-secondary">
-                    {item.image && <img src={item.image} alt="" loading="lazy" onError={onProductImageError} className="h-full w-full object-cover" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="line-clamp-2 text-xs uppercase tracking-[0.12em]">{item.productName}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      × {item.quantity}{item.sku ? ` · ${item.sku}` : ""}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {relatedProducts.length > 0 && (
-          <section className="mt-24 md:mt-36">
-            <h2 className="mb-10 text-center font-display text-3xl font-normal md:mb-14 md:text-4xl">
-              You may also <em className="italic">like</em>
-            </h2>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-10 md:grid-cols-4 md:gap-x-6">
-              {relatedProducts.map((p, i) => (
-                <LuxeCard key={p.id} product={p} index={i} />
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-
-      <div className="h-24 md:h-32" aria-hidden="true" />
-
-      {/* Phones: the bag action stays in reach */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 md:hidden">
-        {!inStock ? (
-          <button type="button" disabled className={cn(PRIMARY_BTN, "h-12")}>Sold out</button>
-        ) : cartItem ? (
-          <div className="flex gap-2">
-            <QuantityRow quantity={cartItem.quantity} onDecrement={decrement} onIncrement={increment} className="h-12 w-36 shrink-0" compact />
-            <button type="button" onClick={openCart} className={cn(PRIMARY_BTN, "h-12 flex-1")}>View bag</button>
-          </div>
-        ) : (
-          <button type="button" onClick={add} className={cn(PRIMARY_BTN, "h-12 tabular-nums")}>
-            Add to bag — {price}
-          </button>
-        )}
-      </div>
-
-      <Footer />
-    </div>
-  );
-}
-
-function Section({ value, title, children }: { value: string; title: string; children: ReactNode }) {
-  return (
-    <AccordionItem value={value} className="border-border">
-      <AccordionTrigger className={cn(EYEBROW, "py-5 font-normal hover:no-underline [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:stroke-[1.25]", FOCUS)}>
-        {title}
-      </AccordionTrigger>
-      <AccordionContent className="pb-6 text-sm leading-relaxed text-muted-foreground">{children}</AccordionContent>
-    </AccordionItem>
-  );
-}
-
-function SpecRow({ label, value }: { label: string; value: string }) {
-  return (
-    <>
-      <dt className="text-foreground">{label}</dt>
-      <dd>{value}</dd>
-    </>
-  );
-}
-
-function QuantityRow({
-  quantity, onDecrement, onIncrement, className, compact = false,
-}: { quantity: number; onDecrement: () => void; onIncrement: () => void; className?: string; compact?: boolean }) {
-  return (
-    <div role="group" aria-label="Quantity in bag" className={cn("flex items-center justify-between border border-foreground", className)}>
-      <button type="button" aria-label="Decrease quantity" onClick={onDecrement} className={cn("flex h-full w-12 items-center justify-center hover:opacity-60", FOCUS)}>
-        <Minus className="h-4 w-4" strokeWidth={1.25} />
-      </button>
-      <span className="text-[11px] uppercase tracking-[0.2em] tabular-nums">
-        {quantity}{compact ? "" : " in bag"}
-      </span>
-      <button type="button" aria-label="Increase quantity" onClick={onIncrement} className={cn("flex h-full w-12 items-center justify-center hover:opacity-60", FOCUS)}>
-        <Plus className="h-4 w-4" strokeWidth={1.25} />
-      </button>
-    </div>
-  );
-}
-
-function PhoneGallery({ images, name }: { images: string[]; name: string }) {
-  const [index, setIndex] = useState(0);
-  const onScroll = (e: UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    if (el.clientWidth > 0) setIndex(Math.round(el.scrollLeft / el.clientWidth));
-  };
-  return (
-    <div className="relative md:hidden">
-      <div
-        onScroll={onScroll}
-        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
-        aria-label={`${name} photos`}
-        role="region"
-        tabIndex={0}
-      >
-        {images.map((src, i) => (
-          <div key={`${src}-${i}`} className="relative aspect-[3/4] w-full shrink-0 snap-center bg-secondary">
-            <img
-              src={src}
-              alt={i === 0 ? name : ""}
-              loading={i === 0 ? "eager" : "lazy"}
-              onError={onProductImageError}
-              className="h-full w-full object-cover"
-            />
-          </div>
-        ))}
-      </div>
-      {images.length > 1 && (
-        <p className="pointer-events-none absolute bottom-4 right-4 bg-background/85 px-2.5 py-1 text-[11px] tracking-[0.2em] text-foreground tabular-nums" aria-live="polite">
-          {index + 1} / {images.length}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function DesktopGallery({ images, name }: { images: string[]; name: string }) {
-  const restOdd = (images.length - 1) % 2 === 1;
-  return (
-    <div className="hidden md:col-span-7 md:block">
-      <div className="grid grid-cols-2 gap-2">
-        {images.map((src, i) => (
-          <div
-            key={`${src}-${i}`}
-            className={cn(
-              "group relative aspect-[3/4] overflow-hidden bg-secondary",
-              (i === 0 || (restOdd && i === images.length - 1)) && "col-span-2",
-            )}
-          >
-            <img
-              src={src}
-              alt={i === 0 ? name : ""}
-              loading={i < 2 ? "eager" : "lazy"}
-              onError={onProductImageError}
-              className="h-full w-full object-cover transition-transform [transition-duration:1500ms] ease-out group-hover:scale-[1.04]"
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+const PANEL = "rounded-xl border border-border/70 bg-card card-shadow";
 
 function LoadingState() {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-background">
-      <Skeleton className="aspect-[3/4] w-full rounded-none md:hidden" />
-      <div className="container md:pt-12">
-        <div className="md:grid md:grid-cols-12 md:gap-16">
-          <div className="hidden md:col-span-7 md:block">
-            <Skeleton className="aspect-[3/4] w-full rounded-none" />
-          </div>
-          <div className="space-y-5 pt-8 md:col-span-5 md:pt-0">
-            <Skeleton className="h-3 w-40 rounded-none" />
-            <Skeleton className="h-9 w-3/4 rounded-none" />
-            <Skeleton className="h-5 w-24 rounded-none" />
-            <Skeleton className="h-16 w-full rounded-none" />
-            <div className="flex gap-2 pt-4">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-11 w-12 rounded-none" />)}
-            </div>
-            <Skeleton className="h-14 w-full rounded-none" />
-            <Skeleton className="h-14 w-full rounded-none" />
-          </div>
+    <div className="min-h-screen bg-background" aria-busy="true" aria-label={t("tpl_luxe:page.loading")}>
+      <div className="container py-6 md:py-8">
+        <Skeleton className="h-4 w-60" />
+        <Skeleton className="mt-4 h-9 w-3/4 max-w-xl" />
+        <Skeleton className="mt-6 aspect-[16/10] w-full rounded-xl lg:aspect-[21/9]" />
+        <div className="mt-8 grid gap-6 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-8"><Skeleton className="h-28 w-full rounded-xl" /><Skeleton className="h-48 w-full rounded-xl" /></div>
+          <Skeleton className="h-72 w-full rounded-xl lg:col-span-4" />
         </div>
       </div>
     </div>
@@ -396,19 +33,360 @@ function LoadingState() {
 }
 
 function MissingState() {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <section className="container flex min-h-[60vh] flex-col items-center justify-center py-24 text-center">
-        <p className={cn(EYEBROW, "text-muted-foreground")}>Not found</p>
-        <h1 className="mt-6 max-w-xl font-display text-4xl font-normal leading-tight md:text-5xl">
-          This piece is no longer <em className="italic">available</em>
-        </h1>
-        <p className="mt-5 max-w-sm text-sm text-muted-foreground">It may have sold out or moved. The rest of the collection is waiting.</p>
-        <Link to="/shop" className={cn(TEXT_LINK, "mt-10")}>
-          Continue shopping <span aria-hidden="true">→</span>
-        </Link>
-      </section>
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="container flex-1 py-16">
+        <div className={cn(PANEL, "mx-auto max-w-md p-8 text-center")}>
+          <Building2 className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
+          <h1 className="mt-4 font-display text-2xl font-semibold text-foreground">{t("tpl_luxe:page.notFoundTitle")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("tpl_luxe:page.notFoundText")}</p>
+          <Link to="/shop" className={cn(BTN_PRIMARY, "mt-6 h-11", FOCUS)}>{t("tpl_luxe:page.browse")}</Link>
+        </div>
+      </div>
       <Footer />
+    </div>
+  );
+}
+
+/** Large photo with arrows and a counter, thumbnails below. */
+function Gallery({ images, name, selected, onSelect }: { images: string[]; name: string; selected: number; onSelect: (i: number) => void }) {
+  const { t } = useTranslation();
+  const photos = images.filter(hasPhoto);
+  const count = photos.length;
+  const go = (i: number) => onSelect(((i % count) + count) % count);
+  const current = Math.min(selected, Math.max(count - 1, 0));
+
+  if (count === 0) {
+    return (
+      <div className="flex aspect-[16/10] w-full items-center justify-center rounded-xl bg-tile-1 text-ink/30 lg:aspect-[21/9]" role="img" aria-label={t("tpl_luxe:page.noPhotos", { name })}>
+        <Building2 className="h-16 w-16" strokeWidth={1.2} aria-hidden="true" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div
+        className="relative aspect-[4/3] overflow-hidden rounded-xl bg-secondary sm:aspect-[16/10] lg:aspect-[21/9]"
+        role="group"
+        aria-roledescription={t("tpl_luxe:page.carousel")}
+        aria-label={t("tpl_luxe:page.photos", { name })}
+        onKeyDown={(e) => {
+          if (count < 2) return;
+          if (e.key === "ArrowRight") go(current + 1);
+          if (e.key === "ArrowLeft") go(current - 1);
+        }}
+      >
+        <img src={photos[current]} alt={t("tpl_luxe:page.photoAlt", { name, current: current + 1, total: count })} onError={onProductImageError} className="h-full w-full object-cover" />
+        {count > 1 && (
+          <>
+            <button type="button" onClick={() => go(current - 1)} aria-label={t("tpl_luxe:page.previousPhoto")} className={cn("absolute left-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-card/90 text-foreground shadow-md hover:bg-card", FOCUS)}>
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button type="button" onClick={() => go(current + 1)} aria-label={t("tpl_luxe:page.nextPhoto")} className={cn("absolute right-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-card/90 text-foreground shadow-md hover:bg-card", FOCUS)}>
+              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white" aria-live="polite">
+              {current + 1} / {count}
+            </span>
+          </>
+        )}
+      </div>
+      {count > 1 && (
+        <ul className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {photos.map((src, i) => (
+            <li key={`${src}-${i}`} className="shrink-0">
+              <button
+                type="button"
+                onClick={() => go(i)}
+                aria-label={t("tpl_luxe:page.showPhoto", { number: i + 1 })}
+                aria-current={i === current}
+                className={cn("block h-16 w-24 overflow-hidden rounded-lg border-2 transition-opacity sm:h-20 sm:w-28", i === current ? "border-primary" : "border-transparent opacity-70 hover:opacity-100", FOCUS)}
+              >
+                <img src={src} alt="" loading="lazy" onError={onProductImageError} className="h-full w-full object-cover" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Variant pickers (only for options with a real choice). */
+function Options({ page }: { page: ProductPageState }) {
+  const choices = page.attributes.filter((a) => a.values.length > 1);
+  if (choices.length === 0) return null;
+  return (
+    <div className="space-y-4">
+      {choices.map((a) => (
+        <fieldset key={a.name}>
+          <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{a.displayName}</legend>
+          <div className="flex flex-wrap gap-2">
+            {a.values.map((v) => {
+              const active = page.selectedAttributes[a.name] === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => page.selectAttribute(a.name, v)}
+                  aria-pressed={active}
+                  className={cn("h-9 rounded-pill border px-3.5 text-sm font-medium transition-colors", active ? "border-primary bg-accent text-primary" : "border-border text-foreground hover:border-primary", FOCUS)}
+                >
+                  {v}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+      ))}
+    </div>
+  );
+}
+
+/** Price, options, reserve (add to cart) and the enquiry contacts. */
+function EnquiryPanel({ page, enquiry }: { page: ProductPageState; enquiry: Enquiry }) {
+  const { t } = useTranslation();
+  const { product, formatCurrency, currentPrice, originalPrice, inStock, cartItem, add, openCart, inWishlist, toggleWishlist, share, quickOrderHref } = page;
+  return (
+    <div className="space-y-4 lg:sticky lg:top-32">
+      <div className={cn(PANEL, "p-5 sm:p-6")}>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("common:product.price")}</p>
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-3">
+          <span className="font-display text-3xl font-semibold text-foreground">{formatCurrency(currentPrice)}</span>
+          {originalPrice && <span className="text-sm text-muted-foreground line-through">{formatCurrency(originalPrice)}</span>}
+        </p>
+        <p className={cn("mt-2 flex items-center gap-1.5 text-sm", inStock ? "text-primary" : "text-destructive")}>
+          <span className={cn("size-2 rounded-full", inStock ? "bg-primary" : "bg-destructive")} aria-hidden="true" />
+          {inStock ? t("tpl_luxe:page.availableNow") : t("tpl_luxe:page.unavailableNow")}
+        </p>
+
+        <div className="mt-5"><Options page={page} /></div>
+
+        <div className="mt-5 space-y-2.5">
+          {inStock ? (
+            cartItem ? (
+              <button type="button" onClick={openCart} className={cn(BTN_PRIMARY, "h-12 w-full", FOCUS)}>
+                <Check className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.inCartView")}
+              </button>
+            ) : (
+              <button type="button" onClick={add} className={cn(BTN_PRIMARY, "h-12 w-full", FOCUS)}>
+                <ShoppingBag className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.reserveProperty")}
+              </button>
+            )
+          ) : (
+            <button type="button" disabled className="h-12 w-full rounded-pill bg-secondary text-sm font-semibold text-muted-foreground">{t("tpl_luxe:page.unavailableNow")}</button>
+          )}
+          {inStock && (
+            <Link to={quickOrderHref} className={cn("flex h-11 w-full items-center justify-center gap-2 rounded-pill border border-primary text-sm font-semibold text-primary transition-colors hover:bg-accent", FOCUS)}>
+              <CalendarCheck className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.quickBooking")}
+            </Link>
+          )}
+        </div>
+
+        <div className="mt-4 flex gap-2 border-t border-border pt-4">
+          <button type="button" onClick={toggleWishlist} aria-pressed={inWishlist} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-pill text-sm font-medium text-foreground hover:bg-secondary", FOCUS)}>
+            <Heart className={cn("h-4 w-4", inWishlist && "fill-highlight text-highlight")} aria-hidden="true" /> {inWishlist ? t("tpl_luxe:page.saved") : t("tpl_luxe:page.save")}
+          </button>
+          <button type="button" onClick={share} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-pill text-sm font-medium text-foreground hover:bg-secondary", FOCUS)}>
+            <Share2 className="h-4 w-4" aria-hidden="true" /> {t("common:actions.share")}
+          </button>
+        </div>
+      </div>
+
+      <div className={cn(PANEL, "p-5 sm:p-6")}>
+        <h2 className="font-display text-lg font-semibold text-foreground">{t("tpl_luxe:page.interested")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("tpl_luxe:page.askAbout", { name: product.name })}</p>
+        <div className="mt-4 space-y-2">
+          {enquiry.whatsapp && (
+            <a href={enquiry.whatsapp} target="_blank" rel="noopener noreferrer" className={cn("flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-[#25D366] text-sm font-semibold text-[#06301a] hover:bg-[#25D366]/90", FOCUS)}>
+              <MessageCircle className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.whatsApp")}
+            </a>
+          )}
+          {enquiry.phone && (
+            <a href={`tel:${enquiry.phone}`} className={cn("flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-ink text-sm font-semibold text-ink-foreground hover:bg-ink/90", FOCUS)}>
+              <Phone className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.call", { phone: enquiry.phone })}
+            </a>
+          )}
+          {enquiry.email ? (
+            <a href={enquiry.email} className={cn("flex h-11 w-full items-center justify-center gap-2 rounded-pill border border-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary", FOCUS)}>
+              <Mail className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.emailEnquiry")}
+            </a>
+          ) : (
+            <Link to="/contact" className={cn("flex h-11 w-full items-center justify-center gap-2 rounded-pill border border-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary", FOCUS)}>
+              <Mail className="h-4 w-4" aria-hidden="true" /> {t("tpl_luxe:page.sendMessage")}
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface Enquiry {
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+}
+
+function useEnquiry(page: ProductPageState | null): Enquiry {
+  const { t } = useTranslation();
+  const { contact } = useStoreChrome();
+  const { onlineStore } = useCurrency();
+  if (!page) return { phone: null, whatsapp: null, email: null };
+  const url = `${window.location.origin}/product/${page.product.slug}`;
+  const number = onlineStore?.whatsappNumber || onlineStore?.social?.whatsapp || "";
+  const message = `${t("tpl_luxe:page.enquiryMessage", { name: page.product.name, price: page.formatCurrency(page.currentPrice) })}\n${url}`;
+  return {
+    phone: contact.phone || null,
+    whatsapp: whatsAppLink(number, message) || null,
+    email: contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent(t("tpl_luxe:page.enquirySubject", { name: page.product.name }))}&body=${encodeURIComponent(message)}` : null,
+  };
+}
+
+/** Listing detail: gallery, price and title, specs grid, description, sticky reserve + enquiry panel, similar listings. */
+export default function ProductPage() {
+  const { t } = useTranslation();
+  const { slug } = useParams<{ slug: string }>();
+  const page = useProductPage(slug, { relatedLimit: 3 });
+  const ready = page.status === "ready" ? page : null;
+  const enquiry = useEnquiry(ready);
+  const [showAll, setShowAll] = useState(false);
+
+  if (page.status === "loading") return <LoadingState />;
+  if (!ready) return <MissingState />;
+
+  const { product, images, selectedImage, setSelectedImage, categoryHref, relatedProducts, formatCurrency, currentPrice, inStock, cartItem, add, openCart } = ready;
+  const specs = listingSpecs(product);
+  const location = listingLocation(product);
+  const description = product.description?.trim() ?? "";
+  const longText = description.length > 700;
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="container flex-1 py-5 md:py-8">
+        <nav aria-label={t("tpl_luxe:page.breadcrumb")}>
+          <ol className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <li className="shrink-0"><Link to="/" className={cn("rounded-sm hover:text-primary", FOCUS)}>{t("common:nav.home")}</Link></li>
+            <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
+            <li className="shrink-0"><Link to="/shop" className={cn("rounded-sm hover:text-primary", FOCUS)}>{t("tpl_luxe:nav.properties")}</Link></li>
+            {product.category && (
+              <>
+                <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
+                <li className="hidden shrink-0 sm:block"><Link to={categoryHref} className={cn("rounded-sm hover:text-primary", FOCUS)}>{product.category}</Link></li>
+                <li aria-hidden="true" className="hidden sm:block"><ChevronRight className="h-3 w-3" /></li>
+              </>
+            )}
+            <li className="min-w-0 truncate font-medium text-foreground" aria-current="page">{product.name}</li>
+          </ol>
+        </nav>
+
+        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {product.category && <Link to={categoryHref} className={cn("rounded-sm text-[11px] font-bold uppercase tracking-[0.16em] text-primary hover:underline", FOCUS)}>{product.category}</Link>}
+              {product.badge && <BadgePill text={product.badge} className="border border-border" />}
+            </div>
+            <h1 className="mt-2 font-display text-[1.9rem] font-semibold leading-tight text-foreground sm:text-4xl">{product.name}</h1>
+            {location && (
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4 shrink-0 text-highlight" aria-hidden="true" /> {location}
+              </p>
+            )}
+          </div>
+          <p className="shrink-0 font-display text-2xl font-semibold text-primary md:text-3xl">{formatCurrency(currentPrice)}</p>
+        </div>
+
+        <div className="mt-5">
+          <Gallery images={images} name={product.name} selected={selectedImage} onSelect={setSelectedImage} />
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-12 lg:gap-8">
+          <div className="min-w-0 space-y-6 lg:col-span-8">
+            {specs.length > 0 && (
+              <section aria-labelledby="lx-specs" className={cn(PANEL, "p-5 sm:p-6")}>
+                <h2 id="lx-specs" className="font-display text-xl font-semibold text-foreground">{t("tpl_luxe:page.details")}</h2>
+                <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {specs.map(({ key, label, value, Icon }) => (
+                    <div key={key} className="flex min-w-0 items-center gap-3 rounded-lg bg-secondary/70 p-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-card text-primary" aria-hidden="true">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <dt className="truncate text-[11px] uppercase tracking-wider text-muted-foreground">{label}</dt>
+                        <dd className="break-words text-sm font-semibold text-foreground">{value}</dd>
+                      </div>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            )}
+
+            <section aria-labelledby="lx-about" className={cn(PANEL, "p-5 sm:p-6")}>
+              <h2 id="lx-about" className="font-display text-xl font-semibold text-foreground">{t("tpl_luxe:page.about")}</h2>
+              {description ? (
+                <>
+                  <p id="lx-about-text" className={cn("mt-3 whitespace-pre-line break-words text-[15px] leading-relaxed text-foreground/85", longText && !showAll && "line-clamp-[10]")}>{description}</p>
+                  {longText && (
+                    <button type="button" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll} aria-controls="lx-about-text" className={cn("mt-3 rounded-sm text-sm font-semibold text-primary hover:underline", FOCUS)}>
+                      {showAll ? t("tpl_luxe:page.showLess") : t("tpl_luxe:page.readMore")}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">{t("tpl_luxe:page.comingSoon")}</p>
+              )}
+            </section>
+          </div>
+
+          <aside className="min-w-0 lg:col-span-4" aria-label={t("tpl_luxe:page.reserveAndEnquire")}>
+            <EnquiryPanel page={ready} enquiry={enquiry} />
+          </aside>
+        </div>
+
+        {relatedProducts.length > 0 && (
+          <section aria-labelledby="lx-similar" className="mt-14">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <h2 id="lx-similar" className="font-display text-2xl font-semibold text-foreground sm:text-[1.75rem]">{t("tpl_luxe:page.similar")}</h2>
+              <Link to={categoryHref} className={cn("rounded-sm text-sm font-semibold text-primary hover:underline", FOCUS)}>{t("common:actions.seeAll")}</Link>
+            </div>
+            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedProducts.map((p, i) => <li key={p.id} className="min-w-0"><ProductCard product={p} index={i} /></li>)}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      {/* Phones: enquiry + reserve bar in place of the tab bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        <div className="flex h-16 items-center gap-2 px-4">
+          {(enquiry.whatsapp || enquiry.phone) && (
+            <a
+              href={enquiry.whatsapp ?? `tel:${enquiry.phone}`}
+              {...(enquiry.whatsapp ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              aria-label={enquiry.whatsapp ? t("tpl_luxe:page.enquireWhatsApp") : t("tpl_luxe:page.call", { phone: enquiry.phone })}
+              className={cn("flex size-11 shrink-0 items-center justify-center rounded-pill border border-border text-foreground", FOCUS)}
+            >
+              {enquiry.whatsapp ? <MessageCircle className="h-5 w-5" aria-hidden="true" /> : <Phone className="h-5 w-5" aria-hidden="true" />}
+            </a>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] text-muted-foreground">{t("common:product.price")}</p>
+            <p className="truncate text-base font-bold text-foreground">{formatCurrency(currentPrice)}</p>
+          </div>
+          {inStock ? (
+            <button type="button" onClick={cartItem ? openCart : add} className={cn(BTN_PRIMARY, "h-11 shrink-0 px-4", FOCUS)}>
+              {cartItem ? t("tpl_luxe:page.inCartShort") : t("tpl_luxe:page.reserve")}
+            </button>
+          ) : (
+            <button type="button" disabled className="h-11 shrink-0 rounded-pill bg-secondary px-4 text-sm font-semibold text-muted-foreground">{t("tpl_luxe:page.unavailable")}</button>
+          )}
+        </div>
+      </div>
+
+      <Footer />
+      <div className="h-[calc(4rem+env(safe-area-inset-bottom))] md:hidden" aria-hidden="true" />
     </div>
   );
 }

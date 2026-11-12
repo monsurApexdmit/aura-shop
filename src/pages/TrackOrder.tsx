@@ -19,15 +19,17 @@ import { InfoList, InfoRow } from "@/components/common/InfoList";
 import type { ApiOrder } from "@/services/orderApi";
 import { mapFulfillmentStatus } from "@/services/orderApi";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
+import { localeTag } from "@/i18n";
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
 
 const TIMELINE_STEPS = [
-  { label: "Order Placed",    icon: Package,     key: "placed"           },
-  { label: "Processing",      icon: Clock,       key: "processing"       },
-  { label: "Shipped",         icon: Truck,       key: "shipped"          },
-  { label: "Out for Delivery",icon: MapPin,      key: "out_for_delivery" },
-  { label: "Delivered",       icon: CheckCircle2,key: "delivered"        },
+  { labelKey: "account:orderDetail.placed",            icon: Package,     key: "placed"           },
+  { labelKey: "account:orderStatus.processing",       icon: Clock,       key: "processing"       },
+  { labelKey: "account:orderStatus.shipped",          icon: Truck,       key: "shipped"          },
+  { labelKey: "account:orderStatus.out_for_delivery", icon: MapPin,      key: "out_for_delivery" },
+  { labelKey: "account:orderStatus.delivered",        icon: CheckCircle2,key: "delivered"        },
 ];
 
 const DONE_UNTIL: Record<string, number> = {
@@ -43,7 +45,7 @@ function buildTimeline(order: ApiOrder) {
   const doneCount = DONE_UNTIL[order.fulfillment_status] ?? 1;
   const orderDate = order.order_time ? new Date(order.order_time) : null;
   const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
-    ? orderDate.toLocaleString("en-US", {
+    ? orderDate.toLocaleString(localeTag(), {
         month: "short", day: "numeric", year: "numeric",
         hour: "numeric", minute: "2-digit",
       })
@@ -59,13 +61,14 @@ function buildTimeline(order: ApiOrder) {
 
 function formatDate(d?: string | null) {
   if (!d) return null;
-  return new Date(d).toLocaleString("en-US", {
+  return new Date(d).toLocaleString(localeTag(), {
     month: "short", day: "numeric", year: "numeric",
     hour: "numeric", minute: "2-digit",
   });
 }
 
 export default function TrackOrder() {
+  const { t } = useTranslation();
   const [orderId, setOrderId] = useState("");
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,7 +79,7 @@ export default function TrackOrder() {
   const runTrack = async (raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed || trimmed.length < 3) {
-      setError("Please enter a valid invoice number");
+      setError(t("account:track.invalid"));
       setOrder(null);
       return;
     }
@@ -86,7 +89,7 @@ export default function TrackOrder() {
       const data = await orderApi.trackByInvoice(trimmed);
       setOrder(data);
     } catch {
-      setError("Order not found. Please check your invoice number and try again.");
+      setError(t("account:track.notFound"));
       setOrder(null);
     } finally {
       setLoading(false);
@@ -106,7 +109,7 @@ export default function TrackOrder() {
     e.preventDefault();
     const trimmed = orderId.trim();
     if (!trimmed || trimmed.length < 3) {
-      setError("Please enter a valid invoice number");
+      setError(t("account:track.invalid"));
       setOrder(null);
       return;
     }
@@ -116,7 +119,7 @@ export default function TrackOrder() {
       const data = await orderApi.trackByInvoice(trimmed);
       setOrder(data);
     } catch {
-      setError("Order not found. Please check your invoice number and try again.");
+      setError(t("account:track.notFound"));
       setOrder(null);
     } finally {
       setLoading(false);
@@ -125,6 +128,7 @@ export default function TrackOrder() {
 
   const timeline = order ? buildTimeline(order) : [];
   const { label: statusLabel } = order ? mapFulfillmentStatus(order.fulfillment_status) : { label: "" };
+  const statusText = order ? t(`account:orderStatus.${order.fulfillment_status}`, { defaultValue: statusLabel }) : "";
   const shipment = order?.shipment ?? null;
   const trackingHistory = shipment?.tracking_history ?? [];
   const itemCount = Array.isArray(order?.items) ? order.items.length : 0;
@@ -135,13 +139,13 @@ export default function TrackOrder() {
       <section className="container text-center mb-12">
         <motion.div {...fadeUp} className="flex items-center justify-center gap-2 mb-3">
           <Truck className="h-5 w-5 text-primary" />
-          <p className="text-primary font-semibold text-sm uppercase tracking-widest">Order Tracking</p>
+          <p className="text-primary font-semibold text-sm uppercase tracking-widest">{t("account:track.eyebrow")}</p>
         </motion.div>
         <motion.h1 {...fadeUp} transition={{ delay: 0.1 }} className="font-display font-bold text-4xl sm:text-5xl text-foreground mb-4">
-          Track Your Order
+          {t("account:track.title")}
         </motion.h1>
         <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-muted-foreground max-w-md mx-auto">
-          Enter your invoice number to see the latest shipping status and delivery updates.
+          {t("account:track.subtitle")}
         </motion.p>
       </section>
 
@@ -155,7 +159,7 @@ export default function TrackOrder() {
                 type="text"
                 value={orderId}
                 onChange={(e) => { setOrderId(e.target.value); setError(""); }}
-                placeholder="Enter invoice number (e.g. ORD-XXXX)"
+                placeholder={t("account:track.placeholder")}
                 className={cn("w-full pl-11", error && "border-destructive")}
               />
             </div>
@@ -164,7 +168,7 @@ export default function TrackOrder() {
               disabled={loading}
               className="shrink-0"
             >
-              {loading ? "Tracking…" : <><span>Track</span><ArrowRight className="h-4 w-4" /></>}
+              {loading ? t("account:track.tracking") : <><span>{t("account:track.submit")}</span><ArrowRight className="h-4 w-4" /></>}
             </Button>
           </div>
           {error && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><Info className="h-3 w-3" />{error}</p>}
@@ -186,23 +190,23 @@ export default function TrackOrder() {
             <Card className="p-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div>
-                  <SectionTitle as="p">Invoice</SectionTitle>
+                  <SectionTitle as="p">{t("account:track.invoice")}</SectionTitle>
                   <p className="font-mono font-bold text-primary text-lg">{order.invoice_no}</p>
                 </div>
                 <div className="text-right">
-                  <SectionTitle as="p">Status</SectionTitle>
-                  <p className="font-semibold text-foreground">{statusLabel}</p>
+                  <SectionTitle as="p">{t("account:track.status")}</SectionTitle>
+                  <p className="font-semibold text-foreground">{statusText}</p>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Box className="h-4 w-4 text-primary" />
-                  <span>{itemCount} item{itemCount !== 1 ? "s" : ""}</span>
+                  <span>{t("common:product.items", { count: itemCount })}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Truck className="h-4 w-4 text-primary" />
-                  <span>{shipment?.carrier ?? order.carrier ?? order.method ?? "Standard Shipping"}</span>
+                  <span>{shipment?.carrier ?? order.carrier ?? order.method ?? t("account:track.standardShipping")}</span>
                 </div>
                 {order.shipping_address?.city && (
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -227,7 +231,7 @@ export default function TrackOrder() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Package className="h-3.5 w-3.5 text-primary shrink-0" />
                       <div>
-                        <p className="font-semibold text-foreground">Shipped</p>
+                        <p className="font-semibold text-foreground">{t("account:track.shipped")}</p>
                         <p>{formatDate(shipment.shipped_at)}</p>
                       </div>
                     </div>
@@ -236,7 +240,7 @@ export default function TrackOrder() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
                       <div>
-                        <p className="font-semibold text-foreground">Est. Delivery</p>
+                        <p className="font-semibold text-foreground">{t("account:track.estDelivery")}</p>
                         <p>{formatDate(shipment.estimated_delivery)}</p>
                       </div>
                     </div>
@@ -245,7 +249,7 @@ export default function TrackOrder() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                       <div>
-                        <p className="font-semibold text-emerald-600">Delivered</p>
+                        <p className="font-semibold text-emerald-600">{t("account:track.delivered")}</p>
                         <p>{formatDate(shipment.delivered_at)}</p>
                       </div>
                     </div>
@@ -258,19 +262,19 @@ export default function TrackOrder() {
             {order.fulfillment_status === "cancelled" ? (
               <Alert variant="destructive">
                 <XCircle className="h-4 w-4" />
-                <AlertTitle>Order Cancelled</AlertTitle>
-                <AlertDescription className="text-muted-foreground">This order has been cancelled.</AlertDescription>
+                <AlertTitle>{t("account:track.cancelledTitle")}</AlertTitle>
+                <AlertDescription className="text-muted-foreground">{t("account:track.cancelledText")}</AlertDescription>
               </Alert>
             ) : (
               <>
                 {/* Fulfillment Progress */}
-                <SectionCard title={<span className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> Order Progress</span>}>
+                <SectionCard title={<span className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> {t("account:track.progress")}</span>}>
                   <div className="space-y-0">
                     {timeline.map((step, i) => {
                       const isLast = i === timeline.length - 1;
                       return (
                         <motion.div
-                          key={step.label}
+                          key={step.key}
                           initial={{ opacity: 0, x: -16 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.08 * i }}
@@ -290,16 +294,16 @@ export default function TrackOrder() {
                           </div>
                           <div className="pt-2 pb-4">
                             <p className={cn("font-semibold text-sm", step.done ? "text-foreground" : "text-muted-foreground")}>
-                              {step.label}
+                              {t(step.labelKey)}
                               {step.isCurrent && (
                                 <Badge variant="secondary" className="ml-2">
-                                  Current
+                                  {t("account:track.current")}
                                 </Badge>
                               )}
                             </p>
                             {step.date
                               ? <p className="text-xs text-muted-foreground mt-0.5">{step.date}</p>
-                              : !step.done && <p className="text-xs text-muted-foreground mt-0.5">Pending</p>
+                              : !step.done && <p className="text-xs text-muted-foreground mt-0.5">{t("account:track.pending")}</p>
                             }
                           </div>
                         </motion.div>
@@ -310,7 +314,7 @@ export default function TrackOrder() {
 
                 {/* Tracking History from shipment */}
                 {trackingHistory.length > 0 && (
-                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> Tracking History</span>}>
+                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> {t("account:track.history")}</span>}>
                     <div className="space-y-0">
                       {trackingHistory.map((event, i) => {
                         const isLatest = i === 0;
@@ -337,10 +341,10 @@ export default function TrackOrder() {
                             <div className="flex-1 pb-5">
                               <div className="flex items-start justify-between gap-2">
                                 <p className={cn("font-semibold text-sm capitalize", isLatest ? "text-primary" : "text-foreground")}>
-                                  {event.status.replace(/_/g, " ")}
+                                  {t(`account:track.event.${event.status}`, { defaultValue: event.status.replace(/_/g, " ") })}
                                   {isLatest && (
                                     <Badge variant="secondary" className="ml-2 normal-case">
-                                      Latest
+                                      {t("account:track.latest")}
                                     </Badge>
                                   )}
                                 </p>
@@ -367,7 +371,7 @@ export default function TrackOrder() {
                 )}
 
                 {/* Order Items */}
-                <SectionCard title={<span className="flex items-center gap-2"><Box className="h-4 w-4 text-primary" /> Items ({order.items.length})</span>}>
+                <SectionCard title={<span className="flex items-center gap-2"><Box className="h-4 w-4 text-primary" /> {t("account:track.items", { count: order.items.length })}</span>}>
                   <div className="space-y-3">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between text-sm">
@@ -388,14 +392,14 @@ export default function TrackOrder() {
                   <div className="pt-4 space-y-1 text-sm">
                     <InfoList className="gap-1">
                       {order.shipping_cost > 0 && (
-                        <InfoRow label="Shipping" value={formatCurrency(order.shipping_cost)} />
+                        <InfoRow label={t("common:money.shipping")} value={formatCurrency(order.shipping_cost)} />
                       )}
                       {order.discount > 0 && (
-                        <InfoRow label="Discount" value={<span className="text-emerald-600">-{formatCurrency(order.discount)}</span>} />
+                        <InfoRow label={t("common:money.discount")} value={<span className="text-emerald-600">-{formatCurrency(order.discount)}</span>} />
                       )}
                     </InfoList>
                     <div className="flex justify-between font-bold text-base pt-1">
-                      <span>Total</span>
+                      <span>{t("common:money.total")}</span>
                       <span className="text-primary">{formatCurrency(order.amount)}</span>
                     </div>
                   </div>

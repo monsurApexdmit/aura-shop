@@ -9,6 +9,18 @@ import { SectionTitle } from "@/components/common/SectionTitle";
 import { useCategories } from "@/hooks/useCategories";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
+
+// Sample tags, as translation keys; translated at render
+const POPULAR_TAGS = [
+  "shop:filters.tags.hotDeal",
+  "shop:filters.tags.new",
+  "shop:filters.tags.organic",
+  "shop:filters.tags.bestSeller",
+  "shop:filters.tags.sale",
+  "shop:filters.tags.trending",
+  "shop:filters.tags.premium",
+] as const;
 
 export interface FilterPanelProps {
   /**
@@ -81,6 +93,7 @@ export default function FilterPanel({
   onToggleCatExpand,
   className = "",
 }: FilterPanelProps) {
+  const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { formatCurrency } = useCurrency();
 
@@ -88,7 +101,7 @@ export default function FilterPanel({
     <div className={cn("space-y-6", className)}>
       {/* Categories Filter */}
       <div>
-        <SectionTitle className="mb-3">Categories</SectionTitle>
+        <SectionTitle className="mb-3">{t("common:nav.categories")}</SectionTitle>
 
         {/* All Products Button */}
         <Button
@@ -96,7 +109,7 @@ export default function FilterPanel({
           onClick={() => onSelectCategory(null, null)}
           className="w-full justify-start mb-1"
         >
-          All Products
+          {t("shop:filters.allProducts")}
         </Button>
 
         {/* Category List */}
@@ -118,10 +131,10 @@ export default function FilterPanel({
                   </Button>
 
                   {/* Expand/Collapse Button */}
-                  <WithTooltip content={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}><Button
+                  <WithTooltip content={t(isExpanded ? "shop:filters.collapse" : "shop:filters.expand", { name: cat.name })}><Button
                     variant="ghost"
                     size="icon"
-                    aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
+                    aria-label={t(isExpanded ? "shop:filters.collapse" : "shop:filters.expand", { name: cat.name })}
                     aria-expanded={isExpanded}
                     onClick={() => onToggleCatExpand(cat.slug)}
                   >
@@ -172,7 +185,7 @@ export default function FilterPanel({
       {/* Price Range Filter */}
       <Separator />
       <div>
-        <SectionTitle className="mb-4">Price Range</SectionTitle>
+        <SectionTitle className="mb-4">{t("shop:filters.priceRange")}</SectionTitle>
         <Slider
           defaultValue={[0, 1500]}
           min={0}
@@ -196,19 +209,11 @@ export default function FilterPanel({
       {/* Popular Tags */}
       <Separator />
       <div>
-        <SectionTitle className="mb-3">Popular Tags</SectionTitle>
+        <SectionTitle className="mb-3">{t("shop:filters.popularTags")}</SectionTitle>
         <div className="flex flex-wrap gap-1.5">
-          {[
-            "Hot Deal",
-            "New",
-            "Organic",
-            "Best Seller",
-            "Sale",
-            "Trending",
-            "Premium",
-          ].map((tag) => (
+          {POPULAR_TAGS.map((tag) => (
             <Badge key={tag} variant="outline">
-              {tag}
+              {t(tag)}
             </Badge>
           ))}
         </div>

@@ -49,6 +49,31 @@ export interface HomepageSections {
   collections?: { enabled: boolean; title: string; subtitle: string } | null;
 }
 
+// Template content (admin: Online store > Template content). Each block is null until saved once;
+// the template then shows its own default. Which template uses which block: src/templates/shared/useTemplateContent.ts
+export interface TemplatePromoTile {
+  id: string;
+  tag: string;
+  title: string;
+  text: string;
+  cta: string;
+  link: string;
+  imagePath: string | null;
+}
+
+export interface TemplateContent {
+  /** Thin bar above the header, e.g. "Welcome offer: 15% off your first order" + code HELLO15 */
+  announcement: { enabled: boolean; text: string; code: string; link: string } | null;
+  /** Short note in the header, e.g. "Delivery in 30–60 min" */
+  headerNote: { enabled: boolean; label: string; text: string } | null;
+  promoTiles: { enabled: boolean; items: TemplatePromoTile[] } | null;
+  stats: { enabled: boolean; items: { value: string; label: string }[] } | null;
+  testimonials: { enabled: boolean; title: string; items: { name: string; text: string; rating: number; note: string }[] } | null;
+  newsletter: { enabled: boolean; title: string; text: string } | null;
+  /** Wide call-to-action band, e.g. "Thinking of selling?" with two buttons */
+  cta: { enabled: boolean; tag: string; title: string; text: string; cta: string; link: string; cta2: string; link2: string; imagePath: string | null } | null;
+}
+
 export const storefrontSettingsApi = {
   getHomepageHero: async (): Promise<AuraShopHeroSettings> => {
     const response = await api.get("/settings/homepage-hero");
@@ -61,6 +86,15 @@ export const storefrontSettingsApi = {
   getHomepageSections: async (): Promise<HomepageSections> => {
     const response = await api.get("/settings/homepage-sections");
     return response.data.data;
+  },
+  /** Older backends have no such route: every block is then null (template defaults). */
+  getTemplateContent: async (): Promise<Partial<TemplateContent>> => {
+    try {
+      const response = await api.get("/settings/template-content");
+      return response.data.data ?? {};
+    } catch {
+      return {};
+    }
   },
 };
 
@@ -75,6 +109,8 @@ export interface OnlineStoreSettings {
   themePreset?: string;
   /** "theme" = the theme's colours; "brand" (default) = Company settings brand colours */
   colorSource?: "theme" | "brand";
+  /** Owner's default storefront language ("en" | "bn"); shoppers can switch. Absent on older backends = English */
+  language?: string;
   published: boolean;
   policies: { returns: string; shipping: string; privacy: string };
   social: { facebook: string; instagram: string; whatsapp: string; youtube: string; twitter: string };

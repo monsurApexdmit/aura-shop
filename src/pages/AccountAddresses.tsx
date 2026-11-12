@@ -22,6 +22,21 @@ const MotionCard = motion.create(Card);
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
+
+/** Error shape from the API client (axios) */
+type ApiErr = { response?: { data?: { message?: string } } };
+
+const FIELDS: { name: keyof AddressPayload; labelKey: string; placeholderKey: string; full?: boolean }[] = [
+  { name: "full_name", labelKey: "account:addresses.field.fullName", placeholderKey: "account:addresses.placeholder.fullName" },
+  { name: "phone", labelKey: "account:addresses.field.phone", placeholderKey: "account:addresses.placeholder.phone" },
+  { name: "address_line1", labelKey: "account:addresses.field.line1", placeholderKey: "account:addresses.placeholder.line1", full: true },
+  { name: "address_line2", labelKey: "account:addresses.field.line2", placeholderKey: "account:addresses.placeholder.line2", full: true },
+  { name: "city", labelKey: "account:addresses.field.city", placeholderKey: "account:addresses.placeholder.city" },
+  { name: "state", labelKey: "account:addresses.field.state", placeholderKey: "account:addresses.placeholder.state" },
+  { name: "postal_code", labelKey: "account:addresses.field.postalCode", placeholderKey: "account:addresses.placeholder.postalCode" },
+  { name: "country", labelKey: "account:addresses.field.country", placeholderKey: "account:addresses.placeholder.country" },
+];
 
 const emptyForm: AddressPayload = {
   full_name: "", phone: "", email: "", address_line1: "", address_line2: "",
@@ -29,6 +44,7 @@ const emptyForm: AddressPayload = {
 };
 
 export default function AccountAddresses() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -46,10 +62,10 @@ export default function AccountAddresses() {
     mutationFn: addressApi.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customer-addresses"] });
-      toast.success("Address added!");
+      toast.success(t("account:addresses.added"));
       closeForm();
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to add address"),
+    onError: (err: ApiErr) => toast.error(err?.response?.data?.message || t("account:addresses.addFailed")),
   });
 
   const updateMutation = useMutation({
@@ -57,19 +73,19 @@ export default function AccountAddresses() {
       addressApi.update(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customer-addresses"] });
-      toast.success("Address updated!");
+      toast.success(t("account:addresses.updated"));
       closeForm();
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to update address"),
+    onError: (err: ApiErr) => toast.error(err?.response?.data?.message || t("account:addresses.updateFailed")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: addressApi.delete,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customer-addresses"] });
-      toast.info("Address removed");
+      toast.info(t("account:addresses.removed"));
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to delete address"),
+    onError: (err: ApiErr) => toast.error(err?.response?.data?.message || t("account:addresses.deleteFailed")),
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -83,7 +99,7 @@ export default function AccountAddresses() {
 
   const handleSave = () => {
     if (!form.full_name.trim() || !form.address_line1.trim()) {
-      toast.error("Full name and address are required");
+      toast.error(t("account:addresses.required"));
       return;
     }
     const payload = { ...form };
@@ -121,20 +137,20 @@ export default function AccountAddresses() {
         <div className="container max-w-3xl">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-              <Link to="/account" className="hover:text-primary">My Account</Link>
+              <Link to="/account" className="hover:text-primary">{t("common:nav.myAccount")}</Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-foreground font-medium">Addresses</span>
+              <span className="text-foreground font-medium">{t("account:breadcrumb.addresses")}</span>
             </div>
 
             <PageHeader
               className="mb-6 items-center"
-              title="Address Book"
+              title={t("account:addresses.title")}
               actions={!showForm && (
                 <Button
                   size="sm"
                   onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}
                 >
-                  <Plus className="h-3.5 w-3.5" /> Add Address
+                  <Plus className="h-3.5 w-3.5" /> {t("account:addresses.add")}
                 </Button>
               )}
             />
@@ -149,38 +165,29 @@ export default function AccountAddresses() {
                   className="overflow-hidden mb-6"
                 >
                   <SectionCard
-                    title={editingId ? "Edit Address" : "New Address"}
+                    title={editingId ? t("account:addresses.edit") : t("account:addresses.new")}
                     actions={
-                      <WithTooltip content="Close form"><Button variant="ghost" size="icon" aria-label="Close form" onClick={closeForm}>
+                      <WithTooltip content={t("account:addresses.closeForm")}><Button variant="ghost" size="icon" aria-label={t("account:addresses.closeForm")} onClick={closeForm}>
                         <X className="h-4 w-4" />
                       </Button></WithTooltip>
                     }
                   >
 
                     <div className="grid sm:grid-cols-2 gap-4">
-                      {[
-                        { name: "full_name", label: "Full Name *", placeholder: "John Doe" },
-                        { name: "phone", label: "Phone", placeholder: "+1 234-567-890" },
-                        { name: "address_line1", label: "Address Line 1 *", placeholder: "123 Main St", full: true },
-                        { name: "address_line2", label: "Address Line 2", placeholder: "Apt 4B", full: true },
-                        { name: "city", label: "City", placeholder: "New York" },
-                        { name: "state", label: "State / Province", placeholder: "NY" },
-                        { name: "postal_code", label: "ZIP / Postal Code", placeholder: "10001" },
-                        { name: "country", label: "Country", placeholder: "United States" },
-                      ].map((f) => (
-                        <FormField key={f.name} label={f.label} htmlFor={`address-${f.name}`} className={(f as any).full ? "sm:col-span-2" : ""}>
+                      {FIELDS.map((f) => (
+                        <FormField key={f.name} label={t(f.labelKey)} htmlFor={`address-${f.name}`} className={f.full ? "sm:col-span-2" : ""}>
                           <Input
                             id={`address-${f.name}`}
                             name={f.name}
-                            value={(form as any)[f.name]}
+                            value={form[f.name] as string}
                             onChange={handleChange}
-                            placeholder={f.placeholder}
+                            placeholder={t(f.placeholderKey)}
                             className="w-full"
                           />
                         </FormField>
                       ))}
 
-                      <FormField label="Address Type" htmlFor="address-address_type">
+                      <FormField label={t("account:addresses.field.type")} htmlFor="address-address_type">
                         <Select
                           name="address_type"
                           value={form.address_type}
@@ -190,9 +197,9 @@ export default function AccountAddresses() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="home">Home</SelectItem>
-                            <SelectItem value="work">Work</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="home">{t("account:addressType.home")}</SelectItem>
+                            <SelectItem value="work">{t("account:addressType.work")}</SelectItem>
+                            <SelectItem value="other">{t("account:addressType.other")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormField>
@@ -204,7 +211,7 @@ export default function AccountAddresses() {
                         checked={!!form.is_default}
                         onCheckedChange={(v) => setForm((f) => ({ ...f, is_default: v === true }))}
                       />
-                      <Label htmlFor="address-is_default" className="text-muted-foreground">Set as default address</Label>
+                      <Label htmlFor="address-is_default" className="text-muted-foreground">{t("account:addresses.setDefault")}</Label>
                     </div>
 
                     <div className="flex gap-3 mt-5">
@@ -213,10 +220,10 @@ export default function AccountAddresses() {
                         disabled={isSaving}
                       >
                         {isSaving && <Spinner />}
-                        {editingId ? "Update Address" : "Save Address"}
+                        {editingId ? t("account:addresses.update") : t("account:addresses.save")}
                       </Button>
                       <Button variant="outline" onClick={closeForm}>
-                        Cancel
+                        {t("common:actions.cancel")}
                       </Button>
                     </div>
                   </SectionCard>
@@ -234,10 +241,10 @@ export default function AccountAddresses() {
                 bordered
                 className="py-16"
                 icon={MapPin}
-                title="No addresses saved yet"
+                title={t("account:addresses.empty")}
                 action={
                   <Button variant="link" onClick={() => setShowForm(true)}>
-                    Add your first address
+                    {t("account:addresses.addFirst")}
                   </Button>
                 }
               />
@@ -246,9 +253,9 @@ export default function AccountAddresses() {
                 {addresses.map((addr) => (
                   <MotionCard key={addr.id} layout className="p-5 relative">
                     {addr.is_default && (
-                      <Badge variant="secondary" className="absolute top-3 right-3">Default</Badge>
+                      <Badge variant="secondary" className="absolute top-3 right-3">{t("account:addresses.default")}</Badge>
                     )}
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 capitalize">{addr.address_type}</p>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 capitalize">{t(`account:addressType.${addr.address_type}`, { defaultValue: addr.address_type })}</p>
                     <p className="font-semibold text-sm text-foreground">{addr.full_name}</p>
                     <p className="text-sm text-muted-foreground">{addr.address_line1}</p>
                     {addr.address_line2 && <p className="text-sm text-muted-foreground">{addr.address_line2}</p>}
@@ -263,7 +270,7 @@ export default function AccountAddresses() {
                         size="sm"
                         onClick={() => startEdit(addr)}
                       >
-                        <Edit2 className="h-3 w-3" /> Edit
+                        <Edit2 className="h-3 w-3" /> {t("common:actions.edit")}
                       </Button>
                       <Button
                         variant="destructive"
@@ -271,7 +278,7 @@ export default function AccountAddresses() {
                         onClick={() => deleteMutation.mutate(addr.id)}
                         disabled={deleteMutation.isPending}
                       >
-                        <Trash2 className="h-3 w-3" /> Remove
+                        <Trash2 className="h-3 w-3" /> {t("common:actions.remove")}
                       </Button>
                     </div>
                   </MotionCard>

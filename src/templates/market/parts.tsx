@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { ArrowRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ApiCategory } from "@/services/categoryApi";
 import { FOCUS, categoryImage, tile } from "./lib";
 
@@ -24,33 +26,64 @@ export function CategoryThumb({ category, index, className, letterClassName }: {
 export function CountBadge({ count, className }: { count: number; className?: string }) {
   if (count <= 0) return null;
   return (
-    <span className={cn("absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-highlight px-1 text-[10px] font-bold leading-none text-highlight-foreground ring-2 ring-card", className)}>
+    <span className={cn("absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground ring-2 ring-card", className)}>
       {count > 99 ? "99+" : count}
     </span>
   );
 }
 
-/** Section title row: bold title with a raspberry tick, optional extras and a "see all" link. */
-export function SectionHeading({ id, title, icon, extra, to, linkLabel = "See all" }: { id?: string; title: ReactNode; icon?: ReactNode; extra?: ReactNode; to?: string; linkLabel?: string }) {
+/** Five amber stars (decorative; pair with a text rating). */
+export function Stars({ rating, className }: { rating: number; className?: string }) {
+  const filled = Math.round(rating);
   return (
-    <div className="flex min-w-0 items-center gap-2 border-b border-border px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
-      {icon}
-      <h2 id={id} className="min-w-0 truncate font-display text-base font-bold text-foreground sm:text-lg">{title}</h2>
-      {extra}
-      {to && (
-        <Link to={to} className={cn("ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-sm text-xs font-semibold text-highlight hover:underline sm:text-sm", FOCUS)}>
-          {linkLabel} <ChevronRight className="h-4 w-4" aria-hidden="true" />
-        </Link>
-      )}
+    <span className="flex items-center gap-px" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star key={i} className={cn("h-3 w-3", i < filled ? "fill-amber-400 text-amber-400" : "fill-border text-border", className)} />
+      ))}
+    </span>
+  );
+}
+
+/** "View all →" link beside a section title. */
+export function ViewAll({ to, label, className }: { to: string; label?: string; className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <Link to={to} className={cn("inline-flex shrink-0 items-center gap-1 rounded-sm text-[13px] font-semibold text-primary hover:underline", FOCUS, className)}>
+      {label ?? t("common:actions.viewAll")} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+    </Link>
+  );
+}
+
+/** Section heading row: bold title, optional middle slot (tabs), "View all" on the right. */
+export function SectionHeader({ id, title, to, linkLabel, children, className }: { id: string; title: string; to?: string; linkLabel?: string; children?: ReactNode; className?: string }) {
+  return (
+    <div className={cn("mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2 sm:mb-5", className)}>
+      <div className="flex min-w-0 flex-wrap items-end gap-x-6 gap-y-2">
+        <h2 id={id} className="min-w-0 font-display text-lg font-bold tracking-tight text-foreground sm:text-[22px]">{title}</h2>
+        {children}
+      </div>
+      {to && <ViewAll to={to} label={linkLabel} />}
     </div>
   );
 }
 
-/** White panel every home section sits in. */
-export function Panel({ children, className, labelledBy }: { children: ReactNode; className?: string; labelledBy?: string }) {
+/** Placeholder product cards while a list loads. */
+export function CardSkeletons({ count }: { count: number }) {
   return (
-    <section aria-labelledby={labelledBy} className={cn("overflow-hidden rounded-lg border border-border bg-card card-shadow", className)}>
-      {children}
-    </section>
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="rounded-xl border border-border bg-card p-2.5" aria-hidden="true">
+          <Skeleton className="aspect-square rounded-lg" />
+          <div className="space-y-2 pt-3">
+            <Skeleton className="h-4 w-11/12" />
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-5 w-2/5" />
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
+
+/** 2 → 3 → 4 → 5 columns. */
+export const PRODUCT_GRID = "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";

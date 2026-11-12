@@ -33,7 +33,7 @@ describe("store themes", () => {
     const out = themeCss("market");
     expect(out).toContain("html:root:not(.dark) {");
     expect(out).toContain("html:root.dark {");
-    expect(out).toContain('--font-display: Sora');
+    expect(out).toContain('--font-display: "Plus Jakarta Sans"');
   });
 
   it("uses HSL triplets for colour tokens", () => {

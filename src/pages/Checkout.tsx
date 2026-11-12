@@ -35,12 +35,13 @@ import { SectionTitle } from "@/components/common/SectionTitle";
 import { InfoList, InfoRow } from "@/components/common/InfoList";
 import { EmptyState } from "@/components/common/EmptyState";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { Trans, useTranslation } from "react-i18next";
 
 const shippingSchema = z.object({
-  fullName: z.string().trim().min(2, "Name is required").max(100),
-  email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
-  phone: z.string().trim().min(7, "Phone is required").max(20),
-  address: z.string().trim().min(5, "Address is required").max(300),
+  fullName: z.string().trim().min(2, "checkout:validation.nameRequired").max(100),
+  email: z.string().trim().email("checkout:validation.invalidEmail").max(255).optional().or(z.literal("")),
+  phone: z.string().trim().min(7, "checkout:validation.phoneRequired").max(20),
+  address: z.string().trim().min(5, "checkout:validation.addressRequired").max(300),
   city: z.string().trim().max(100).optional().or(z.literal("")),
   state: z.string().trim().max(100).optional().or(z.literal("")),
   zip: z.string().trim().max(20).optional().or(z.literal("")),
@@ -67,12 +68,21 @@ const PAYMENT_ICON_MAP: Record<string, LucideIcon> = {
   smartphone:    Smartphone,
 };
 
-const steps = [
-  { id: 1, label: "Shipping", icon: MapPin },
-  { id: 2, label: "Payment", icon: CreditCard },
-  { id: 3, label: "Review", icon: ClipboardCheck },
-  { id: 4, label: "Complete", icon: CheckCircle2 },
+const STEPS = [
+  { id: 1, labelKey: "checkout:steps.shipping", icon: MapPin },
+  { id: 2, labelKey: "checkout:steps.payment", icon: CreditCard },
+  { id: 3, labelKey: "checkout:steps.review", icon: ClipboardCheck },
+  { id: 4, labelKey: "checkout:steps.complete", icon: CheckCircle2 },
 ];
+
+/** Redirecting gateways and the brand name shown in "You'll be redirected to …" (not translated) */
+const GATEWAY_NAMES: Record<string, string> = {
+  portwallet: "PortWallet",
+  stripe: "Stripe Checkout",
+  paypal: "PayPal",
+  bkash: "bKash",
+  nagad: "Nagad",
+};
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
@@ -81,6 +91,8 @@ export default function Checkout() {
   const placeOrder = usePlaceOrder();
   const orderAttemptKey = useRef<string | null>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const steps = STEPS.map(({ labelKey, ...s }) => ({ ...s, label: t(labelKey) }));
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
@@ -113,7 +125,9 @@ export default function Checkout() {
         if (parsed.couponCode) setCouponCode(parsed.couponCode);
         setRestoredFromSession(true);
         sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
-      } catch {}
+      } catch {
+        /* corrupt saved state: start fresh */
+      }
     }
   }, []);
 
@@ -169,17 +183,17 @@ export default function Checkout() {
 
   const validateShipping = () => {
     if (isPickup && !pickupPoint) {
-      setErrors({ pickup: "Please choose a pickup point" });
+      setErrors({ pickup: t("checkout:validation.choosePickup") });
       return false;
     }
     if (!selectedShipping) {
-      setErrors({ delivery: "Choose a delivery option" });
+      setErrors({ delivery: t("checkout:validation.chooseDelivery") });
       return false;
     }
     const result = (isPickup ? shippingSchema.extend({ address: z.string().optional() }) : shippingSchema).safeParse(form);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((e) => { fieldErrors[e.path[0] as string] = e.message; });
+      result.error.errors.forEach((e) => { fieldErrors[e.path[0] as string] = t(e.message); });
       setErrors(fieldErrors);
       return false;
     }
@@ -193,9 +207,10 @@ export default function Checkout() {
     try {
       const result = await couponApi.validate(couponCode.trim());
       setCouponResult(result);
-      toast.success("Coupon applied!", { description: result.campaign_name });
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Invalid or expired coupon");
+      toast.success(t("checkout:coupon.applied"), { description: result.campaign_name });
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(message ?? t("checkout:coupon.invalid"));
       setCouponResult(null);
     } finally {
       setCouponApplying(false);
@@ -267,7 +282,7 @@ export default function Checkout() {
         const status = response?.status;
         // The order was refused (e.g. stock ran out): the next try is a new attempt with a new key
         if (!keepKeyAfterError(status)) orderAttemptKey.current = null;
-        toast.error(orderErrorMessage(response?.data, "Failed to place order. Please try again."));
+        toast.error(orderErrorMessage(response?.data, t("checkout:review.placeFailed")));
       }
       return;
     }
@@ -308,10 +323,10 @@ export default function Checkout() {
       <div className="min-h-screen bg-background pt-40 px-4">
         <EmptyState
           icon={Truck}
-          title="Your cart is empty"
+          title={t("checkout:empty.title")}
           action={
             <Button onClick={() => navigate("/shop")}>
-              Go Shopping
+              {t("checkout:empty.goShopping")}
             </Button>
           }
         />
@@ -334,37 +349,37 @@ export default function Checkout() {
               <div className="grid lg:grid-cols-5 gap-6">
                 <Card className="lg:col-span-3 p-6 sm:p-8">
                   <h2 className="font-semibold text-lg mb-6 flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" /> Shipping Information
+                    <MapPin className="h-5 w-5 text-primary" /> {t("checkout:shipping.title")}
                   </h2>
 
                   {isLoggedIn && user && (
                     <div className="mb-6">
-                      <SectionTitle as="p" className="mb-3">Ship to</SectionTitle>
+                      <SectionTitle as="p" className="mb-3">{t("checkout:shipping.shipTo")}</SectionTitle>
                       <ChoiceCardGroup
                         value={addressMode}
                         onValueChange={(v) => switchAddressMode(v as "saved" | "new")}
                         className="grid-cols-1 sm:grid-cols-2 gap-3"
-                        aria-label="Ship to"
+                        aria-label={t("checkout:shipping.shipTo")}
                       >
                         <ChoiceCard
                           value="saved"
                           icon={<UserCheck />}
-                          title="My Account Address"
+                          title={t("checkout:shipping.accountAddress")}
                           description={<span className="block truncate">{defaultAddress ? [defaultAddress.address_line1, defaultAddress.city].filter(Boolean).join(", ") : user.name}</span>}
                           className="min-w-0"
                         />
                         <ChoiceCard
                           value="new"
                           icon={<MapPin />}
-                          title="New Address"
-                          description="Enter a different address"
+                          title={t("checkout:shipping.newAddress")}
+                          description={t("checkout:shipping.newAddressHint")}
                         />
                       </ChoiceCardGroup>
                       {addressMode === "saved" && !defaultAddress && (
                         <Alert className="mt-3">
                           <Info className="h-4 w-4" />
                           <AlertDescription className="text-xs">
-                            Your account has no saved address yet. Please fill in the fields below.
+                            {t("checkout:shipping.noSavedAddress")}
                           </AlertDescription>
                         </Alert>
                       )}
@@ -372,16 +387,16 @@ export default function Checkout() {
                   )}
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormField label="Full Name" error={errors.fullName} required className="sm:col-span-2">
+                    <FormField label={t("common:form.fullName")} error={errors.fullName} required className="sm:col-span-2">
                       <Input
                         name="fullName"
                         value={form.fullName}
                         onChange={handleChange}
-                        placeholder="John Doe"
+                        placeholder={t("checkout:shipping.namePlaceholder")}
                       />
                     </FormField>
 
-                    <FormField label="Email" error={errors.email} required={isLoggedIn}>
+                    <FormField label={t("common:form.email")} error={errors.email} required={isLoggedIn}>
                       <Input
                         name="email"
                         type="email"
@@ -391,36 +406,36 @@ export default function Checkout() {
                       />
                     </FormField>
 
-                    <FormField label="Phone" error={errors.phone} required>
+                    <FormField label={t("common:form.phone")} error={errors.phone} required>
                       <Input
                         name="phone"
                         type="tel"
                         value={form.phone}
                         onChange={handleChange}
-                        placeholder="+1 234 567 890"
+                        placeholder={t("checkout:shipping.phonePlaceholder")}
                       />
                     </FormField>
 
                     {!isPickup && (
                       <>
-                        <FormField label="Address" error={errors.address} required className="sm:col-span-2">
+                        <FormField label={t("common:form.address")} error={errors.address} required className="sm:col-span-2">
                           <Input
                             name="address"
                             value={form.address}
                             onChange={handleChange}
-                            placeholder="123 Main Street"
+                            placeholder={t("checkout:shipping.addressPlaceholder")}
                           />
                         </FormField>
                       </>
                     )}
 
-                    <FormField label="Order Note" helperText="Special delivery instructions..." className="sm:col-span-2">
+                    <FormField label={t("checkout:shipping.orderNote")} helperText={t("checkout:shipping.noteHint")} className="sm:col-span-2">
                       <Textarea
                         name="note"
                         value={form.note}
                         onChange={handleChange}
                         rows={3}
-                        placeholder="Special delivery instructions..."
+                        placeholder={t("checkout:shipping.noteHint")}
                       />
                     </FormField>
                   </div>
@@ -429,7 +444,7 @@ export default function Checkout() {
                   <Separator className="mt-6" />
                   <div className="pt-6">
                     <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-primary" /> Delivery
+                      <Truck className="h-4 w-4 text-primary" /> {t("checkout:labels.delivery")}
                     </h3>
                     {methodsLoading ? (
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -437,13 +452,13 @@ export default function Checkout() {
                         <Skeleton className="h-[84px]" />
                       </div>
                     ) : shippingOptions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">No delivery options available.</p>
+                      <p className="text-sm text-muted-foreground py-4 text-center">{t("checkout:shipping.noDeliveryOptions")}</p>
                     ) : (
                       <ChoiceCardGroup
                         value={shippingMethodId != null ? String(shippingMethodId) : undefined}
                         onValueChange={(v) => { setShippingMethodId(Number(v)); setErrors({}); }}
                         className="grid-cols-1 sm:grid-cols-2 gap-3"
-                        aria-label="Delivery option"
+                        aria-label={t("checkout:labels.deliveryOption")}
                       >
                         {shippingOptions.map((m) => {
                           const pickup = m.type === "pickup";
@@ -456,10 +471,10 @@ export default function Checkout() {
                               title={
                                 <span className="flex flex-1 items-center justify-between gap-3">
                                   <span>{m.name}</span>
-                                  <span className="font-semibold tabular-nums">{pickup || !m.price ? "Free" : formatCurrency(m.price)}</span>
+                                  <span className="font-semibold tabular-nums">{pickup || !m.price ? t("common:money.free") : formatCurrency(m.price)}</span>
                                 </span>
                               }
-                              description={[pickup ? (m.description || "Pick up from store · no delivery address needed") : m.description, m.estimated_days].filter(Boolean).join(" · ") || undefined}
+                              description={[pickup ? (m.description || t("checkout:shipping.pickupDefault")) : m.description, m.estimated_days].filter(Boolean).join(" · ") || undefined}
                               className="[&>span:first-child]:w-full"
                             />
                           );
@@ -469,14 +484,14 @@ export default function Checkout() {
                     {errors.delivery && <p className="text-xs text-destructive mt-2">{errors.delivery}</p>}
                     {isPickup && (
                       <div className="mt-4">
-                        <SectionTitle as="p" className="mb-3">Pickup point</SectionTitle>
+                        <SectionTitle as="p" className="mb-3">{t("checkout:shipping.pickupPoint")}</SectionTitle>
                         {pickupPoints.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No pickup points available.</p>
+                          <p className="text-sm text-muted-foreground">{t("checkout:shipping.noPickupPoints")}</p>
                         ) : (
                           <ChoiceCardGroup
                             value={pickupPointId != null ? String(pickupPointId) : undefined}
                             onValueChange={(v) => setPickupPointId(Number(v))}
-                            aria-label="Pickup point"
+                            aria-label={t("checkout:shipping.pickupPoint")}
                           >
                             {pickupPoints.map((p) => (
                               <ChoiceCard
@@ -502,10 +517,10 @@ export default function Checkout() {
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
                 <Button variant="ghost" onClick={() => navigate(-1)}>
-                  <ArrowLeft className="h-4 w-4" /> Back
+                  <ArrowLeft className="h-4 w-4" /> {t("common:actions.back")}
                 </Button>
                 <Button onClick={nextStep}>
-                  Review Order <ArrowRight className="h-4 w-4" />
+                  {t("checkout:shipping.reviewOrder")} <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </motion.div>
@@ -517,7 +532,7 @@ export default function Checkout() {
               <div className="grid lg:grid-cols-5 gap-6">
                 <Card className="lg:col-span-3 p-6 sm:p-8">
                   <h2 className="font-semibold text-lg mb-6 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-primary" /> Payment Method
+                    <CreditCard className="h-5 w-5 text-primary" /> {t("checkout:payment.title")}
                   </h2>
                   <div className="space-y-3">
                     {paymentMethodsLoading ? (
@@ -527,7 +542,7 @@ export default function Checkout() {
                         <Skeleton className="h-[72px]" />
                       </>
                     ) : paymentMethods.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">No payment options available.</p>
+                      <p className="text-sm text-muted-foreground py-4 text-center">{t("checkout:payment.none")}</p>
                     ) : (
                       <ChoiceCardGroup
                         value={paymentMethodId != null ? String(paymentMethodId) : undefined}
@@ -536,7 +551,7 @@ export default function Checkout() {
                           if (m) setPaymentMethodId(m.id);
                         }}
                         className="gap-3"
-                        aria-label="Payment method"
+                        aria-label={t("checkout:labels.paymentMethod")}
                       >
                       {paymentMethods.map((method) => {
                         const Icon = PAYMENT_ICON_MAP[method.icon ?? ""] ?? CreditCard;
@@ -551,48 +566,28 @@ export default function Checkout() {
                           >
                               {isSelected && method.gateway_type === "sslcommerz" && (
                                 <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
-                                  <Globe className="h-3 w-3" /> You'll be redirected to pay securely
+                                  <Globe className="h-3 w-3" /> {t("checkout:labels.redirectSecure")}
                                 </p>
                               )}
-                              {isSelected && method.gateway_type === "portwallet" && (
+                              {isSelected && GATEWAY_NAMES[method.gateway_type ?? ""] && (
                                 <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
-                                  <Globe className="h-3 w-3" /> You'll be redirected to PortWallet
-                                </p>
-                              )}
-                              {isSelected && method.gateway_type === "stripe" && (
-                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
-                                  <Globe className="h-3 w-3" /> You'll be redirected to Stripe Checkout
-                                </p>
-                              )}
-                              {isSelected && method.gateway_type === "paypal" && (
-                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
-                                  <Globe className="h-3 w-3" /> You'll be redirected to PayPal
-                                </p>
-                              )}
-                              {isSelected && method.gateway_type === "bkash" && (
-                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
-                                  <Globe className="h-3 w-3" /> You'll be redirected to bKash
-                                </p>
-                              )}
-                              {isSelected && method.gateway_type === "nagad" && (
-                                <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
-                                  <Globe className="h-3 w-3" /> You'll be redirected to Nagad
+                                  <Globe className="h-3 w-3" /> {t("checkout:payment.redirectTo", { gateway: GATEWAY_NAMES[method.gateway_type ?? ""] })}
                                 </p>
                               )}
                               {isSelected && method.gateway_type === "manual" && (method.account || method.bank_name) && (
                                 <Card className="mt-2 w-full p-3 text-xs font-normal space-y-0.5">
-                                  <p className="text-muted-foreground">Send payment to:</p>
-                                  {method.bank_name && <p>Bank: <span className="font-medium">{method.bank_name}</span></p>}
-                                  {method.account_name && <p>Account name: <span className="font-medium">{method.account_name}</span></p>}
-                                  {method.account && <p>Account / number: <span className="font-medium">{method.account}</span></p>}
+                                  <p className="text-muted-foreground">{t("checkout:payment.sendTo")}</p>
+                                  {method.bank_name && <p><Trans i18nKey="checkout:payment.bank" values={{ name: method.bank_name }} components={{ b: <span className="font-medium" /> }} /></p>}
+                                  {method.account_name && <p><Trans i18nKey="checkout:payment.accountName" values={{ name: method.account_name }} components={{ b: <span className="font-medium" /> }} /></p>}
+                                  {method.account && <p><Trans i18nKey="checkout:payment.accountNumber" values={{ number: method.account }} components={{ b: <span className="font-medium" /> }} /></p>}
                                 </Card>
                               )}
                               {method.gateway_type === "cod" && method.cod_deposit_required && (
                                 <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
                                   <Globe className="h-3 w-3" />
                                   {method.cod_deposit_amount
-                                    ? `Shipping deposit of ${currencySymbol}${method.cod_deposit_amount} required before delivery`
-                                    : "Shipping charge must be paid upfront via bKash/Nagad/Card"}
+                                    ? t("checkout:payment.codDeposit", { amount: `${currencySymbol}${method.cod_deposit_amount}` })
+                                    : t("checkout:payment.codUpfront")}
                                 </p>
                               )}
                           </ChoiceCard>
@@ -608,10 +603,10 @@ export default function Checkout() {
               </div>
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
                 <Button variant="ghost" onClick={() => setStep(1)}>
-                  <ArrowLeft className="h-4 w-4" /> Back to Shipping
+                  <ArrowLeft className="h-4 w-4" /> {t("checkout:payment.backToShipping")}
                 </Button>
                 <Button onClick={nextStep}>
-                  Review Order <ArrowRight className="h-4 w-4" />
+                  {t("checkout:shipping.reviewOrder")} <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </motion.div>
@@ -622,7 +617,7 @@ export default function Checkout() {
             <motion.div key="review" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="grid lg:grid-cols-5 gap-6">
                 <div className="lg:col-span-3 space-y-5">
-                  <SectionCard title={<span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {isPickup ? "Pickup Point" : "Delivery Address"}</span>}>
+                  <SectionCard title={<span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {isPickup ? t("checkout:review.pickupPoint") : t("checkout:review.deliveryAddress")}</span>}>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p className="font-semibold text-foreground">{form.fullName}</p>
                       <p>{isPickup && pickupPoint ? `${pickupPoint.name}${pickupPoint.address ? `, ${pickupPoint.address}` : ""}${pickupPoint.district ? `, ${pickupPoint.district}` : ""}` : form.address}</p>
@@ -630,21 +625,21 @@ export default function Checkout() {
                         <p>{[form.city, form.state, form.zip].filter(Boolean).join(", ")}</p>
                       )}
                       <p>{form.phone}{form.email ? ` · ${form.email}` : ""}</p>
-                      {form.note && <p className="mt-2 italic text-xs">Note: {form.note}</p>}
+                      {form.note && <p className="mt-2 italic text-xs">{t("checkout:review.note", { note: form.note })}</p>}
                     </div>
                   </SectionCard>
 
-                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> Delivery</span>}>
+                  <SectionCard title={<span className="flex items-center gap-2"><Truck className="h-4 w-4 text-primary" /> {t("checkout:labels.delivery")}</span>}>
                     <div className="flex items-center gap-3">
                       {isPickup ? <Store className="h-5 w-5 text-primary" /> : <Truck className="h-5 w-5 text-primary" />}
                       <div>
                         <span className="text-sm font-medium text-foreground">{shippingLabel}</span>
-                        <p className="text-xs text-muted-foreground">{[shippingTime, shippingCost > 0 ? formatCurrency(shippingCost) : "Free"].filter(Boolean).join(" · ")}</p>
+                        <p className="text-xs text-muted-foreground">{[shippingTime, shippingCost > 0 ? formatCurrency(shippingCost) : t("common:money.free")].filter(Boolean).join(" · ")}</p>
                       </div>
                     </div>
                   </SectionCard>
 
-                  <SectionCard title={<span className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> Payment Method</span>}>
+                  <SectionCard title={<span className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> {t("checkout:payment.title")}</span>}>
                     {selectedPayment && (() => {
                       const Icon = PAYMENT_ICON_MAP[selectedPayment.icon ?? ""] ?? CreditCard;
                       return (
@@ -656,7 +651,7 @@ export default function Checkout() {
                     })()}
                   </SectionCard>
 
-                  <SectionCard title={<span className="flex items-center gap-2"><ClipboardCheck className="h-4 w-4 text-primary" /> Order Items ({items.length})</span>}>
+                  <SectionCard title={<span className="flex items-center gap-2"><ClipboardCheck className="h-4 w-4 text-primary" /> {t("checkout:review.items", { count: items.length })}</span>}>
                     <div className="space-y-3">
                       {items.map((item) => (
                         <Item key={item.id} variant="outline" size="sm">
@@ -673,11 +668,11 @@ export default function Checkout() {
                                 }}
                               />
                             ) : null}
-                            <span className={cn("text-[10px] text-muted-foreground text-center leading-tight px-1", item.image ? "hidden" : "")}>No Image</span>
+                            <span className={cn("text-[10px] text-muted-foreground text-center leading-tight px-1", item.image ? "hidden" : "")}>{t("checkout:labels.noImage")}</span>
                           </ItemMedia>
                           <ItemContent className="min-w-0">
                             <ItemTitle className="w-full truncate">{item.name}</ItemTitle>
-                            <ItemDescription className="text-xs">Qty: {item.quantity}</ItemDescription>
+                            <ItemDescription className="text-xs">{t("checkout:review.qty", { qty: item.quantity })}</ItemDescription>
                           </ItemContent>
                           <ItemActions>
                             <p className="font-semibold text-sm text-foreground">{formatCurrency(item.price * item.quantity)}</p>
@@ -692,17 +687,17 @@ export default function Checkout() {
                   <OrderSummary items={items} totalPrice={totalPrice} shipping={shippingCost} discount={discount} grandTotal={grandTotal} couponResult={couponResult} couponCode={couponCode} onCouponCodeChange={setCouponCode} onApplyCoupon={applyCoupon} onRemoveCoupon={removeCoupon} couponApplying={couponApplying} />
                   <Alert className="mt-4">
                     <ShieldCheck className="h-4 w-4" />
-                    <AlertDescription className="text-xs text-muted-foreground">Your order information is secure. We'll send a confirmation to your email.</AlertDescription>
+                    <AlertDescription className="text-xs text-muted-foreground">{t("checkout:review.secure")}</AlertDescription>
                   </Alert>
                 </div>
               </div>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between mt-6">
                 <Button variant="ghost" onClick={() => setStep(2)}>
-                  <ArrowLeft className="h-4 w-4" /> Edit Payment
+                  <ArrowLeft className="h-4 w-4" /> {t("checkout:review.editPayment")}
                 </Button>
                 <Button onClick={nextStep} disabled={placeOrder.isPending}>
-                  {placeOrder.isPending ? "Placing Order..." : <><span>Place Order</span><CheckCircle2 className="h-4 w-4" /></>}
+                  {placeOrder.isPending ? t("checkout:review.placing") : <><span>{t("checkout:review.placeOrder")}</span><CheckCircle2 className="h-4 w-4" /></>}
                 </Button>
               </div>
             </motion.div>
@@ -722,35 +717,35 @@ export default function Checkout() {
                 </motion.div>
 
                 <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="font-semibold text-2xl text-foreground mb-2">
-                  Order Placed Successfully!
+                  {t("checkout:complete.title")}
                 </motion.h2>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-muted-foreground text-sm mb-6">
-                  Thank you for your order. We'll send a confirmation to your email once it's on the way.
+                  {t("checkout:complete.text")}
                 </motion.p>
 
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mb-6">
                   <Card className="p-5 text-left">
                     <InfoList>
-                      <InfoRow label="Order ID" value={<span className="font-mono font-bold text-primary">{placedOrderId ?? "—"}</span>} />
-                      <InfoRow label="Payment" value={selectedPayment?.name ?? "—"} />
-                      <InfoRow label="Delivery To" value={form.fullName} />
-                      <InfoRow label="Shipping" value={shippingLabel} />
-                      <InfoRow label="Estimated Delivery" value={shippingTime ?? "—"} />
+                      <InfoRow label={t("checkout:complete.orderId")} value={<span className="font-mono font-bold text-primary">{placedOrderId ?? "—"}</span>} />
+                      <InfoRow label={t("checkout:labels.payment")} value={selectedPayment?.name ?? "—"} />
+                      <InfoRow label={t("checkout:complete.deliveryTo")} value={form.fullName} />
+                      <InfoRow label={t("common:money.shipping")} value={shippingLabel} />
+                      <InfoRow label={t("checkout:complete.estimatedDelivery")} value={shippingTime ?? "—"} />
                     </InfoList>
                   </Card>
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex flex-col sm:flex-row gap-3">
                   <Button onClick={() => navigate("/")} className="flex-1">
-                    Continue Shopping
+                    {t("common:actions.continueShopping")}
                   </Button>
                   {!isLoggedIn && placedOrderId ? (
                     <Button variant="outline" onClick={() => navigate(`/track-order?invoice=${encodeURIComponent(placedOrderId)}`)} className="flex-1">
-                      Track Order
+                      {t("common:nav.trackOrder")}
                     </Button>
                   ) : (
                     <Button variant="outline" onClick={() => navigate("/shop")} className="flex-1">
-                      Browse More
+                      {t("checkout:complete.browseMore")}
                     </Button>
                   )}
                 </motion.div>
@@ -777,15 +772,16 @@ function OrderSummary({ items, totalPrice, shipping, discount, grandTotal, coupo
   couponApplying: boolean;
 }) {
   const { formatCurrency } = useCurrency();
+  const { t } = useTranslation();
   return (
     <Card className="p-4 sm:p-6 lg:sticky lg:top-36">
-      <h3 className="font-semibold text-sm mb-4">Order Summary</h3>
+      <h3 className="font-semibold text-sm mb-4">{t("checkout:summary.title")}</h3>
       <InfoList className="pb-4">
-        <InfoRow label={`Subtotal (${items.reduce((s, i) => s + i.quantity, 0)} items)`} value={formatCurrency(totalPrice)} />
-        <InfoRow label="Shipping" value={couponResult?.free_shipping ? <span className="text-green-600">FREE</span> : formatCurrency(shipping)} />
+        <InfoRow label={t("checkout:summary.subtotal", { count: items.reduce((s, i) => s + i.quantity, 0) })} value={formatCurrency(totalPrice)} />
+        <InfoRow label={t("common:money.shipping")} value={couponResult?.free_shipping ? <span className="text-green-600 uppercase">{t("common:money.free")}</span> : formatCurrency(shipping)} />
         {discount > 0 && (
           <InfoRow
-            label={<span className="text-green-600 font-medium">Discount {couponResult && `(${couponResult.code})`}</span>}
+            label={<span className="text-green-600 font-medium">{couponResult ? t("checkout:summary.discountCode", { code: couponResult.code }) : t("common:money.discount")}</span>}
             value={<span className="text-green-600">-{formatCurrency(discount)}</span>}
           />
         )}
@@ -803,7 +799,7 @@ function OrderSummary({ items, totalPrice, shipping, discount, grandTotal, coupo
               <ItemTitle className="text-xs">{couponResult.code} — {couponResult.campaign_name}</ItemTitle>
             </ItemContent>
             <ItemActions>
-              <WithTooltip content="Remove coupon"><Button variant="ghost" size="icon" onClick={onRemoveCoupon} aria-label="Remove coupon">
+              <WithTooltip content={t("checkout:coupon.remove")}><Button variant="ghost" size="icon" onClick={onRemoveCoupon} aria-label={t("checkout:coupon.remove")}>
                 <X className="h-3.5 w-3.5" />
               </Button></WithTooltip>
             </ItemActions>
@@ -811,7 +807,7 @@ function OrderSummary({ items, totalPrice, shipping, discount, grandTotal, coupo
         ) : (
           <div className="flex flex-col gap-2 min-[420px]:flex-row">
             <Input
-              placeholder="Coupon code"
+              placeholder={t("checkout:coupon.placeholder")}
               value={couponCode}
               onChange={(e) => onCouponCodeChange(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onApplyCoupon(); } }}
@@ -822,14 +818,14 @@ function OrderSummary({ items, totalPrice, shipping, discount, grandTotal, coupo
               disabled={couponApplying || !couponCode.trim()}
               className="shrink-0"
             >
-              {couponApplying ? <Spinner /> : "Apply"}
+              {couponApplying ? <Spinner /> : t("common:actions.apply")}
             </Button>
           </div>
         )}
       </div>
 
       <div className="flex justify-between font-semibold text-lg">
-        <span>Total</span>
+        <span>{t("common:money.total")}</span>
         <span className="text-primary">{formatCurrency(grandTotal)}</span>
       </div>
     </Card>

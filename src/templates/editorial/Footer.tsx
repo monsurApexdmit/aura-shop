@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useHomepageSections, useShopNavLinks } from "@/hooks/useHomepageSections";
@@ -16,6 +17,7 @@ import { WithTooltip } from "@/components/common/WithTooltip"
 const LINK = "text-sm text-ink-foreground/60 transition-colors hover:text-ink-foreground";
 
 export default function Footer() {
+  const { t } = useTranslation();
   const { storeName, paymentMethods, storePhone, storeEmail, storeAddress, bannerUrl, onlineStore } = useCurrency();
   const navLinks = useShopNavLinks();
   const { data: pages = [] } = useStorefrontPages();
@@ -23,25 +25,25 @@ export default function Footer() {
   const { data: sections } = useHomepageSections();
   const { data: collections = [] } = useCollections();
   // Admin: Online store > Homepage sections > Footer text.
-  const tagline = sections?.footer ? sections.footer.tagline : "Color-forward, joyfully made clothing for women, men and kids.";
+  const tagline = sections?.footer ? sections.footer.tagline : t("tpl_editorial:footer.tagline");
   // Pages published with "Footer" placement in admin (Pages); policies and FAQ go under Help.
   const footerPages = pages.filter((p) => p.place === 'footer');
   const toLink = (p: (typeof pages)[number]) => ({ label: p.title, to: pageLinkHref(p.slug) });
   const columns = [
-    { title: "Shop", links: [...navLinks, { label: "All clothing", to: "/shop" }, ...(collections.length > 0 ? [{ label: "Collections", to: "/collections" }] : []), { label: "Sale", to: "/deals" }] },
+    { title: t("common:nav.shop"), links: [...navLinks, { label: t("tpl_editorial:footer.allClothing"), to: "/shop" }, ...(collections.length > 0 ? [{ label: t("common:nav.collections"), to: "/collections" }] : []), { label: t("common:product.sale"), to: "/deals" }] },
     {
-      title: "Help",
+      title: t("tpl_editorial:footer.help"),
       links: [
         ...footerPages.filter((p) => p.type === 'policy' || p.type === 'faq').map(toLink),
-        { label: "Contact", to: "/contact" },
-        { label: "Track order", to: "/track-order" },
+        { label: t("common:nav.contact"), to: "/contact" },
+        { label: t("common:nav.trackOrder"), to: "/track-order" },
       ],
     },
     {
-      title: "Company",
+      title: t("tpl_editorial:footer.company"),
       links: [
         ...footerPages.filter((p) => p.type !== 'policy' && p.type !== 'faq').map(toLink),
-        { label: "My account", to: "/account" },
+        { label: t("common:nav.myAccount"), to: "/account" },
       ],
     },
   ];
@@ -70,17 +72,17 @@ export default function Footer() {
             )}
             {tagline && <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-foreground/60">{tagline}</p>}
             <form className="mt-6 flex max-w-sm items-center gap-2" onSubmit={(e) => e.preventDefault()}>
-              <label htmlFor="footer-email" className="sr-only">Email address</label>
+              <label htmlFor="footer-email" className="sr-only">{t("common:form.emailAddress")}</label>
               <Input
                 id="footer-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder={t("common:footer.emailPlaceholder")}
                 className="h-11 flex-1 rounded-pill border-ink-foreground/15 bg-ink-foreground/5 px-5 text-ink-foreground placeholder:text-ink-foreground/40"
               />
               <Button type="submit" variant="ghost" className="h-11 rounded-pill px-4 font-semibold text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground">
-                Join
+                {t("tpl_editorial:footer.join")}
               </Button>
             </form>
             <div className="mt-6 space-y-2">
@@ -121,7 +123,7 @@ export default function Footer() {
       {/* Bottom Bar */}
       <Separator className="bg-ink-foreground/10" />
       <div className="container flex flex-col items-center justify-between gap-3 py-5 md:flex-row">
-        <p className="text-xs text-ink-foreground/50">© {year} {storeName}. All rights reserved.</p>
+        <p className="text-xs text-ink-foreground/50">{t("common:footer.rights", { year, store: storeName })}</p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           {paymentMethods.map((m) => (
             <Badge key={m} variant="outline" className="border-ink-foreground/20 font-medium text-ink-foreground/60">

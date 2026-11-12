@@ -13,8 +13,13 @@ import { Spinner } from "@/components/ui/spinner";
 import { FormField } from "@/components/common/FormField";
 import { PageHeader } from "@/components/common/PageHeader";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { useTranslation } from "react-i18next";
+
+/** Error shape from the API client (axios) */
+type ApiErr = { response?: { data?: { message?: string } } };
 
 export default function AccountProfile() {
+  const { t } = useTranslation();
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -24,15 +29,16 @@ export default function AccountProfile() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
-      toast.error("Name and email are required");
+      toast.error(t("account:profile.required"));
       return;
     }
     try {
       setSaving(true);
       await updateProfile({ name: name.trim(), email: email.trim(), phone: phone.trim() || undefined });
-      toast.success("Profile updated!");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to update profile");
+      toast.success(t("account:profile.updated"));
+    } catch (e) {
+      const err = e as ApiErr;
+      toast.error(err?.response?.data?.message || t("account:profile.failed"));
     } finally {
       setSaving(false);
     }
@@ -44,12 +50,12 @@ export default function AccountProfile() {
         <div className="container max-w-2xl">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-              <Link to="/account" className="hover:text-primary">My Account</Link>
+              <Link to="/account" className="hover:text-primary">{t("common:nav.myAccount")}</Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-foreground font-medium">Profile</span>
+              <span className="text-foreground font-medium">{t("account:breadcrumb.profile")}</span>
             </div>
 
-            <PageHeader title="Profile Settings" className="mb-6" />
+            <PageHeader title={t("account:profile.title")} className="mb-6" />
 
             <Card className="p-6 sm:p-8">
               {/* Avatar */}
@@ -58,18 +64,18 @@ export default function AccountProfile() {
                 <div>
                   <p className="font-semibold text-lg">{user?.name}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{user?.city ? `${user.city}${user.country ? `, ${user.country}` : ""}` : "No location set"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{user?.city ? `${user.city}${user.country ? `, ${user.country}` : ""}` : t("account:profile.noLocation")}</p>
                 </div>
               </div>
               <Separator className="mt-6 mb-8" />
 
               <form onSubmit={handleSave} className="space-y-5">
                 {[
-                  { label: "Full Name", value: name, set: setName, type: "text", placeholder: "John Doe" },
-                  { label: "Email Address", value: email, set: setEmail, type: "email", placeholder: "john@example.com" },
-                  { label: "Phone Number", value: phone, set: setPhone, type: "tel", placeholder: "+1 234-567-890" },
+                  { label: t("account:profile.fullName"), value: name, set: setName, type: "text", placeholder: t("account:signup.namePlaceholder") },
+                  { label: t("account:profile.email"), value: email, set: setEmail, type: "email", placeholder: "john@example.com" },
+                  { label: t("account:profile.phone"), value: phone, set: setPhone, type: "tel", placeholder: t("account:profile.phonePlaceholder") },
                 ].map((field) => (
-                  <FormField key={field.label} label={field.label} htmlFor={`profile-${field.type}`}>
+                  <FormField key={field.type} label={field.label} htmlFor={`profile-${field.type}`}>
                     <Input
                       id={`profile-${field.type}`}
                       type={field.type}
@@ -83,7 +89,7 @@ export default function AccountProfile() {
 
                 <Button type="submit" disabled={saving}>
                   {saving ? <Spinner /> : <Save className="h-4 w-4" />}
-                  {saving ? "Saving..." : "Save Changes"}
+                  {saving ? t("account:profile.saving") : t("account:profile.save")}
                 </Button>
               </form>
             </Card>

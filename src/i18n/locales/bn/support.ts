@@ -1,0 +1,96 @@
+import type { Messages } from "../../types";
+import type en from "../en/support";
+
+// বাংলা — "support" namespace. Must have exactly the keys of ../en/support.ts.
+const bn: Messages<typeof en> = {
+  status: {
+    open: "খোলা",
+    in_progress: "চলমান",
+    resolved: "সমাধান হয়েছে",
+    closed: "বন্ধ",
+  },
+  category: {
+    order: "অর্ডার সহায়তা",
+    product: "পণ্য সম্পর্কে জিজ্ঞাসা",
+    payment: "পেমেন্ট সমস্যা",
+    shipping: "ডেলিভারি সমস্যা",
+    general: "সাধারণ প্রশ্ন",
+  },
+  time: {
+    justNow: "এইমাত্র",
+    minutesAgo: "{{n}} মিনিট আগে",
+    hoursAgo: "{{n}} ঘণ্টা আগে",
+    yesterday: "গতকাল",
+  },
+  form: {
+    category: "ক্যাটাগরি",
+    subject: "বিষয়",
+  },
+  validation: {
+    subjectRequired: "বিষয় লিখুন",
+    subjectTooLong: "বিষয় অনেক বড় হয়ে গেছে",
+    messageMin: "মেসেজ কমপক্ষে ১০ অক্ষরের হতে হবে",
+    messageTooLong: "মেসেজ অনেক বড় হয়ে গেছে",
+  },
+  attach: "ফাইল যোগ করুন",
+  attachFiles: "ফাইল যোগ করুন",
+  voice: "ভয়েস",
+  stop: "থামান",
+  startRecording: "ভয়েস নোট রেকর্ড করুন",
+  stopRecording: "রেকর্ডিং থামান",
+  micFailed: "মাইক্রোফোন চালু করা যায়নি।",
+  supportTeam: "সাপোর্ট টিম",
+  you: "আপনি",
+  newTicket: {
+    title: "নতুন সাপোর্ট টিকেট",
+    subjectPlaceholder: "সংক্ষেপে আপনার সমস্যাটি লিখুন",
+    messagePlaceholder: "আপনার সমস্যাটি বিস্তারিত লিখুন…",
+    submit: "টিকেট জমা দিন",
+    success: "টিকেট জমা হয়েছে! আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।",
+    failed: "টিকেট জমা দেওয়া যায়নি। আবার চেষ্টা করুন।",
+  },
+  chat: {
+    loadFailed: "টিকেট লোড করা যায়নি",
+    replied: "সাপোর্ট টিম আপনার টিকেটে উত্তর দিয়েছে",
+    sendFailed: "মেসেজ পাঠানো যায়নি।",
+    empty: "এখনো কোনো মেসেজ নেই। নিচে প্রথম মেসেজটি পাঠান।",
+    placeholder: "মেসেজ লিখুন… (পাঠাতে Enter চাপুন)",
+    send: "মেসেজ পাঠান",
+    hint: "নতুন লাইনের জন্য Shift+Enter চাপুন। সর্বোচ্চ ৫টি ফাইল যোগ করুন অথবা ভয়েস নোট রেকর্ড করুন।",
+    closedNotice: "এই টিকেটটি <strong>{{status}}</strong>। আরও সাহায্য লাগলে <link>নতুন টিকেট খুলুন</link>।",
+  },
+  list: {
+    new: "নতুন",
+    empty: "এখনো কোনো টিকেট নেই। সাহায্য পেতে একটি টিকেট খুলুন।",
+    messages_one: "{{count}}টি মেসেজ",
+    messages_other: "{{count}}টি মেসেজ",
+    loadFailed: "টিকেট লোড করা যায়নি",
+  },
+  page: {
+    selectTicket: "একটি টিকেট বেছে নিন অথবা নতুন টিকেট খুলুন",
+    signInTitle: "সাপোর্ট পেতে সাইন ইন করুন",
+    signInText: "টিকেট জমা দিতে ও আমাদের সাপোর্ট টিমকে মেসেজ পাঠাতে লগ ইন করুন।",
+  },
+  guest: {
+    kicker: "গেস্ট সাপোর্ট",
+    title: "সাপোর্ট কথোপকথন",
+    backToContact: "যোগাযোগ পেজে ফিরে যান",
+    invalidLink: "এই সাপোর্ট লিংকটি অসম্পূর্ণ বা সঠিক নয়।",
+    replied: "সাপোর্ট টিম আপনার মেসেজের উত্তর দিয়েছে।",
+    loadFailed: "এই কথোপকথনটি লোড করা যায়নি।",
+    replySent: "আপনার উত্তর পাঠানো হয়েছে।",
+    replyFailed: "আপনার উত্তর পাঠানো যায়নি।",
+    loading: "সাপোর্ট কথোপকথন লোড হচ্ছে...",
+    errorTitle: "এই কথোপকথনটি খোলা যাচ্ছে না",
+    guestName: "গেস্ট",
+    noEmail: "ইমেইল নেই",
+    meta: "{{name}} · {{email}} · {{time}} তৈরি হয়েছে",
+    refresh: "রিফ্রেশ",
+    replyLabel: "সাপোর্টকে উত্তর দিন",
+    replyPlaceholder: "আপনার পরবর্তী মেসেজ এখানে লিখুন...",
+    sendReply: "উত্তর পাঠান",
+    closed: "এই টিকেটটি বন্ধ হয়ে গেছে, এতে আর উত্তর দেওয়া যাবে না।",
+  },
+};
+
+export default bn;

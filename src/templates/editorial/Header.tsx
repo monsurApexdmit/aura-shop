@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ShoppingBag, Search, Menu, X, Sun, Moon, User, ChevronDown, ChevronLeft, Heart, LogOut, Package, Settings, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import { StoreClosureBanner } from "@/components/StoreHours";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
 import { isTabRoot } from "@/lib/mobileNav";
 
 const MotionCard = motion.create(Card);
@@ -29,6 +31,7 @@ const MotionCard = motion.create(Card);
 const COUNT_BADGE = "absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-highlight px-1 text-[10px] font-bold leading-none text-highlight-foreground";
 
 export default function Header() {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { totalItems, setIsOpen } = useCart();
   const { totalWishlistItems } = useWishlist();
@@ -39,14 +42,14 @@ export default function Header() {
   const { data: pages = [] } = useStorefrontPages();
   // Pages published with "Header menu" placement in admin (Pages).
   const headerPageLinks = pages.filter((p) => p.place === 'header').map((p) => ({ label: p.title, to: pageLinkHref(p.slug) }));
-  const allUtilityLinks = [...headerPageLinks, { label: "Contact", to: "/contact" }];
+  const allUtilityLinks = [...headerPageLinks, { label: t("common:nav.contact"), to: "/contact" }];
   // Collections link only once the store has published collections, so the nav never leads to an empty page.
   const { data: collections = [] } = useCollections();
   const hasCollections = collections.length > 0;
   const shopLinks = [
     ...navLinks,
-    { label: "Shop all", to: "/shop" },
-    ...(hasCollections ? [{ label: "Collections", to: "/collections" }] : []),
+    { label: t("tpl_editorial:header.shopAll"), to: "/shop" },
+    ...(hasCollections ? [{ label: t("common:nav.collections"), to: "/collections" }] : []),
   ];
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -82,11 +85,11 @@ export default function Header() {
         <div className="container grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-3 md:h-[72px]">
           <div className="flex min-w-0 items-center gap-1">
             {!tabRoot && (
-              <Button variant="ghost" size="icon" className="-ml-2 shrink-0 rounded-full md:hidden" aria-label="Back" onClick={goBack}>
+              <Button variant="ghost" size="icon" className="-ml-2 shrink-0 rounded-full md:hidden" aria-label={t("common:actions.back")} onClick={goBack}>
                 <ChevronLeft className="h-6 w-6" />
               </Button>
             )}
-            <WithTooltip content={mobileOpen ? "Close menu" : "Open menu"}><Button variant="ghost" size="icon" className="-ml-2 hidden rounded-full md:inline-flex lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
+            <WithTooltip content={mobileOpen ? t("common:nav.closeMenu") : t("common:nav.openMenu")}><Button variant="ghost" size="icon" className="-ml-2 hidden rounded-full md:inline-flex lg:hidden" aria-label={mobileOpen ? t("common:nav.closeMenu") : t("common:nav.openMenu")} onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button></WithTooltip>
             <Link to="/" className="hidden min-w-0 items-center md:flex">
@@ -110,7 +113,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav aria-label="Main" className="hidden items-center gap-8 lg:flex">
+          <nav aria-label={t("tpl_editorial:header.mainNav")} className="hidden items-center gap-8 lg:flex">
             {[...shopLinks, ...headerPageLinks].map((link) => (
               <Link
                 key={link.to}
@@ -121,21 +124,22 @@ export default function Header() {
               </Link>
             ))}
             <Link to="/deals" className="py-2 text-sm font-semibold text-highlight underline-offset-8 hover:underline">
-              Sale
+              {t("common:product.sale")}
             </Link>
           </nav>
 
           {/* Right Actions */}
           <div className="col-start-3 flex items-center justify-self-end gap-0.5">
-            <WithTooltip content="Search"><Button variant="ghost" size="icon" className="rounded-full" aria-label="Search" aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}>
+            <WithTooltip content={t("common:search.submit")}><Button variant="ghost" size="icon" className="rounded-full" aria-label={t("common:search.submit")} aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="h-[18px] w-[18px]" />
             </Button></WithTooltip>
-            <WithTooltip content={theme === "light" ? "Dark mode" : "Light mode"}><Button variant="ghost" size="icon" className="rounded-full max-md:-mr-2" aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"} onClick={toggleTheme}>
+            <LanguageSwitcher className="rounded-full hover:bg-accent hover:text-accent-foreground" contentClassName="z-[70]" />
+            <WithTooltip content={theme === "light" ? t("common:theme.dark") : t("common:theme.light")}><Button variant="ghost" size="icon" className="rounded-full max-md:-mr-2" aria-label={theme === "light" ? t("tpl_editorial:header.switchToDark") : t("tpl_editorial:header.switchToLight")} onClick={toggleTheme}>
               {theme === "light" ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
             </Button></WithTooltip>
             {/* User Menu */}
             <div ref={userMenuRef} className="relative hidden md:block">
-              <WithTooltip content={isLoggedIn ? "Account menu" : "Login"}><Button variant="ghost" size="icon" className="rounded-full" aria-label={isLoggedIn ? "Account menu" : "Login"} onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
+              <WithTooltip content={isLoggedIn ? t("tpl_editorial:header.accountMenu") : t("common:nav.signIn")}><Button variant="ghost" size="icon" className="rounded-full" aria-label={isLoggedIn ? t("tpl_editorial:header.accountMenu") : t("common:nav.signIn")} onClick={() => isLoggedIn ? setUserMenuOpen(!userMenuOpen) : undefined} asChild={!isLoggedIn}>
                 {isLoggedIn ? (
                   <UserAvatar className="size-8" name={user?.name} fallback={user?.name?.charAt(0).toUpperCase() || "U"} />
                 ) : (
@@ -156,10 +160,10 @@ export default function Header() {
                     </div>
                     <Separator />
                     {[
-                      { label: "My Account", to: "/account", icon: User },
-                      { label: "My Orders", to: "/account/orders", icon: Package },
-                      { label: "Track Order", to: "/track-order", icon: Truck },
-                      { label: "Settings", to: "/account/profile", icon: Settings },
+                      { label: t("common:nav.myAccount"), to: "/account", icon: User },
+                      { label: t("tpl_editorial:header.myOrders"), to: "/account/orders", icon: Package },
+                      { label: t("common:nav.trackOrder"), to: "/track-order", icon: Truck },
+                      { label: t("tpl_editorial:header.settings"), to: "/account/profile", icon: Settings },
                     ].map((item) => (
                       <Button key={item.to} asChild variant="ghost" className="w-full justify-start rounded-none">
                         <Link to={item.to} onClick={() => setUserMenuOpen(false)}>
@@ -172,19 +176,19 @@ export default function Header() {
                     <Button variant="ghost" onClick={() => { logout(); setUserMenuOpen(false); }}
                       className="w-full justify-start rounded-none">
                       <LogOut className="h-4 w-4" />
-                      Log Out
+                      {t("common:nav.signOut")}
                     </Button>
                   </MotionCard>
                 )}
               </AnimatePresence>
             </div>
-            <WithTooltip content="Wishlist"><Button asChild variant="ghost" size="icon" className="relative hidden rounded-full md:inline-flex">
-              <Link to="/wishlist" aria-label={`Wishlist, ${totalWishlistItems} items`}>
+            <WithTooltip content={t("common:nav.wishlist")}><Button asChild variant="ghost" size="icon" className="relative hidden rounded-full md:inline-flex">
+              <Link to="/wishlist" aria-label={t("tpl_editorial:header.wishlistCount", { count: totalWishlistItems })}>
                 <Heart className="h-[18px] w-[18px]" />
                 {totalWishlistItems > 0 && <span className={COUNT_BADGE}>{totalWishlistItems}</span>}
               </Link>
             </Button></WithTooltip>
-            <WithTooltip content="Bag"><Button variant="ghost" size="icon" className="relative hidden rounded-full md:inline-flex" aria-label={`Bag, ${totalItems} items`} onClick={() => setIsOpen(true)}>
+            <WithTooltip content={t("tpl_editorial:header.bag")}><Button variant="ghost" size="icon" className="relative hidden rounded-full md:inline-flex" aria-label={t("tpl_editorial:header.bagCount", { count: totalItems })} onClick={() => setIsOpen(true)}>
               <ShoppingBag className="h-[18px] w-[18px]" />
               {totalItems > 0 && <span className={COUNT_BADGE}>{totalItems}</span>}
             </Button></WithTooltip>
@@ -234,23 +238,23 @@ export default function Header() {
                   onClick={() => setMobileOpen(false)}
                   className="col-span-2 rounded-2xl bg-highlight px-4 py-3 font-display text-lg font-bold text-highlight-foreground"
                 >
-                  Sale
+                  {t("common:product.sale")}
                 </Link>
               </div>
 
               {hasCollections ? (
                 <SegmentedControl
-                  aria-label="Browse by"
+                  aria-label={t("tpl_editorial:header.browseBy")}
                   className="mx-3 my-2"
                   value={mobileBrowse}
                   onValueChange={(v) => setMobileBrowse(v as "categories" | "collections")}
                   options={[
-                    { value: "categories", label: "All Categories" },
-                    { value: "collections", label: "Collections" },
+                    { value: "categories", label: t("common:nav.allCategories") },
+                    { value: "collections", label: t("common:nav.collections") },
                   ]}
                 />
               ) : (
-                <SectionTitle as="p" className="px-3 py-2">Categories</SectionTitle>
+                <SectionTitle as="p" className="px-3 py-2">{t("common:nav.categories")}</SectionTitle>
               )}
               {hasCollections && mobileBrowse === "collections" && (
                 <>
@@ -263,7 +267,7 @@ export default function Header() {
                     </Button>
                   ))}
                   <Button asChild variant="ghost" className="w-full justify-start font-semibold">
-                    <Link to="/collections" onClick={() => setMobileOpen(false)}>View all collections</Link>
+                    <Link to="/collections" onClick={() => setMobileOpen(false)}>{t("tpl_editorial:header.viewAllCollections")}</Link>
                   </Button>
                 </>
               )}
@@ -291,7 +295,7 @@ export default function Header() {
                             onClick={() => setMobileOpen(false)}
                             className="block py-2 text-sm font-semibold text-foreground"
                           >
-                            All {cat.name}
+                            {t("tpl_editorial:header.allIn", { name: cat.name })}
                           </Link>
                           {cat.children.map((child) => (
                             <Link
@@ -314,13 +318,13 @@ export default function Header() {
               <Button asChild variant="ghost" className="w-full justify-start">
                 <Link to="/track-order" onClick={() => setMobileOpen(false)}>
                   <Truck className="h-4 w-4" />
-                  Track your order
+                  {t("tpl_editorial:header.trackYourOrder")}
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="w-full justify-start">
                 <Link to="/wishlist" onClick={() => setMobileOpen(false)}>
                   <Heart className="h-4 w-4" />
-                  Wishlist{totalWishlistItems > 0 && ` (${totalWishlistItems})`}
+                  {t("common:nav.wishlist")}{totalWishlistItems > 0 && ` (${totalWishlistItems})`}
                 </Link>
               </Button>
               {allUtilityLinks.map((link) => (
@@ -337,33 +341,34 @@ export default function Header() {
                 className="w-full justify-start"
               >
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
+                {theme === "light" ? t("common:theme.dark") : t("common:theme.light")}
               </Button>
+              <LanguageSwitcher variant="full" align="start" className="w-full justify-start gap-2 rounded-md px-4 hover:bg-accent hover:text-accent-foreground" contentClassName="z-[70]" />
               <Separator className="my-2" />
               {isLoggedIn ? (
                 <>
                   <Button asChild variant="ghost" className="w-full justify-start">
                     <Link to="/account" onClick={() => setMobileOpen(false)}>
                       <User className="h-4 w-4" />
-                      My Account
+                      {t("common:nav.myAccount")}
                     </Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
                     <Link to="/account/orders" onClick={() => setMobileOpen(false)}>
                       <Package className="h-4 w-4" />
-                      My Orders
+                      {t("tpl_editorial:header.myOrders")}
                     </Link>
                   </Button>
                   <Button variant="ghost" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start">
                     <LogOut className="h-4 w-4" />
-                    Log Out
+                    {t("common:nav.signOut")}
                   </Button>
                 </>
               ) : (
                 <Button asChild variant="ghost" className="w-full justify-start">
                   <Link to="/login" onClick={() => setMobileOpen(false)}>
                     <User className="h-4 w-4" />
-                    Login / Sign Up
+                    {t("tpl_editorial:header.signInUp")}
                   </Link>
                 </Button>
               )}

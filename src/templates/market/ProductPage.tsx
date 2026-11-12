@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronRight, MessageCircle, PackageSearch, ShoppingCart, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,13 +11,14 @@ import { ProductDetails, ProductSideBox } from "./ProductExtras";
 import { useQuantityAdd } from "./productActions";
 import ProductCard from "./ProductCard";
 import Footer from "./Footer";
-import { CountBadge } from "./parts";
-import { FOCUS } from "./lib";
+import { CountBadge, PRODUCT_GRID, SectionHeader } from "./parts";
+import { FOCUS, WRAP } from "./lib";
 
 function LoadingState() {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-background" aria-busy="true" aria-label="Loading product">
-      <div className="container py-3 md:py-5">
+    <div className="min-h-screen bg-background" aria-busy="true" aria-label={t("tpl_market:page.loading")}>
+      <div className={cn(WRAP, "py-3 md:py-5")}>
         <Skeleton className="mb-4 hidden h-4 w-72 md:block" />
         <div className="grid gap-4 lg:grid-cols-12">
           <div className="-mx-4 md:mx-0 lg:col-span-5">
@@ -41,16 +43,17 @@ function LoadingState() {
 }
 
 function MissingState() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background">
-      <div className="container py-16">
-        <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-8 text-center">
+      <div className={cn(WRAP, "py-16")}>
+        <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-8 text-center">
           <PackageSearch className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
-          <h1 className="mt-4 font-display text-xl font-bold text-foreground">Product not found</h1>
-          <p className="mt-2 text-sm text-muted-foreground">It may have sold out or been removed. Try searching, or browse similar items.</p>
+          <h1 className="mt-4 font-display text-xl font-bold text-foreground">{t("tpl_market:page.notFound")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("tpl_market:page.notFoundText")}</p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <Link to="/shop" className={cn("flex h-10 items-center justify-center rounded-md bg-ink px-5 text-sm font-semibold text-ink-foreground hover:bg-ink/90", FOCUS)}>Browse the shop</Link>
-            <Link to="/deals" className={cn("flex h-10 items-center justify-center rounded-md border border-highlight px-5 text-sm font-semibold text-highlight hover:bg-highlight/10", FOCUS)}>Today's deals</Link>
+            <Link to="/shop" className={cn("flex h-10 items-center justify-center rounded-pill bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90", FOCUS)}>{t("tpl_market:page.browseShop")}</Link>
+            <Link to="/deals" className={cn("flex h-10 items-center justify-center rounded-pill border border-primary px-5 text-sm font-semibold text-primary hover:bg-primary/10", FOCUS)}>{t("tpl_market:page.todaysDeals")}</Link>
           </div>
         </div>
       </div>
@@ -61,10 +64,11 @@ function MissingState() {
   );
 }
 
-/** Marketplace product page: gallery · buy box · service box, then detail panels and similar items. */
+/** Tech Store product page: gallery · buy box in one white panel, delivery/store box beside it, then detail panels and similar items. */
 export default function ProductPage() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
-  const page = useProductPage(slug, { relatedLimit: 12 });
+  const page = useProductPage(slug, { relatedLimit: 10 });
   const ready = page.status === "ready" ? page : null;
   const { qty, setQty, addToCart } = useQuantityAdd(ready);
   const { totalItems } = useCart();
@@ -76,15 +80,15 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container py-0 md:py-4">
+      <div className={cn(WRAP, "py-0 md:py-5")}>
         {/* Breadcrumbs */}
-        <nav aria-label="Breadcrumb" className="hidden md:block">
-          <ol className="mb-3 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <li><Link to="/" className={cn("rounded-sm hover:text-highlight", FOCUS)}>Home</Link></li>
+        <nav aria-label={t("tpl_market:page.breadcrumb")} className="hidden md:block">
+          <ol className="mb-4 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <li><Link to="/" className={cn("rounded-sm hover:text-primary", FOCUS)}>{t("common:nav.home")}</Link></li>
             <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
             {product.category && (
               <>
-                <li className="shrink-0"><Link to={categoryHref} className={cn("rounded-sm hover:text-highlight", FOCUS)}>{product.category}</Link></li>
+                <li className="shrink-0"><Link to={categoryHref} className={cn("rounded-sm hover:text-primary", FOCUS)}>{product.category}</Link></li>
                 <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
               </>
             )}
@@ -93,8 +97,8 @@ export default function ProductPage() {
         </nav>
 
         <div className="grid gap-3 md:gap-4 lg:grid-cols-12">
-          <div className="min-w-0 md:rounded-lg md:border md:border-border md:bg-card md:p-4 lg:col-span-9">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[5fr_4fr] lg:gap-6">
+          <div className="min-w-0 md:rounded-xl md:border md:border-border md:bg-card md:p-5 lg:col-span-9 xl:p-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
               <ProductGallery
                 images={images}
                 name={product.name}
@@ -105,12 +109,12 @@ export default function ProductPage() {
                 onLike={toggleWishlist}
                 onShare={share}
               />
-              <div className="min-w-0 rounded-lg bg-card p-3 md:p-0">
+              <div className="min-w-0 rounded-xl bg-card p-3 md:p-0">
                 <ProductBuyBox page={ready} qty={qty} setQty={setQty} addToCart={addToCart} />
               </div>
             </div>
           </div>
-          <aside className="min-w-0 lg:col-span-3" aria-label="Delivery and store">
+          <aside className="min-w-0 lg:col-span-3" aria-label={t("tpl_market:page.deliveryAndStore")}>
             <ProductSideBox page={ready} />
           </aside>
         </div>
@@ -120,9 +124,9 @@ export default function ProductPage() {
         </div>
 
         {relatedProducts.length > 0 && (
-          <section aria-labelledby="mk-similar" className="mt-6">
-            <h2 id="mk-similar" className="mb-3 font-display text-lg font-bold text-foreground">Similar products</h2>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <section aria-labelledby="ts-similar" className="mt-8 md:mt-10">
+            <SectionHeader id="ts-similar" title={t("tpl_market:page.alsoLike")} to={categoryHref} />
+            <div className={PRODUCT_GRID}>
               {relatedProducts.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </section>
@@ -134,35 +138,35 @@ export default function ProductPage() {
         <div className="flex h-16 items-center gap-1 px-2">
           {whatsAppHref ? (
             <a href={whatsAppHref} target="_blank" rel="noopener noreferrer" className={cn("flex w-12 shrink-0 flex-col items-center gap-0.5 text-[10px] text-muted-foreground", FOCUS)}>
-              <MessageCircle className="h-5 w-5 text-foreground" aria-hidden="true" /> Chat
+              <MessageCircle className="h-5 w-5 text-foreground" aria-hidden="true" /> {t("tpl_market:page.chat")}
             </a>
           ) : (
             <Link to="/shop" className={cn("flex w-12 shrink-0 flex-col items-center gap-0.5 text-[10px] text-muted-foreground", FOCUS)}>
-              <Store className="h-5 w-5 text-foreground" aria-hidden="true" /> Store
+              <Store className="h-5 w-5 text-foreground" aria-hidden="true" /> {t("tpl_market:page.store")}
             </Link>
           )}
-          <button type="button" onClick={openCart} aria-label={`Cart, ${totalItems} items`} className={cn("flex w-12 shrink-0 flex-col items-center gap-0.5 text-[10px] text-muted-foreground", FOCUS)}>
+          <button type="button" onClick={openCart} aria-label={t("tpl_market:mobileNav.cartLabel", { count: totalItems })} className={cn("flex w-12 shrink-0 flex-col items-center gap-0.5 text-[10px] text-muted-foreground", FOCUS)}>
             <span className="relative">
               <ShoppingCart className="h-5 w-5 text-foreground" aria-hidden="true" />
               <CountBadge count={totalItems} />
             </span>
-            Cart
+            {t("common:nav.cart")}
           </button>
           {inStock ? (
-            <div className="ml-1 flex h-11 min-w-0 flex-1 overflow-hidden rounded-md">
+            <div className="ml-1 flex h-11 min-w-0 flex-1 overflow-hidden rounded-pill">
               <button
                 type="button"
                 onClick={cartItem ? openCart : addToCart}
-                className={cn("flex min-w-0 flex-1 items-center justify-center bg-ink px-2 text-sm font-bold text-ink-foreground active:bg-ink/90", FOCUS)}
+                className={cn("flex min-w-0 flex-1 items-center justify-center border border-primary bg-card px-2 text-sm font-semibold text-primary active:bg-accent", FOCUS)}
               >
-                <span className="truncate">{cartItem ? `In cart (${cartItem.quantity})` : "Add to cart"}</span>
+                <span className="truncate">{cartItem ? t("tpl_market:page.inCart", { count: cartItem.quantity }) : t("common:actions.addToCart")}</span>
               </button>
-              <Link to={quickOrderHref} className={cn("flex min-w-0 flex-1 items-center justify-center bg-highlight px-2 text-sm font-bold text-highlight-foreground active:bg-highlight/90", FOCUS)}>
-                <span className="truncate">Buy now</span>
+              <Link to={quickOrderHref} className={cn("flex min-w-0 flex-1 items-center justify-center bg-primary px-2 text-sm font-semibold text-primary-foreground active:bg-primary/90", FOCUS)}>
+                <span className="truncate">{t("common:actions.buyNow")}</span>
               </Link>
             </div>
           ) : (
-            <button type="button" disabled className="ml-1 h-11 flex-1 rounded-md bg-secondary text-sm font-bold text-muted-foreground">Out of stock</button>
+            <button type="button" disabled className="ml-1 h-11 flex-1 rounded-pill bg-secondary text-sm font-bold text-muted-foreground">{t("common:product.outOfStock")}</button>
           )}
         </div>
       </div>

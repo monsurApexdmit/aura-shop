@@ -4,6 +4,7 @@ import { getOnlineStore, type OnlineStoreSettings } from "@/services/storefrontS
 import { API_BASE_URL, COMPANY_ID, USE_SUBDOMAIN, getImageUrl } from "@/lib/api";
 import { applyStoreTheme, setThemeLayer } from "@/lib/storeTheme";
 import { colorLayers } from "@/lib/storeColors";
+import { applyStoreDefault } from "@/i18n";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$", EUR: "€", GBP: "£", INR: "₹", AUD: "A$", CAD: "C$",
@@ -93,6 +94,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     getOnlineStore()
       .then((o) => {
         applyStoreTheme(o.themePreset);
+        applyStoreDefault(o.language);
         setOnlineStore(o);
       })
       .catch(() => {});

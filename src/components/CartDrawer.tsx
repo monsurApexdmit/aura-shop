@@ -9,11 +9,13 @@ import { Separator } from "@/components/ui/separator";
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { EmptyState } from "@/components/common/EmptyState";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalPrice } = useCart();
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
+  const { t } = useTranslation();
 
   return (
     <AnimatePresence>
@@ -40,11 +42,11 @@ export default function CartDrawer() {
                   <ShoppingBag className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-base">Shopping Cart</h2>
-                  <p className="text-xs text-muted-foreground">{items.length} items</p>
+                  <h2 className="font-display font-bold text-base">{t("cart:drawer.title")}</h2>
+                  <p className="text-xs text-muted-foreground">{t("common:product.items", { count: items.length })}</p>
                 </div>
               </div>
-              <WithTooltip content="Close cart"><Button variant="ghost" size="icon" aria-label="Close cart" onClick={() => setIsOpen(false)}>
+              <WithTooltip content={t("cart:drawer.close")}><Button variant="ghost" size="icon" aria-label={t("cart:drawer.close")} onClick={() => setIsOpen(false)}>
                 <X className="h-4 w-4" />
               </Button></WithTooltip>
             </div>
@@ -54,11 +56,11 @@ export default function CartDrawer() {
               <EmptyState
                 className="flex-1"
                 icon={ShoppingBag}
-                title="Your cart is empty"
-                description="Looks like you haven't added anything yet."
+                title={t("cart:drawer.emptyTitle")}
+                description={t("cart:drawer.emptyText")}
                 action={
                   <Button onClick={() => setIsOpen(false)}>
-                    Continue Shopping <ArrowRight className="h-4 w-4" />
+                    {t("common:actions.continueShopping")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 }
               />
@@ -79,31 +81,31 @@ export default function CartDrawer() {
                             alt={item.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              const t = e.currentTarget;
-                              t.style.display = "none";
-                              t.nextElementSibling?.classList.remove("hidden");
+                              const img = e.currentTarget;
+                              img.style.display = "none";
+                              img.nextElementSibling?.classList.remove("hidden");
                             }}
                           />
                         ) : null}
-                        <span className={cn("text-xs text-muted-foreground text-center leading-tight px-1", item.image ? "hidden" : "")}>No Image</span>
+                        <span className={cn("text-xs text-muted-foreground text-center leading-tight px-1", item.image ? "hidden" : "")}>{t("cart:drawer.noImage")}</span>
                       </ItemMedia>
                       <ItemContent className="min-w-0">
                         <ItemTitle className="block truncate">{item.name}</ItemTitle>
                         <p className="text-primary font-semibold">{formatCurrency(item.price)}</p>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <WithTooltip content="Decrease quantity"><Button
+                          <WithTooltip content={t("common:actions.decrease")}><Button
                             variant="outline"
                             size="icon"
-                            aria-label="Decrease quantity"
+                            aria-label={t("common:actions.decrease")}
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button></WithTooltip>
                           <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
-                          <WithTooltip content="Increase quantity"><Button
+                          <WithTooltip content={t("common:actions.increase")}><Button
                             variant="outline"
                             size="icon"
-                            aria-label="Increase quantity"
+                            aria-label={t("common:actions.increase")}
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3" />
@@ -111,7 +113,7 @@ export default function CartDrawer() {
                         </div>
                       </ItemContent>
                       <ItemActions className="self-start">
-                        <WithTooltip content={`Remove ${item.name}`}><Button variant="ghost" size="icon" aria-label={`Remove ${item.name}`} onClick={() => removeItem(item.id)}>
+                        <WithTooltip content={t("cart:drawer.removeItem", { name: item.name })}><Button variant="ghost" size="icon" aria-label={t("cart:drawer.removeItem", { name: item.name })} onClick={() => removeItem(item.id)}>
                           <X className="h-4 w-4" />
                         </Button></WithTooltip>
                       </ItemActions>
@@ -124,18 +126,18 @@ export default function CartDrawer() {
                 <Separator />
                 <div className="p-5 space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground text-sm">Subtotal</span>
+                    <span className="text-muted-foreground text-sm">{t("common:money.subtotal")}</span>
                     <span className="font-semibold text-xl tabular-nums">{formatCurrency(totalPrice)}</span>
                   </div>
                   <Button onClick={() => { setIsOpen(false); navigate("/checkout"); }} className="w-full">
-                    Proceed to Checkout <ArrowRight className="h-4 w-4" />
+                    {t("cart:drawer.checkout")} <ArrowRight className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setIsOpen(false)}
                     className="w-full"
                   >
-                    Continue Shopping
+                    {t("common:actions.continueShopping")}
                   </Button>
                 </div>
               </>
