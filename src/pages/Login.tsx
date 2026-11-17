@@ -12,8 +12,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/Footer";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { Trans, useTranslation } from "react-i18next";
+
+/** Error shape from the API client (axios) */
+type ApiErr = { response?: { data?: { message?: string } } };
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoggedIn } = useAuth();
@@ -21,29 +26,29 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const from = (location.state as any)?.from || "/account";
+  const from = (location.state as { from?: string } | null)?.from || "/account";
 
   if (isLoggedIn) {
     navigate(from, { replace: true });
     return null;
   }
 
-  const [loading, setLoading] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error("Please fill in all fields");
+      toast.error(t("account:login.fillAll"));
       return;
     }
     setLoading(true);
     try {
       await login(email, password);
-      toast.success("Login successful!");
+      toast.success(t("account:login.success"));
       navigate(from, { replace: true });
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Invalid email or password");
+    } catch (e) {
+      const err = e as ApiErr;
+      toast.error(err?.response?.data?.message || t("account:login.invalid"));
     } finally {
       setLoading(false);
     }
@@ -65,8 +70,8 @@ const Login = () => {
                 Shop<span className="text-primary">Hub</span>
               </h1>
             </Link>
-            <h2 className="text-2xl font-semibold text-foreground mb-2">Welcome back</h2>
-            <p className="text-muted-foreground">Sign in to your account to continue</p>
+            <h2 className="text-2xl font-semibold text-foreground mb-2">{t("account:login.title")}</h2>
+            <p className="text-muted-foreground">{t("account:login.subtitle")}</p>
           </div>
 
           {/* Social Login */}
@@ -94,13 +99,13 @@ const Login = () => {
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-3 text-muted-foreground">or continue with email</span>
+              <span className="bg-background px-3 text-muted-foreground">{t("account:login.orEmail")}</span>
             </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FormField label="Email address" htmlFor="email">
+            <FormField label={t("common:form.emailAddress")} htmlFor="email">
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -116,9 +121,9 @@ const Login = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("common:form.password")}</Label>
                 <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  Forgot password?
+                  {t("account:login.forgot")}
                 </Link>
               </div>
               <div className="relative">
@@ -131,11 +136,11 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                 />
-                <WithTooltip content={showPassword ? "Hide password" : "Show password"}><Button
+                <WithTooltip content={showPassword ? t("account:password.hide") : t("account:password.show")}><Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("account:password.hide") : t("account:password.show")}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-1 top-1/2 -translate-y-1/2"
                 >
@@ -151,21 +156,21 @@ const Login = () => {
                 onCheckedChange={(v) => setRemember(v === true)}
               />
               <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                Remember me for 30 days
+                {t("account:login.remember")}
               </Label>
             </div>
 
             <Button type="submit" disabled={loading} size="lg" className="w-full gap-2">
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("account:login.submitting") : t("account:login.submit")}
               {!loading && <ArrowRight className="h-4 w-4" />}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Don't have an account?{" "}
-            <Link to="/signup" state={{ from }} className="text-primary font-medium hover:underline">
-              Create one
-            </Link>
+            <Trans
+              i18nKey="account:login.noAccount"
+              components={{ link: <Link to="/signup" state={{ from }} className="text-primary font-medium hover:underline" /> }}
+            />
           </p>
         </motion.div>
       </div>

@@ -18,6 +18,11 @@ import { useReturn, useCancelReturn } from "@/hooks/useReturns"
 import { STATUS_LABEL } from "@/services/returnApi"
 import type { ReturnStatus } from "@/services/returnApi"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { Trans, useTranslation } from "react-i18next"
+import { localeTag } from "@/i18n"
+
+/** Error shape from the API client (axios) */
+type ApiErr = { response?: { data?: { message?: string } } }
 
 const STATUS_ICON: Record<ReturnStatus, React.ElementType> = {
   pending:   Clock,
@@ -26,13 +31,24 @@ const STATUS_ICON: Record<ReturnStatus, React.ElementType> = {
   completed: CheckCircle2,
 }
 
-const REFUND_METHOD_LABEL: Record<string, string> = {
-  original_payment: "Original Payment Method",
-  store_credit:     "Store Credit",
-  cash:             "Cash Refund",
+const REFUND_METHOD_KEY: Record<string, string> = {
+  original_payment: "account:refundMethod.original_payment",
+  store_credit:     "account:refundMethod.store_credit",
+  cash:             "account:refundMethod.cash",
+}
+
+// Reasons are stored in English (RETURN_REASONS); translate the known ones
+const REASON_KEY: Record<string, string> = {
+  "Defective / Damaged":   "account:returnReason.defective",
+  "Wrong item received":   "account:returnReason.wrongItem",
+  "Item not as described": "account:returnReason.notAsDescribed",
+  "Size / fit issue":      "account:returnReason.sizeFit",
+  "Changed my mind":       "account:returnReason.changedMind",
+  "Other":                 "account:returnReason.other",
 }
 
 export default function ReturnDetail() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { formatCurrency } = useCurrency()
@@ -42,12 +58,13 @@ export default function ReturnDetail() {
 
   const handleCancel = async () => {
     if (!numericId) return
-    if (!window.confirm("Cancel this return request?")) return
+    if (!window.confirm(t("account:returns.cancelConfirm"))) return
     try {
       await cancelReturn(numericId)
       navigate("/account/returns")
-    } catch (err: any) {
-      alert(err?.response?.data?.message ?? "Failed to cancel return")
+    } catch (e) {
+      const err = e as ApiErr
+      alert(err?.response?.data?.message ?? t("account:returns.cancelFailed"))
     }
   }
 
@@ -68,10 +85,10 @@ export default function ReturnDetail() {
       <div className="min-h-screen bg-background pt-40">
         <EmptyState
           icon={RotateCcw}
-          title="Return not found"
+          title={t("account:returnDetail.notFound")}
           action={
             <Button asChild>
-              <Link to="/account/returns">Back to Returns</Link>
+              <Link to="/account/returns">{t("account:returnDetail.back")}</Link>
             </Button>
           }
         />
@@ -83,6 +100,11 @@ export default function ReturnDetail() {
   const isPending = ret.status === "pending"
   const requestDate = ret.created_at ? new Date(ret.created_at) : null
   const processedDate = ret.processed_at ? new Date(ret.processed_at) : null
+  const statusLabel = (s: string) =>
+    t(`account:returnStatus.${s}`, { defaultValue: STATUS_LABEL[s as ReturnStatus] ?? s })
+  const refundMethodLabel = ret.refund_method
+    ? (REFUND_METHOD_KEY[ret.refund_method] ? t(REFUND_METHOD_KEY[ret.refund_method]) : ret.refund_method)
+    : null
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -91,9 +113,9 @@ export default function ReturnDetail() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-              <Link to="/account" className="hover:text-primary">My Account</Link>
+              <Link to="/account" className="hover:text-primary">{t("common:nav.myAccount")}</Link>
               <ChevronRight className="h-3 w-3" />
-              <Link to="/account/returns" className="hover:text-primary">Returns</Link>
+              <Link to="/account/returns" className="hover:text-primary">{t("common:nav.returns")}</Link>
               <ChevronRight className="h-3 w-3" />
               <span className="text-foreground font-medium">{ret.return_number ?? `RET-${ret.id}`}</span>
             </div>
@@ -101,21 +123,21 @@ export default function ReturnDetail() {
             {/* Header */}
             <PageHeader
               className="mb-8 items-start"
-              title={ret.return_number ?? `Return #${ret.id}`}
+              title={ret.return_number ?? t("account:returnDetail.title", { id: ret.id })}
               description={requestDate
-                ? `Submitted ${requestDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+                ? t("account:returnDetail.submitted", { date: requestDate.toLocaleDateString(localeTag(), { month: "long", day: "numeric", year: "numeric" }) })
                 : undefined}
               actions={
                 <StatusBadge
                   status={ret.status}
                   className="gap-1.5"
-                  label={<><StatusIcon className="h-3.5 w-3.5" />{STATUS_LABEL[ret.status as ReturnStatus] ?? ret.status}</>}
+                  label={<><StatusIcon className="h-3.5 w-3.5" />{statusLabel(ret.status)}</>}
                 />
               }
             />
 
             {/* Status timeline */}
-            <SectionCard title="Return Progress" className="mb-5">
+            <SectionCard title={t("account:returnDetail.progress")} className="mb-5">
               <div className="flex items-center gap-0">
                 {(["pending", "approved", "completed"] as ReturnStatus[]).map((s, i, arr) => {
                   const statusOrder = { pending: 0, approved: 1, rejected: 1, completed: 2 }
@@ -135,7 +157,7 @@ export default function ReturnDetail() {
                         <span className={cn("text-[10px] font-semibold text-center", isRejected ? "text-red-600"
                           : done ? "text-primary"
                           : "text-muted-foreground")}>
-                          {isRejected ? "Rejected" : STATUS_LABEL[s]}
+                          {isRejected ? statusLabel("rejected") : statusLabel(s)}
                         </span>
                       </div>
                       {i < arr.length - 1 && (
@@ -149,7 +171,7 @@ export default function ReturnDetail() {
 
             <div className="grid md:grid-cols-5 gap-5">
               {/* Items */}
-              <SectionCard className="md:col-span-3" title={`Return Items (${ret.items?.length ?? 0})`}>
+              <SectionCard className="md:col-span-3" title={t("account:returnDetail.items", { count: ret.items?.length ?? 0 })}>
                 <div className="space-y-3">
                   {(ret.items ?? []).map((item, i) => (
                     <Item key={i} variant="outline" className="flex-nowrap items-start gap-3 p-3">
@@ -157,10 +179,10 @@ export default function ReturnDetail() {
                         <Package />
                       </ItemMedia>
                       <ItemContent className="min-w-0 gap-0">
-                        <ItemTitle>{item.product_name ?? `Product #${item.product_id}`}</ItemTitle>
+                        <ItemTitle>{item.product_name ?? t("account:productNumber", { id: item.product_id })}</ItemTitle>
                         {item.variant_name && <ItemDescription className="text-xs">{item.variant_name}</ItemDescription>}
-                        <ItemDescription className="text-xs">Qty: {item.quantity}</ItemDescription>
-                        <ItemDescription className="text-xs">Reason: {item.reason}</ItemDescription>
+                        <ItemDescription className="text-xs">{t("account:qty", { qty: item.quantity })}</ItemDescription>
+                        <ItemDescription className="text-xs">{t("account:returnDetail.reason", { reason: REASON_KEY[item.reason] ? t(REASON_KEY[item.reason]) : item.reason })}</ItemDescription>
                       </ItemContent>
                       {item.price != null && (
                         <ItemActions>
@@ -177,20 +199,20 @@ export default function ReturnDetail() {
               {/* Details sidebar */}
               <div className="md:col-span-2 space-y-4">
                 {/* Return info */}
-                <SectionCard title="Return Details">
+                <SectionCard title={t("account:returnDetail.details")}>
                   <InfoList className="gap-2.5">
                     {ret.order_number && (
-                      <InfoRow label="Order" value={<span className="font-mono">{ret.order_number}</span>} />
+                      <InfoRow label={t("account:returnDetail.order")} value={<span className="font-mono">{ret.order_number}</span>} />
                     )}
                     <InfoRow
-                      label="Refund via"
-                      value={ret.refund_method ? (REFUND_METHOD_LABEL[ret.refund_method] ?? ret.refund_method) : "—"}
+                      label={t("account:returnDetail.refundVia")}
+                      value={refundMethodLabel ?? "—"}
                     />
                     {ret.total_amount != null && (
                       <>
                         <Separator />
                         <InfoRow
-                          label={<span className="font-semibold text-foreground">Total</span>}
+                          label={<span className="font-semibold text-foreground">{t("common:money.total")}</span>}
                           value={<span className="font-semibold tabular-nums">{formatCurrency(ret.total_amount)}</span>}
                         />
                       </>
@@ -200,18 +222,18 @@ export default function ReturnDetail() {
 
                 {/* Notes */}
                 {ret.notes && (
-                  <SectionCard title="Your Notes">
+                  <SectionCard title={t("account:returnDetail.notes")}>
                     <p className="text-sm text-muted-foreground">{ret.notes}</p>
                   </SectionCard>
                 )}
 
                 {/* Processed info */}
                 {processedDate && (
-                  <SectionCard title="Processed">
+                  <SectionCard title={t("account:returnDetail.processed")}>
                     <p className="text-sm text-muted-foreground">
-                      {processedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      {processedDate.toLocaleDateString(localeTag(), { month: "long", day: "numeric", year: "numeric" })}
                     </p>
-                    {ret.processed_by && <p className="text-xs text-muted-foreground mt-0.5">by {ret.processed_by}</p>}
+                    {ret.processed_by && <p className="text-xs text-muted-foreground mt-0.5">{t("account:returnDetail.processedBy", { name: ret.processed_by })}</p>}
                   </SectionCard>
                 )}
               </div>
@@ -221,7 +243,7 @@ export default function ReturnDetail() {
             {ret.status === "rejected" && ret.rejection_reason && (
               <Alert variant="destructive" className="mt-5">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Return Rejected</AlertTitle>
+                <AlertTitle>{t("account:returnDetail.rejected")}</AlertTitle>
                 <AlertDescription>{ret.rejection_reason}</AlertDescription>
               </Alert>
             )}
@@ -230,9 +252,13 @@ export default function ReturnDetail() {
             {ret.status === "approved" && (
               <Alert className="mt-5">
                 <CheckCircle2 className="h-4 w-4" />
-                <AlertTitle>Return Approved</AlertTitle>
+                <AlertTitle>{t("account:returnDetail.approved")}</AlertTitle>
                 <AlertDescription>
-                  Your refund via <strong>{ret.refund_method ? (REFUND_METHOD_LABEL[ret.refund_method] ?? ret.refund_method) : "selected method"}</strong> is being processed. You will be contacted once completed.
+                  <Trans
+                    i18nKey="account:returnDetail.approvedText"
+                    values={{ method: refundMethodLabel ?? t("account:returnDetail.selectedMethod") }}
+                    components={{ strong: <strong /> }}
+                  />
                 </AlertDescription>
               </Alert>
             )}
@@ -240,7 +266,7 @@ export default function ReturnDetail() {
             {/* Footer actions */}
             <div className="mt-6 flex flex-wrap items-center gap-4">
               <Button asChild variant="ghost">
-                <Link to="/account/returns">← Back to Returns</Link>
+                <Link to="/account/returns">{t("account:returnDetail.backArrow")}</Link>
               </Button>
               {isPending && (
                 <Button
@@ -249,7 +275,7 @@ export default function ReturnDetail() {
                   disabled={cancelling}
                 >
                   {cancelling ? <Spinner /> : <XCircle className="h-4 w-4" />}
-                  Cancel Request
+                  {t("account:returnDetail.cancel")}
                 </Button>
               )}
             </div>

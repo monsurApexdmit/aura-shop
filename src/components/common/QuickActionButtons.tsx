@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button";
 import { WithTooltip } from "@/components/common/WithTooltip";
 import { Heart, Eye, ShoppingCart } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface QuickActionButtonsProps {
   /**
@@ -59,10 +60,12 @@ export default function QuickActionButtons({
   hideAddCart = false,
   className = "",
 }: QuickActionButtonsProps) {
+  const { t } = useTranslation();
+  const wishlistLabel = liked ? t("common:actions.removeFromWishlist") : t("common:actions.addToWishlist");
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       {/* Wishlist Button */}
-      <WithTooltip content={liked ? "Remove from wishlist" : "Add to wishlist"}>
+      <WithTooltip content={wishlistLabel}>
       <Button
         variant={liked ? "default" : "outline"}
         size="icon"
@@ -70,14 +73,14 @@ export default function QuickActionButtons({
           e.preventDefault();
           onWishlist();
         }}
-        aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+        aria-label={wishlistLabel}
       >
         <Heart className={cn("h-4 w-4", liked ? "fill-current" : "")} />
       </Button>
       </WithTooltip>
 
       {/* View Button */}
-      <WithTooltip content="View product details">
+      <WithTooltip content={t("product:quickActions.viewDetails")}>
       <Button
         variant="outline"
         size="icon"
@@ -85,7 +88,7 @@ export default function QuickActionButtons({
           e.preventDefault();
           onView();
         }}
-        aria-label="View product details"
+        aria-label={t("product:quickActions.viewDetails")}
       >
         <Eye className="h-4 w-4" />
       </Button>
@@ -93,14 +96,14 @@ export default function QuickActionButtons({
 
       {/* Add to Cart Button (if not hidden) */}
       {!hideAddCart && (
-        <WithTooltip content="Add to cart">
+        <WithTooltip content={t("common:actions.addToCart")}>
         <Button
           size="icon"
           onClick={(e) => {
             e.preventDefault();
             onAddCart();
           }}
-          aria-label="Add to cart"
+          aria-label={t("common:actions.addToCart")}
         >
           <ShoppingCart className="h-4 w-4" />
         </Button>

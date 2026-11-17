@@ -1,6 +1,7 @@
 
 import * as React from "react"
 import { cva } from "class-variance-authority"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -28,13 +29,14 @@ interface SlideDotsProps {
   onSelect: (index: number) => void
   /** `light` for dots over images/dark backgrounds. */
   tone?: "default" | "light"
-  /** aria-label prefix, e.g. "Show slide" -> "Show slide 2". */
+  /** aria-label prefix, e.g. "Show slide" -> "Show slide 2". Default: translated "Show slide N". */
   label?: string
   className?: string
 }
 
 /** Carousel pager dots built from Button; active dot is wider. Replaces raw `<button style={{ width }}>` dots. */
-export function SlideDots({ count = 0, indices, current, onSelect, tone = "default", label = "Show slide", className }: SlideDotsProps) {
+export function SlideDots({ count = 0, indices, current, onSelect, tone = "default", label, className }: SlideDotsProps) {
+  const { t } = useTranslation()
   const list = indices ?? Array.from({ length: count }, (_, i) => i)
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
@@ -44,7 +46,7 @@ export function SlideDots({ count = 0, indices, current, onSelect, tone = "defau
           type="button"
           variant="ghost"
           size="sm"
-          aria-label={`${label} ${i + 1}`}
+          aria-label={label ? `${label} ${i + 1}` : t("shop:ui.showSlide", { number: i + 1 })}
           aria-current={i === current ? "true" : undefined}
           onClick={() => onSelect(i)}
           className={dotVariants({ tone, active: i === current })}

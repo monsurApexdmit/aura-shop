@@ -26,6 +26,9 @@ import { supportApi, type SupportTicket, type TicketCategory, type SupportMessag
 import { MessageAttachments, SelectedAttachments } from "@/components/SupportAttachments";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import i18n, { localeTag } from "@/i18n";
 
 // ── Sound ─────────────────────────────────────────────────────────
 function playNotificationSound() {
@@ -42,43 +45,49 @@ function playNotificationSound() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);
-  } catch {}
+  } catch {
+    /* audio not available */
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
+// Validation messages are translation keys, translated when shown
 const newTicketSchema = z.object({
-  subject:  z.string().trim().min(3, "Subject is required").max(255),
-  message:  z.string().trim().min(10, "Message must be at least 10 characters").max(5000),
+  subject:  z.string().trim().min(3, "support:validation.subjectRequired").max(255, "support:validation.subjectTooLong"),
+  message:  z.string().trim().min(10, "support:validation.messageMin").max(5000, "support:validation.messageTooLong"),
   category: z.enum(["order", "product", "payment", "shipping", "general"]),
 });
-type NewTicketData = z.infer<typeof newTicketSchema>;
+type NewTicketData = { subject: string; message: string; category: TicketCategory };
 
-const STATUS_CONFIG = {
-  open:        { label: "Open",        icon: AlertCircle },
-  in_progress: { label: "In Progress", icon: Clock },
-  resolved:    { label: "Resolved",    icon: CheckCircle2 },
-  closed:      { label: "Closed",      icon: XCircle },
+const STATUS_ICON = {
+  open:        AlertCircle,
+  in_progress: Clock,
+  resolved:    CheckCircle2,
+  closed:      XCircle,
 };
 
-const CATEGORIES: { value: TicketCategory; label: string }[] = [
-  { value: "order",    label: "Order Support" },
-  { value: "product",  label: "Product Inquiry" },
-  { value: "payment",  label: "Payment Issue" },
-  { value: "shipping", label: "Shipping Problem" },
-  { value: "general",  label: "General Question" },
+const CATEGORIES: { value: TicketCategory; labelKey: string }[] = [
+  { value: "order",    labelKey: "support:category.order" },
+  { value: "product",  labelKey: "support:category.product" },
+  { value: "payment",  labelKey: "support:category.payment" },
+  { value: "shipping", labelKey: "support:category.shipping" },
+  { value: "general",  labelKey: "support:category.general" },
 ];
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, t: TFunction): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
   const h = Math.floor(diff / 3600000);
   const d = Math.floor(diff / 86400000);
-  if (m < 1) return "Just now";
-  if (m < 60) return `${m}m ago`;
-  if (h < 24) return `${h}h ago`;
-  if (d === 1) return "Yesterday";
-  return new Date(dateStr).toLocaleDateString();
+  if (m < 1) return t("support:time.justNow");
+  if (m < 60) return t("support:time.minutesAgo", { n: m });
+  if (h < 24) return t("support:time.hoursAgo", { n: h });
+  if (d === 1) return t("support:time.yesterday");
+  return new Date(dateStr).toLocaleDateString(localeTag());
 }
+
+/** Shopper-facing label for a ticket status code (raw code if unknown) */
+const statusLabel = (status: string, t: TFunction) => t(`support:status.${status}`, { defaultValue: status });
 
 function hasNewIncomingMessage(previous: SupportTicket | null, next: SupportTicket): boolean {
   if (!previous) return false;
@@ -90,15 +99,16 @@ function hasNewIncomingMessage(previous: SupportTicket | null, next: SupportTick
 }
 
 function TicketStatusBadge({ status }: { status: SupportTicket["status"] }) {
-  const cfg = STATUS_CONFIG[status];
-  const Icon = cfg.icon;
+  const { t } = useTranslation();
+  const Icon = STATUS_ICON[status] ?? AlertCircle;
   return (
-    <StatusBadge status={status} className="gap-1" label={<><Icon className="w-3 h-3" /> {cfg.label}</>} />
+    <StatusBadge status={status} className="gap-1" label={<><Icon className="w-3 h-3" /> {statusLabel(status, t)}</>} />
   );
 }
 
 // ── New Ticket Form ───────────────────────────────────────────────
 function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) => void; onCancel: () => void }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<NewTicketData>({ subject: "", message: "", category: "general" });
   const [errors, setErrors] = useState<Partial<Record<keyof NewTicketData, string>>>({});
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -118,10 +128,10 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
     setSubmitting(true);
     try {
       const ticket = await supportApi.create({ ...form, attachments });
-      toast.success("Ticket submitted! We'll get back to you soon.");
+      toast.success(t("support:newTicket.success"));
       onCreated(ticket);
     } catch {
-      toast.error("Failed to submit ticket. Please try again.");
+      toast.error(t("support:newTicket.failed"));
     } finally {
       setSubmitting(false);
     }
@@ -147,17 +157,17 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
     try {
       await startRecording((file) => setAttachments((prev) => [...prev, file].slice(0, 5)));
     } catch {
-      toast.error("Microphone access failed.");
+      toast.error(t("support:micFailed"));
     }
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 p-4">
-        <WithTooltip content="Back"><Button variant="ghost" size="icon" onClick={onCancel} aria-label="Back">
+        <WithTooltip content={t("common:actions.back")}><Button variant="ghost" size="icon" onClick={onCancel} aria-label={t("common:actions.back")}>
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Button></WithTooltip>
-        <h2 className="font-semibold">New Support Ticket</h2>
+        <h2 className="font-semibold">{t("support:newTicket.title")}</h2>
       </div>
       <Separator />
 
@@ -170,7 +180,7 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
           className="hidden"
           onChange={handleFileSelect}
         />
-        <FormField label="Category" htmlFor="new-ticket-category">
+        <FormField label={t("support:form.category")} htmlFor="new-ticket-category">
           <Select
             value={form.category}
             onValueChange={(v) => setForm((f) => ({ ...f, category: v as TicketCategory }))}
@@ -179,25 +189,25 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+              {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>)}
             </SelectContent>
           </Select>
         </FormField>
-        <FormField label="Subject" htmlFor="new-ticket-subject" error={errors.subject}>
+        <FormField label={t("support:form.subject")} htmlFor="new-ticket-subject" error={errors.subject ? t(errors.subject) : undefined}>
           <Input
             id="new-ticket-subject"
             value={form.subject}
             onChange={(e) => { setForm((f) => ({ ...f, subject: e.target.value })); setErrors((p) => ({ ...p, subject: "" })); }}
-            placeholder="Briefly describe your issue"
+            placeholder={t("support:newTicket.subjectPlaceholder")}
           />
         </FormField>
-        <FormField label="Message" htmlFor="new-ticket-message" error={errors.message}>
+        <FormField label={t("common:form.message")} htmlFor="new-ticket-message" error={errors.message ? t(errors.message) : undefined}>
           <Textarea
             id="new-ticket-message"
             value={form.message}
             onChange={(e) => { setForm((f) => ({ ...f, message: e.target.value })); setErrors((p) => ({ ...p, message: "" })); }}
             rows={5}
-            placeholder="Describe your issue in detail…"
+            placeholder={t("support:newTicket.messagePlaceholder")}
             className="resize-none"
           />
         </FormField>
@@ -205,24 +215,24 @@ function NewTicketForm({ onCreated, onCancel }: { onCreated: (t: SupportTicket) 
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
             <Paperclip className="w-4 h-4" />
-            Attach
+            {t("support:attach")}
           </Button>
           <Button type="button" variant="outline" onClick={handleVoiceToggle}>
             {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            {isRecording ? "Stop" : "Voice"}
+            {isRecording ? t("support:stop") : t("support:voice")}
           </Button>
         </div>
         <div className="flex gap-3">
           <Button
             type="button" variant="outline" onClick={onCancel}
             className="flex-1"
-          >Cancel</Button>
+          >{t("common:actions.cancel")}</Button>
           <Button
             type="submit" disabled={submitting}
             className="flex-1"
           >
             {submitting ? <Spinner /> : <Send className="w-4 h-4" />}
-            Submit Ticket
+            {t("support:newTicket.submit")}
           </Button>
         </div>
       </form>
@@ -236,6 +246,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
   onBack: () => void
   onTicketUpdate: (t: SupportTicket) => void
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [reply, setReply] = useState("");
@@ -259,11 +270,11 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
   // Initial load
   useEffect(() => {
     let cancelled = false;
-    supportApi.get(ticketId).then((t) => {
+    supportApi.get(ticketId).then((loaded) => {
       if (cancelled) return;
-      setTicket(t);
+      setTicket(loaded);
       setTimeout(() => scrollToBottom("instant"), 50);
-    }).catch(() => toast.error("Failed to load ticket"));
+    }).catch(() => toast.error(i18n.t("support:chat.loadFailed")));
     return () => { cancelled = true; };
   }, [ticketId]);
 
@@ -281,7 +292,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
 
         if (message.senderType === "staff") {
           playNotificationSound();
-          toast.success("Support replied to your ticket", { duration: 3000 });
+          toast.success(i18n.t("support:chat.replied"), { duration: 3000 });
         }
 
         scrollToBottom();
@@ -319,12 +330,14 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
 
         if (hasNewIncomingMessage(ticketRef.current, latest)) {
           playNotificationSound();
-          toast.success("Support replied to your ticket", { duration: 3000 });
+          toast.success(i18n.t("support:chat.replied"), { duration: 3000 });
         }
 
         setTicket(latest);
         onTicketUpdate(latest);
-      } catch {}
+      } catch {
+        /* keep the current view; next poll retries */
+      }
     }, 60000);
 
     return () => {
@@ -369,7 +382,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
       setTicket((prev) => prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimisticId) } : prev);
       setReply(sentText);
       setAttachments(attachments);
-      toast.error("Failed to send message.");
+      toast.error(t("support:chat.sendFailed"));
     } finally {
       optimisticIds.current.delete(optimisticId);
       setSending(false);
@@ -401,7 +414,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
     try {
       await startRecording((file) => setAttachments((prev) => [...prev, file].slice(0, 5)));
     } catch {
-      toast.error("Microphone access failed.");
+      toast.error(t("support:micFailed"));
     }
   };
 
@@ -409,7 +422,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center gap-3 p-4">
-          <WithTooltip content="Back"><Button variant="ghost" size="icon" onClick={onBack} className="md:hidden" aria-label="Back">
+          <WithTooltip content={t("common:actions.back")}><Button variant="ghost" size="icon" onClick={onBack} className="md:hidden" aria-label={t("common:actions.back")}>
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </Button></WithTooltip>
           <Skeleton className="h-5 w-48" />
@@ -428,7 +441,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-start gap-3 p-4 shrink-0">
-        <WithTooltip content="Back"><Button variant="ghost" size="icon" onClick={onBack} className="mt-0.5 md:hidden" aria-label="Back">
+        <WithTooltip content={t("common:actions.back")}><Button variant="ghost" size="icon" onClick={onBack} className="mt-0.5 md:hidden" aria-label={t("common:actions.back")}>
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Button></WithTooltip>
         <div className="flex-1 min-w-0">
@@ -444,7 +457,7 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {ticket.messages.length === 0 && (
-          <EmptyState icon={MessageSquare} title="No messages yet. Send your first message below." className="p-6" />
+          <EmptyState icon={MessageSquare} title={t("support:chat.empty")} className="p-6" />
         )}
         {ticket.messages.map((msg) => {
           const isCustomer = msg.senderType === "customer";
@@ -457,8 +470,8 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
                 <MessageAttachments attachments={msg.attachments} />
               </div>
               <span className="text-xs text-muted-foreground px-1">
-                {isCustomer ? (user?.name ?? "You") : (msg.senderName ?? "Support Team")}
-                {" · "}{relativeTime(msg.createdAt)}
+                {isCustomer ? (user?.name ?? t("support:you")) : (msg.senderName ?? t("support:supportTeam"))}
+                {" · "}{relativeTime(msg.createdAt, t)}
               </span>
             </div>
           );
@@ -481,23 +494,23 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
           />
           <SelectedAttachments attachments={attachments} onRemove={removeAttachment} />
           <div className="flex gap-2 items-end">
-            <WithTooltip content="Attach files"><Button
+            <WithTooltip content={t("support:attachFiles")}><Button
               type="button"
               variant="outline"
               size="icon"
               onClick={() => fileInputRef.current?.click()}
               className="shrink-0"
-              aria-label="Attach files"
+              aria-label={t("support:attachFiles")}
             >
               <Paperclip className="w-4 h-4" />
             </Button></WithTooltip>
-            <WithTooltip content={isRecording ? "Stop recording" : "Record voice note"}><Button
+            <WithTooltip content={isRecording ? t("support:stopRecording") : t("support:startRecording")}><Button
               type="button"
               variant={isRecording ? "destructive" : "outline"}
               size="icon"
               onClick={handleVoiceToggle}
               className="shrink-0"
-              aria-label={isRecording ? "Stop recording" : "Record voice note"}
+              aria-label={isRecording ? t("support:stopRecording") : t("support:startRecording")}
             >
               {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button></WithTooltip>
@@ -507,21 +520,21 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
               onChange={(e) => setReply(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
-              placeholder="Type a message… (Enter to send)"
+              placeholder={t("support:chat.placeholder")}
               className="flex-1 resize-none max-h-32 overflow-y-auto"
               style={{ minHeight: "42px" }}
             />
-            <WithTooltip content="Send message"><Button
+            <WithTooltip content={t("support:chat.send")}><Button
               size="icon"
               onClick={sendReply}
               disabled={sending || (!reply.trim() && attachments.length === 0)}
               className="shrink-0"
-              aria-label="Send message"
+              aria-label={t("support:chat.send")}
             >
               {sending ? <Spinner /> : <Send className="w-4 h-4" />}
             </Button></WithTooltip>
           </div>
-          <p className="text-xs text-muted-foreground/60 mt-1.5 ml-1">Shift+Enter for new line. Attach up to 5 files or record a voice note.</p>
+          <p className="text-xs text-muted-foreground/60 mt-1.5 ml-1">{t("support:chat.hint")}</p>
         </div>
         </>
       ) : (
@@ -529,8 +542,14 @@ function ChatPanel({ ticketId, onBack, onTicketUpdate }: {
         <Separator />
         <div className="shrink-0 p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            This ticket is <strong>{ticket.status}</strong>.{" "}
-            <Link to="/support" onClick={onBack} className="underline hover:text-primary">Open a new ticket</Link> if you need further help.
+            <Trans
+              i18nKey="support:chat.closedNotice"
+              values={{ status: statusLabel(ticket.status, t) }}
+              components={{
+                strong: <strong />,
+                link: <Link to="/support" onClick={onBack} className="underline hover:text-primary" />,
+              }}
+            />
           </p>
         </div>
         </>
@@ -547,15 +566,16 @@ function TicketListPanel({ tickets, selectedId, onSelect, loading, onNew }: {
   loading: boolean
   onNew: () => void
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 shrink-0">
         <div className="flex items-center gap-2">
           <Headphones className="w-5 h-5 text-primary" />
-          <h1 className="font-bold text-base">Support</h1>
+          <h1 className="font-bold text-base">{t("common:nav.support")}</h1>
         </div>
         <Button size="sm" onClick={onNew}>
-          <Plus className="w-3.5 h-3.5" /> New
+          <Plus className="w-3.5 h-3.5" /> {t("support:list.new")}
         </Button>
       </div>
       <Separator />
@@ -566,7 +586,7 @@ function TicketListPanel({ tickets, selectedId, onSelect, loading, onNew }: {
             {[0,1,2].map(i => <Skeleton key={i} className="h-16" />)}
           </div>
         ) : tickets.length === 0 ? (
-          <EmptyState icon={MessageSquare} title="No tickets yet. Create one to get help." className="h-full p-6" />
+          <EmptyState icon={MessageSquare} title={t("support:list.empty")} className="h-full p-6" />
         ) : (
           <div className="p-2 space-y-1">
             {tickets.map((ticket) => {
@@ -585,7 +605,7 @@ function TicketListPanel({ tickets, selectedId, onSelect, loading, onNew }: {
                     {ticket.subject}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {relativeTime(ticket.createdAt)} · {ticket.messages.length} msg
+                    {relativeTime(ticket.createdAt, t)} · {t("support:list.messages", { count: ticket.messages.length })}
                   </p>
                 </Button>
               );
@@ -599,6 +619,7 @@ function TicketListPanel({ tickets, selectedId, onSelect, loading, onNew }: {
 
 // ── Main Page ─────────────────────────────────────────────────────
 export default function Support() {
+  const { t } = useTranslation();
   const { isLoggedIn, isRestoring } = useAuth();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(false);
@@ -623,7 +644,7 @@ export default function Support() {
         setTickets(res.data);
         if (res.data.length > 0) setSelectedId(res.data[0].id);
       })
-      .catch(() => toast.error("Failed to load tickets"))
+      .catch(() => toast.error(i18n.t("support:list.loadFailed")))
       .finally(() => setLoading(false));
   }, [isLoggedIn, isRestoring]);
 
@@ -648,7 +669,7 @@ export default function Support() {
   };
 
   const handleTicketUpdate = useCallback((updated: SupportTicket) => {
-    setTickets((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setTickets((prev) => prev.map((item) => item.id === updated.id ? updated : item));
   }, []);
 
   if (!isLoggedIn) {
@@ -657,13 +678,13 @@ export default function Support() {
         <div className="flex-1 pt-32 pb-16 flex items-center justify-center">
           <EmptyState
             icon={Headphones}
-            title="Sign in to get support"
-            description="Log in to submit tickets and message our support team."
+            title={t("support:page.signInTitle")}
+            description={t("support:page.signInText")}
             className="px-4"
             action={
               <div className="flex gap-3 justify-center">
-                <Button asChild><Link to="/login">Sign In</Link></Button>
-                <Button asChild variant="outline"><Link to="/contact">Contact Us</Link></Button>
+                <Button asChild><Link to="/login">{t("common:nav.signIn")}</Link></Button>
+                <Button asChild variant="outline"><Link to="/contact">{t("common:footer.contactUs")}</Link></Button>
               </div>
             }
           />
@@ -679,9 +700,9 @@ export default function Support() {
         <div className="container max-w-5xl">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link to="/account" className="hover:text-primary">My Account</Link>
+            <Link to="/account" className="hover:text-primary">{t("common:nav.myAccount")}</Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-foreground font-medium">Support</span>
+            <span className="text-foreground font-medium">{t("common:nav.support")}</span>
           </div>
 
           {/* Split pane */}
@@ -727,7 +748,7 @@ export default function Support() {
                     <motion.div key="empty" className="flex-1 flex flex-col items-center justify-center"
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     >
-                      <EmptyState icon={MessageSquare} title="Select a ticket or create a new one" />
+                      <EmptyState icon={MessageSquare} title={t("support:page.selectTicket")} />
                     </motion.div>
                   )}
                 </AnimatePresence>

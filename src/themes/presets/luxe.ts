@@ -1,0 +1,58 @@
+import type { StoreTheme } from "../types";
+import { gf } from "./gf";
+
+// Property listings: light grey page, white cards, deep navy ink, teal actions, gold "Featured" accents, elegant serif headings.
+const luxe: StoreTheme = {
+  id: "luxe",
+  name: "Property Listings",
+  fontsHref: gf(["Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600", "Inter:wght@400;500;600;700"]),
+  fontDisplay: '"Playfair Display", Georgia, "Times New Roman", serif',
+  fontBody: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  radius: "0.75rem",
+  radiusPill: "0.5rem",
+  tiles: ["213 27% 91%", "176 26% 89%", "40 45% 90%", "220 18% 90%", "196 28% 90%"],
+  light: {
+    background: "216 25% 97%",
+    foreground: "217 47% 12%",
+    card: "0 0% 100%",
+    primary: "175 76% 26%",
+    primaryForeground: "0 0% 100%",
+    secondary: "214 28% 94%",
+    mutedForeground: "215 16% 42%",
+    accent: "176 35% 93%",
+    highlight: "40 70% 52%",
+    highlightForeground: "217 47% 12%",
+    highlightSoft: "42 88% 78%",
+    destructive: "0 70% 46%",
+    border: "215 22% 89%",
+    input: "215 18% 80%",
+    ring: "175 76% 30%",
+    ink: "218 52% 11%",
+    inkForeground: "210 33% 96%",
+    cardShadow: "0 1px 2px hsl(218 52% 11% / 0.05), 0 6px 18px -8px hsl(218 52% 11% / 0.10)",
+    cardShadowHover: "0 22px 44px -18px hsl(218 52% 11% / 0.28), 0 4px 10px hsl(218 52% 11% / 0.06)",
+  },
+  dark: {
+    background: "218 45% 7%",
+    foreground: "210 30% 94%",
+    card: "218 36% 11%",
+    primary: "173 58% 44%",
+    primaryForeground: "218 50% 8%",
+    secondary: "218 30% 15%",
+    mutedForeground: "215 18% 66%",
+    accent: "218 30% 17%",
+    highlight: "41 76% 58%",
+    highlightForeground: "218 50% 8%",
+    highlightSoft: "42 88% 78%",
+    destructive: "0 66% 56%",
+    border: "218 26% 19%",
+    input: "218 22% 28%",
+    ring: "173 58% 50%",
+    ink: "220 50% 5%",
+    inkForeground: "210 30% 94%",
+    cardShadow: "0 1px 2px hsl(0 0% 0% / 0.35)",
+    cardShadowHover: "0 22px 44px -18px hsl(0 0% 0% / 0.7)",
+  },
+};
+
+export default luxe;

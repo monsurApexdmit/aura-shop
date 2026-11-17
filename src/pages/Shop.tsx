@@ -19,10 +19,12 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "newest";
 
 export default function Shop() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   // Admin-built links use ?category=, storefront links use ?cat=.
   const activeCatSlug = searchParams.get("cat") || searchParams.get("category") || null;
@@ -87,12 +89,12 @@ export default function Shop() {
       <div className="bg-muted/40">
         <div className="container py-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link to="/" className="hover:text-primary transition-colors">{t("common:nav.home")}</Link>
             <ChevronRight className="h-3 w-3" />
             <span className={!activeCatSlug ? "text-foreground font-medium" : "hover:text-primary cursor-pointer transition-colors"}>
               {activeCatSlug ? (
-                <Button variant="link" onClick={() => selectCategory(null, null)} className="h-auto p-0">Shop</Button>
-              ) : "Shop"}
+                <Button variant="link" onClick={() => selectCategory(null, null)} className="h-auto p-0">{t("common:nav.shop")}</Button>
+              ) : t("common:nav.shop")}
             </span>
             {activeCategory && (
               <>
@@ -113,8 +115,8 @@ export default function Shop() {
           </div>
           <PageHeader
             className="mt-2"
-            title={activeSubCategory?.name || activeCategory?.name || (searchQuery ? `Results for "${searchQuery}"` : "All Products")}
-            description={isLoading ? "Loading..." : `${data?.meta?.total ?? filteredProducts.length} product${(data?.meta?.total ?? filteredProducts.length) !== 1 ? "s" : ""} found`}
+            title={activeSubCategory?.name || activeCategory?.name || (searchQuery ? t("shop:shop.resultsFor", { query: searchQuery }) : t("shop:shop.allProducts"))}
+            description={isLoading ? t("common:status.loading") : t("shop:shop.found", { count: data?.meta?.total ?? filteredProducts.length })}
           />
         </div>
       </div>
@@ -143,7 +145,7 @@ export default function Shop() {
             <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="lg:hidden gap-2" onClick={() => setMobileFilterOpen(true)}>
-                  <SlidersHorizontal className="h-4 w-4" /> Filters
+                  <SlidersHorizontal className="h-4 w-4" /> {t("shop:shop.filters")}
                 </Button>
                 {(activeCatSlug || priceRange[0] > 0 || priceRange[1] < 1500) && (
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -164,23 +166,23 @@ export default function Shop() {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                    <SelectTrigger className="w-44 pl-8" aria-label="Sort products">
+                    <SelectTrigger className="w-44 pl-8" aria-label={t("shop:sort.sortProducts")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Default</SelectItem>
-                      <SelectItem value="price-asc">Price: Low → High</SelectItem>
-                      <SelectItem value="price-desc">Price: High → Low</SelectItem>
-                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="default">{t("shop:sort.default")}</SelectItem>
+                      <SelectItem value="price-asc">{t("shop:sort.priceAsc")}</SelectItem>
+                      <SelectItem value="price-desc">{t("shop:sort.priceDesc")}</SelectItem>
+                      <SelectItem value="newest">{t("shop:sort.newest")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 </div>
-                <ButtonGroup className="hidden md:flex" aria-label="Grid density">
-                  <WithTooltip content="Larger cards"><Button variant={gridCols === 3 ? "default" : "outline"} size="icon" aria-label="Larger cards" aria-pressed={gridCols === 3} onClick={() => setGridCols(3)}>
+                <ButtonGroup className="hidden md:flex" aria-label={t("shop:shop.gridDensity")}>
+                  <WithTooltip content={t("shop:shop.largerCards")}><Button variant={gridCols === 3 ? "default" : "outline"} size="icon" aria-label={t("shop:shop.largerCards")} aria-pressed={gridCols === 3} onClick={() => setGridCols(3)}>
                     <LayoutList className="h-4 w-4" />
                   </Button></WithTooltip>
-                  <WithTooltip content="Compact grid"><Button variant={gridCols === 4 ? "default" : "outline"} size="icon" aria-label="Compact grid" aria-pressed={gridCols === 4} onClick={() => setGridCols(4)}>
+                  <WithTooltip content={t("shop:shop.compactGrid")}><Button variant={gridCols === 4 ? "default" : "outline"} size="icon" aria-label={t("shop:shop.compactGrid")} aria-pressed={gridCols === 4} onClick={() => setGridCols(4)}>
                     <Grid3X3 className="h-4 w-4" />
                   </Button></WithTooltip>
                 </ButtonGroup>
@@ -197,11 +199,11 @@ export default function Shop() {
             ) : filteredProducts.length === 0 ? (
               <EmptyState
                 className="py-20"
-                title="No products found"
-                description="Try adjusting your filters"
+                title={t("common:search.noResults")}
+                description={t("shop:shop.emptyText")}
                 action={
                   <Button variant="outline" onClick={() => { selectCategory(null, null); setPriceRange([0, 1500]); }}>
-                    Clear Filters
+                    {t("shop:shop.clearFilters")}
                   </Button>
                 }
               />
@@ -217,13 +219,13 @@ export default function Shop() {
                 {data && data.meta.last_page > 1 && (
                   <div className="flex justify-center gap-2 mt-8">
                     <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                      Previous
+                      {t("common:actions.previous")}
                     </Button>
                     <span className="flex items-center px-4 text-sm text-muted-foreground">
-                      Page {data.meta.current_page} of {data.meta.last_page}
+                      {t("shop:shop.pageOf", { page: data.meta.current_page, total: data.meta.last_page })}
                     </span>
                     <Button variant="outline" disabled={page === data.meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                      Next
+                      {t("common:actions.next")}
                     </Button>
                   </div>
                 )}
@@ -243,8 +245,8 @@ export default function Shop() {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background z-50 lg:hidden overflow-y-auto">
               <div className="flex items-center justify-between p-4">
-                <h2 className="font-semibold text-lg">Filters</h2>
-                <WithTooltip content="Close filters"><Button variant="ghost" size="icon" aria-label="Close filters" onClick={() => setMobileFilterOpen(false)}>
+                <h2 className="font-semibold text-lg">{t("shop:shop.filters")}</h2>
+                <WithTooltip content={t("shop:shop.closeFilters")}><Button variant="ghost" size="icon" aria-label={t("shop:shop.closeFilters")} onClick={() => setMobileFilterOpen(false)}>
                   <X className="h-5 w-5" />
                 </Button></WithTooltip>
               </div>

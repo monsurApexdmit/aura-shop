@@ -12,8 +12,10 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function Wishlist() {
+  const { t } = useTranslation();
   const { wishlist, clearWishlist } = useWishlist();
 
   // Fetch a broad set of products and filter by wishlist IDs client-side
@@ -33,10 +35,10 @@ export default function Wishlist() {
               title={
                 <span className="flex items-center gap-3">
                   <Heart className="h-7 w-7 text-foreground fill-highlight" />
-                  My Wishlist
+                  {t("account:wishlist.title")}
                 </span>
               }
-              description={isLoading ? "Loading..." : `${wishlistProducts.length} ${wishlistProducts.length === 1 ? "item" : "items"} saved`}
+              description={isLoading ? t("common:status.loading") : t("account:wishlist.saved", { count: wishlistProducts.length })}
             />
           </motion.div>
         </div>
@@ -53,12 +55,12 @@ export default function Wishlist() {
             <EmptyState
               className="py-16"
               icon={Heart}
-              title="Your wishlist is empty"
-              description="Browse our products and save your favorites!"
+              title={t("account:wishlist.empty")}
+              description={t("account:wishlist.emptyDesc")}
               action={
                 <Button asChild className="gap-2">
                   <Link to="/shop">
-                    <ShoppingCart className="h-4 w-4" /> Browse Products
+                    <ShoppingCart className="h-4 w-4" /> {t("account:wishlist.browse")}
                   </Link>
                 </Button>
               }
@@ -68,7 +70,7 @@ export default function Wishlist() {
           <>
             <div className="flex justify-end mb-6">
               <Button variant="outline" size="sm" onClick={clearWishlist} className="gap-2 text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" /> Clear All
+                <Trash2 className="h-4 w-4" /> {t("account:wishlist.clearAll")}
               </Button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">

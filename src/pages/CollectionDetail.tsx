@@ -4,7 +4,6 @@ import { isAxiosError } from "axios";
 import { ArrowUpDown, ChevronRight, PackageOpen } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
-import { productCountLabel } from "@/components/CollectionCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,15 +17,17 @@ import { mapApiProduct } from "@/lib/mappers";
 import { pastel } from "@/lib/pastels";
 import type { CollectionSort } from "@/services/collectionApi";
 import NotFound from "@/pages/NotFound";
+import { useTranslation } from "react-i18next";
 
 // "featured" keeps the order the admin chose for this collection (no sort sent to the API).
-const SORT_OPTIONS: { value: CollectionSort | "featured"; label: string }[] = [
-  { value: "featured", label: "Featured" },
-  { value: "best_selling", label: "Best selling" },
-  { value: "newest", label: "Newest" },
-  { value: "price_asc", label: "Price: Low → High" },
-  { value: "price_desc", label: "Price: High → Low" },
-  { value: "name", label: "Name: A → Z" },
+// labelKey is translated at render.
+const SORT_OPTIONS: { value: CollectionSort | "featured"; labelKey: string }[] = [
+  { value: "featured", labelKey: "shop:sort.featured" },
+  { value: "best_selling", labelKey: "shop:sort.bestSelling" },
+  { value: "newest", labelKey: "shop:sort.newest" },
+  { value: "price_asc", labelKey: "shop:sort.priceAsc" },
+  { value: "price_desc", labelKey: "shop:sort.priceDesc" },
+  { value: "name", labelKey: "shop:sort.nameAsc" },
 ];
 const SORT_VALUES = new Set(SORT_OPTIONS.map((o) => o.value));
 
@@ -44,6 +45,7 @@ function setMetaDescription(content: string | null) {
 }
 
 export default function CollectionDetail() {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawSort = searchParams.get("sort");
@@ -87,9 +89,9 @@ export default function CollectionDetail() {
       <div className="bg-muted/40">
         <div className="container py-4">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link to="/" className="hover:text-primary transition-colors">{t("common:nav.home")}</Link>
             <ChevronRight className="h-3 w-3" />
-            <Link to="/collections" className="hover:text-primary transition-colors">Collections</Link>
+            <Link to="/collections" className="hover:text-primary transition-colors">{t("common:nav.collections")}</Link>
             <ChevronRight className="h-3 w-3" />
             {collection
               ? <span className="text-foreground font-medium truncate" aria-current="page">{collection.name}</span>
@@ -111,9 +113,9 @@ export default function CollectionDetail() {
           <EmptyState
             className="py-20"
             icon={PackageOpen}
-            title="This collection could not be loaded"
-            description="Please check your connection and try again."
-            action={<Button variant="outline" onClick={() => refetch()}>Try again</Button>}
+            title={t("shop:collectionDetail.loadError")}
+            description={t("shop:collections.checkConnection")}
+            action={<Button variant="outline" onClick={() => refetch()}>{t("common:actions.retry")}</Button>}
           />
         ) : collection && (
           <header>
@@ -140,15 +142,15 @@ export default function CollectionDetail() {
         {!isError && (
           <div className="mt-8 mb-5 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground" aria-live="polite">
-              {isLoading ? "Loading products..." : productCountLabel(total)}
+              {isLoading ? t("shop:collectionDetail.loadingProducts") : t("common:product.products", { count: total })}
             </p>
             <div className="relative">
               <Select value={sort} onValueChange={changeSort}>
-                <SelectTrigger className="w-48 pl-8" aria-label="Sort by">
+                <SelectTrigger className="w-48 pl-8" aria-label={t("shop:sort.label")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SORT_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  {SORT_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{t(o.labelKey)}</SelectItem>)}
                 </SelectContent>
               </Select>
               <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -165,9 +167,9 @@ export default function CollectionDetail() {
           <EmptyState
             className="py-16"
             icon={PackageOpen}
-            title="No products in this collection yet"
-            description="Check back soon, or browse everything in the shop."
-            action={<Button asChild variant="outline"><Link to="/shop">Shop all</Link></Button>}
+            title={t("shop:collectionDetail.emptyTitle")}
+            description={t("shop:collectionDetail.emptyText")}
+            action={<Button asChild variant="outline"><Link to="/shop">{t("shop:links.shopAll")}</Link></Button>}
           />
         ) : !isError && (
           <>
@@ -176,10 +178,10 @@ export default function CollectionDetail() {
             </div>
             {hasNextPage && (
               <div className="mt-10 flex flex-col items-center gap-2">
-                <p className="text-sm text-muted-foreground">Showing {products.length} of {total}</p>
+                <p className="text-sm text-muted-foreground">{t("shop:collectionDetail.showing", { shown: products.length, total })}</p>
                 <Button variant="outline" size="lg" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
                   {isFetchingNextPage && <Spinner />}
-                  {isFetchingNextPage ? "Loading..." : "Load more"}
+                  {isFetchingNextPage ? t("common:status.loading") : t("common:actions.loadMore")}
                 </Button>
               </div>
             )}

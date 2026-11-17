@@ -11,167 +11,149 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card } from "@/components/ui/card";
 import { SectionCard } from "@/components/common/SectionCard";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+import enPages from "@/i18n/locales/en/pages";
 
 const MotionCard = motion.create(Card);
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true } };
 
-export const defaultFaqPageContent: FaqPageContent = {
+/** Looks up a translation key; the built-in defaults are built from keys so they can follow the language */
+type Translate = (key: string) => string;
+
+const faqContent = (t: Translate): FaqPageContent => ({
   template: "faq",
   hero: {
-    kicker: "Help Center",
-    title: "Frequently Asked Questions",
-    description: "Find quick answers about orders, delivery, returns, payments, and account support.",
+    kicker: t("pages:faq.kicker"),
+    title: t("pages:faq.title"),
+    description: t("pages:faq.description"),
   },
   faqCategories: [
     {
-      title: "Orders & Delivery",
+      title: t("pages:faq.orders.title"),
       items: [
-        {
-          question: "How can I track my order?",
-          answer: "After your order ships, use Track Order in Aura Shop with your order number and phone or email to see the latest delivery status.",
-        },
-        {
-          question: "How long does delivery take?",
-          answer: "Delivery time depends on the shipping method selected at checkout. Standard delivery usually arrives within 2 to 5 business days.",
-        },
-        {
-          question: "Can I change my delivery address after placing an order?",
-          answer: "If your order has not been packed yet, support may still be able to update the address. Contact the team as soon as possible.",
-        },
+        { question: t("pages:faq.orders.trackQ"), answer: t("pages:faq.orders.trackA") },
+        { question: t("pages:faq.orders.timeQ"), answer: t("pages:faq.orders.timeA") },
+        { question: t("pages:faq.orders.addressQ"), answer: t("pages:faq.orders.addressA") },
       ],
     },
     {
-      title: "Payments & Returns",
+      title: t("pages:faq.payments.title"),
       items: [
-        {
-          question: "Which payment methods do you accept?",
-          answer: "Aura Shop supports the payment methods configured by your store, including cash on delivery, cards, and digital payment providers when enabled.",
-        },
-        {
-          question: "What if I receive a damaged or incorrect item?",
-          answer: "Contact support within 48 hours of delivery with your order details and clear photos so the team can review the case quickly.",
-        },
-        {
-          question: "When will I receive my refund?",
-          answer: "Approved refunds are usually processed within 5 to 10 business days, depending on your original payment provider.",
-        },
+        { question: t("pages:faq.payments.methodsQ"), answer: t("pages:faq.payments.methodsA") },
+        { question: t("pages:faq.payments.damagedQ"), answer: t("pages:faq.payments.damagedA") },
+        { question: t("pages:faq.payments.refundQ"), answer: t("pages:faq.payments.refundA") },
       ],
     },
   ],
   seo: {
-    title: "FAQ | Aura Shop",
-    description: "Browse frequently asked questions about Aura Shop orders, delivery, returns, payments, and support.",
+    title: t("pages:faq.seoTitle"),
+    description: t("pages:faq.seoDescription"),
   },
-};
+});
 
-export const defaultReturnsRefundsPageContent: PolicyPageContent = {
+const returnsContent = (t: Translate): PolicyPageContent => ({
   template: "policy",
   hero: {
-    kicker: "Customer Care",
-    title: "Returns & Refunds",
-    description: "Review the conditions, timelines, and process for requesting returns, exchanges, and refunds.",
+    kicker: t("pages:returns.kicker"),
+    title: t("pages:returns.title"),
+    description: t("pages:returns.description"),
   },
   sections: [
     {
-      title: "Eligibility for Returns",
-      paragraphs: [
-        "Items may be returned within 7 days of delivery unless marked as final sale, perishable, customized, or otherwise non-returnable.",
-        "Returned items must be unused, in original packaging, and include all tags, accessories, manuals, and proof of purchase.",
-      ],
+      title: t("pages:returns.eligibility.title"),
+      paragraphs: [t("pages:returns.eligibility.p1"), t("pages:returns.eligibility.p2")],
     },
     {
-      title: "Damaged, Incorrect, or Missing Items",
-      paragraphs: [
-        "If your order arrives damaged, incomplete, or incorrect, contact support within 48 hours of delivery.",
-        "Provide your order number and supporting photos so the team can verify the issue and arrange a replacement, refund, or store credit.",
-      ],
+      title: t("pages:returns.damaged.title"),
+      paragraphs: [t("pages:returns.damaged.p1"), t("pages:returns.damaged.p2")],
     },
     {
-      title: "Refund Processing",
-      paragraphs: [
-        "Once a return is approved and received, refunds are processed back to the original payment method unless another resolution is agreed in writing.",
-        "Banks and payment providers may take additional business days to reflect the refund after it has been issued.",
-      ],
+      title: t("pages:returns.refunds.title"),
+      paragraphs: [t("pages:returns.refunds.p1"), t("pages:returns.refunds.p2")],
     },
   ],
   seo: {
-    title: "Returns & Refunds | Aura Shop",
-    description: "Read Aura Shop return eligibility, damaged item rules, and refund processing timelines.",
+    title: t("pages:returns.seoTitle"),
+    description: t("pages:returns.seoDescription"),
   },
-};
+});
 
-export const defaultShippingPolicyPageContent: PolicyPageContent = {
+const shippingContent = (t: Translate): PolicyPageContent => ({
   template: "policy",
   hero: {
-    kicker: "Delivery Terms",
-    title: "Shipping Policy",
-    description: "Understand our fulfillment timeline, shipping options, address rules, and delivery exceptions.",
+    kicker: t("pages:shipping.kicker"),
+    title: t("pages:shipping.title"),
+    description: t("pages:shipping.description"),
   },
   sections: [
     {
-      title: "Order Processing",
-      paragraphs: [
-        "Orders are processed after payment confirmation or order verification, depending on the payment method used.",
-        "Processing may take longer during holidays, flash sales, severe weather events, or periods of unusually high order volume.",
-      ],
+      title: t("pages:shipping.processing.title"),
+      paragraphs: [t("pages:shipping.processing.p1"), t("pages:shipping.processing.p2")],
     },
     {
-      title: "Shipping Methods & Delivery Windows",
-      paragraphs: [
-        "Available shipping methods and estimated delivery timelines are shown at checkout based on your store settings and service coverage.",
-        "Delivery estimates are not guaranteed and may vary because of courier delays, remote locations, or force majeure events.",
-      ],
+      title: t("pages:shipping.methods.title"),
+      paragraphs: [t("pages:shipping.methods.p1"), t("pages:shipping.methods.p2")],
     },
     {
-      title: "Address Accuracy",
-      paragraphs: [
-        "Customers are responsible for entering a complete and accurate shipping address, contact number, and recipient details at checkout.",
-        "Aura Shop is not responsible for failed delivery attempts caused by incomplete addresses, unavailable recipients, or unreachable phone numbers.",
-      ],
+      title: t("pages:shipping.address.title"),
+      paragraphs: [t("pages:shipping.address.p1"), t("pages:shipping.address.p2")],
     },
   ],
   seo: {
-    title: "Shipping Policy | Aura Shop",
-    description: "Review Aura Shop shipping rules, processing timelines, delivery windows, and address requirements.",
+    title: t("pages:shipping.seoTitle"),
+    description: t("pages:shipping.seoDescription"),
   },
-};
+});
 
-export const defaultPrivacyPolicyPageContent: PolicyPageContent = {
+const privacyContent = (t: Translate): PolicyPageContent => ({
   template: "policy",
   hero: {
-    kicker: "Trust & Transparency",
-    title: "Privacy Policy",
-    description: "Learn what data we collect, how it is used, and the controls available to customers.",
+    kicker: t("pages:privacy.kicker"),
+    title: t("pages:privacy.title"),
+    description: t("pages:privacy.description"),
   },
   sections: [
     {
-      title: "Information We Collect",
-      paragraphs: [
-        "Aura Shop may collect account details, contact information, delivery addresses, order history, payment references, and support communications.",
-        "We may also collect technical information such as device details, browser data, and usage activity needed to keep the storefront secure and functional.",
-      ],
+      title: t("pages:privacy.collect.title"),
+      paragraphs: [t("pages:privacy.collect.p1"), t("pages:privacy.collect.p2")],
     },
     {
-      title: "How We Use Information",
-      paragraphs: [
-        "Customer data is used to process orders, coordinate delivery, provide support, improve service quality, and comply with legal or financial obligations.",
-        "We do not sell customer personal data. Data may be shared with trusted service providers only when required to operate the service.",
-      ],
+      title: t("pages:privacy.use.title"),
+      paragraphs: [t("pages:privacy.use.p1"), t("pages:privacy.use.p2")],
     },
     {
-      title: "Retention & Customer Rights",
-      paragraphs: [
-        "We retain data only as long as needed for operational, legal, tax, fraud prevention, and support purposes.",
-        "Customers may request access, correction, or deletion of eligible personal information by contacting the store support team.",
-      ],
+      title: t("pages:privacy.retention.title"),
+      paragraphs: [t("pages:privacy.retention.p1"), t("pages:privacy.retention.p2")],
     },
   ],
   seo: {
-    title: "Privacy Policy | Aura Shop",
-    description: "Read Aura Shop privacy practices, data usage, retention, and customer rights.",
+    title: t("pages:privacy.seoTitle"),
+    description: t("pages:privacy.seoDescription"),
   },
-};
+});
+
+/** English straight from the resources, so the exported defaults don't depend on i18n init order */
+const english: Translate = (key) =>
+  key
+    .replace(/^pages:/, "")
+    .split(".")
+    .reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], enPages) as string;
+
+// English copies kept as exports (App.tsx passes them as fallbackContent). ContentPage swaps
+// them for the shopper's language; content the owner saved is shown as-is.
+export const defaultFaqPageContent: FaqPageContent = faqContent(english);
+export const defaultReturnsRefundsPageContent: PolicyPageContent = returnsContent(english);
+export const defaultShippingPolicyPageContent: PolicyPageContent = shippingContent(english);
+export const defaultPrivacyPolicyPageContent: PolicyPageContent = privacyContent(english);
+
+const LOCALIZED_DEFAULTS = new Map<StorefrontPageContent, (t: Translate) => StorefrontPageContent>([
+  [defaultFaqPageContent, faqContent],
+  [defaultReturnsRefundsPageContent, returnsContent],
+  [defaultShippingPolicyPageContent, shippingContent],
+  [defaultPrivacyPolicyPageContent, privacyContent],
+]);
 
 type ContentPageProps = {
   slug: string;
@@ -179,6 +161,7 @@ type ContentPageProps = {
 };
 
 export default function ContentPage({ slug, fallbackContent }: ContentPageProps) {
+  const { t } = useTranslation();
   const [content, setContent] = useState<StorefrontPageContent>(fallbackContent);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
@@ -203,8 +186,10 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
         if (active) {
           setMissing(true);
           setContent(fallbackContent);
-          if (fallbackContent.seo?.title) {
-            document.title = fallbackContent.seo.title;
+          const localize = LOCALIZED_DEFAULTS.get(fallbackContent);
+          const fallbackTitle = (localize ? localize((key) => i18n.t(key)) : fallbackContent).seo?.title;
+          if (fallbackTitle) {
+            document.title = fallbackTitle;
           }
         }
       } finally {
@@ -221,28 +206,31 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
     };
   }, [fallbackContent, slug]);
 
-  const template = inferPageTemplate(slug, content);
+  // Built-in default (not owner content): show it in the shopper's language
+  const localizeDefault = content === fallbackContent ? LOCALIZED_DEFAULTS.get(fallbackContent) : undefined;
+  const shown = localizeDefault ? localizeDefault((key) => t(key)) : content;
+  const template = inferPageTemplate(slug, shown);
   const useStorePolicy = !loading && missing && !!policyText;
 
   return (
     <div className="min-h-screen bg-background pt-32 pb-20">
       <section className="container text-center mb-16">
         <motion.p {...fadeUp} className="text-primary font-semibold text-sm uppercase tracking-widest mb-3">
-          {content.hero.kicker}
+          {shown.hero.kicker}
         </motion.p>
         <motion.h1
           {...fadeUp}
           transition={{ delay: 0.1 }}
           className="font-display font-bold text-4xl sm:text-5xl text-foreground mb-5 leading-tight"
         >
-          {content.hero.title}
+          {shown.hero.title}
         </motion.h1>
         <motion.p
           {...fadeUp}
           transition={{ delay: 0.2 }}
           className="text-muted-foreground max-w-3xl mx-auto text-base leading-relaxed"
         >
-          {content.hero.description}
+          {shown.hero.description}
         </motion.p>
       </section>
 
@@ -255,7 +243,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
       ) : template === "faq" ? (
         <section className="container max-w-4xl">
           <div className="space-y-8">
-            {(content as FaqPageContent).faqCategories.map((category, index) => (
+            {(shown as FaqPageContent).faqCategories.map((category, index) => (
               <motion.div key={`${category.title}-${index}`} {...fadeUp} transition={{ delay: index * 0.08 }}>
                 <SectionCard title={<span className="text-2xl">{category.title}</span>}>
                   <Accordion type="single" collapsible className="w-full">
@@ -278,7 +266,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
       ) : (
         <section className="container max-w-4xl">
           <div className="space-y-6">
-            {(content as PolicyPageContent).sections.map((section, index) => (
+            {(shown as PolicyPageContent).sections.map((section, index) => (
               <MotionCard
                 key={`${section.title}-${index}`}
                 {...fadeUp}
@@ -299,7 +287,7 @@ export default function ContentPage({ slug, fallbackContent }: ContentPageProps)
         </section>
       )}
 
-      {loading && <div className="sr-only">Loading page content</div>}
+      {loading && <div className="sr-only">{t("pages:loadingContent")}</div>}
     </div>
   );
 }

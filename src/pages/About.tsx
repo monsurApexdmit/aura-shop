@@ -5,58 +5,43 @@ import contentPageApi, { type AboutPageContent } from "@/services/contentPageApi
 import { Card } from "@/components/ui/card";
 import { ItemMedia } from "@/components/ui/item";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 const MotionCard = motion.create(Card);
 
-const defaultContent: AboutPageContent = {
+/** Built-in About content, shown (in the shopper's language) until the owner saves their own */
+const defaultContent = (t: (key: string) => string): AboutPageContent => ({
   template: "about",
   hero: {
-    kicker: "Our Story",
-    title: "We're Building the Future of Online Shopping",
-    description:
-      "Founded in 2020, Aura Shop started with a simple belief: everyone deserves access to high-quality products at fair prices, delivered with care and consistency.",
+    kicker: t("pages:about.kicker"),
+    title: t("pages:about.title"),
+    description: t("pages:about.description"),
   },
-  valuesHeading: "What We Stand For",
-  teamHeading: "Meet the Team",
+  valuesHeading: t("pages:about.valuesHeading"),
+  teamHeading: t("pages:about.teamHeading"),
   stats: [
-    { label: "Happy Customers", value: "50K+", icon: "users" },
-    { label: "Products Delivered", value: "200K+", icon: "truck" },
-    { label: "Awards Won", value: "15+", icon: "award" },
-    { label: "Countries Served", value: "30+", icon: "globe" },
+    { label: t("pages:about.stats.customers"), value: "50K+", icon: "users" },
+    { label: t("pages:about.stats.delivered"), value: "200K+", icon: "truck" },
+    { label: t("pages:about.stats.awards"), value: "15+", icon: "award" },
+    { label: t("pages:about.stats.countries"), value: "30+", icon: "globe" },
   ],
   values: [
-    {
-      title: "Quality First",
-      description: "We handpick every product to ensure it meets our rigorous quality standards before it reaches you.",
-      icon: "shield-check",
-    },
-    {
-      title: "Customer Love",
-      description: "Your satisfaction drives everything we do. Our support team is always ready to help you.",
-      icon: "heart",
-    },
-    {
-      title: "Fast Delivery",
-      description: "From our warehouse to your doorstep, we make sure your orders arrive quickly and safely.",
-      icon: "zap",
-    },
-    {
-      title: "Our Mission",
-      description: "To make premium products accessible to everyone, with an experience that feels personal and effortless.",
-      icon: "target",
-    },
+    { title: t("pages:about.values.qualityTitle"), description: t("pages:about.values.qualityText"), icon: "shield-check" },
+    { title: t("pages:about.values.loveTitle"), description: t("pages:about.values.loveText"), icon: "heart" },
+    { title: t("pages:about.values.deliveryTitle"), description: t("pages:about.values.deliveryText"), icon: "zap" },
+    { title: t("pages:about.values.missionTitle"), description: t("pages:about.values.missionText"), icon: "target" },
   ],
   team: [
-    { name: "Sarah Johnson", role: "Founder & CEO", bio: "Passionate about redefining e-commerce with a human touch." },
-    { name: "Michael Chen", role: "Head of Operations", bio: "Keeps the wheels turning from logistics to customer delight." },
-    { name: "Emily Rodriguez", role: "Creative Director", bio: "Curates the brand aesthetic and product storytelling." },
-    { name: "David Kim", role: "Lead Developer", bio: "Builds the tech that powers seamless shopping experiences." },
+    { name: "Sarah Johnson", role: t("pages:about.team.ceoRole"), bio: t("pages:about.team.ceoBio") },
+    { name: "Michael Chen", role: t("pages:about.team.opsRole"), bio: t("pages:about.team.opsBio") },
+    { name: "Emily Rodriguez", role: t("pages:about.team.creativeRole"), bio: t("pages:about.team.creativeBio") },
+    { name: "David Kim", role: t("pages:about.team.devRole"), bio: t("pages:about.team.devBio") },
   ],
   seo: {
-    title: "About Aura Shop",
-    description: "Learn about Aura Shop, our story, values, and the team behind the brand.",
+    title: t("pages:about.seoTitle"),
+    description: t("pages:about.seoDescription"),
   },
-};
+});
 
 const iconMap: Record<string, LucideIcon> = {
   users: Users,
@@ -77,7 +62,9 @@ const getIcon = (iconName: string | undefined, fallback: LucideIcon): LucideIcon
 };
 
 export default function About() {
-  const [content, setContent] = useState<AboutPageContent>(defaultContent);
+  const { t } = useTranslation();
+  // null = owner hasn't saved About content (or it failed to load): use the translated default
+  const [saved, setSaved] = useState<AboutPageContent | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -87,14 +74,14 @@ export default function About() {
       try {
         const page = await contentPageApi.getBySlug("about");
         if (active && page?.content) {
-          setContent(page.content as AboutPageContent);
+          setSaved(page.content as AboutPageContent);
           if (page.content.seo?.title) {
             document.title = page.content.seo.title;
           }
         }
       } catch {
         if (active) {
-          setContent(defaultContent);
+          setSaved(null);
         }
       } finally {
         if (active) {
@@ -109,6 +96,8 @@ export default function About() {
       active = false;
     };
   }, []);
+
+  const content = saved ?? defaultContent((key) => t(key));
 
   return (
     <div className="min-h-screen bg-background pt-32 pb-20">
@@ -200,7 +189,7 @@ export default function About() {
         </div>
       </section>
 
-      {loading && <div className="sr-only">Loading page content</div>}
+      {loading && <div className="sr-only">{t("pages:loadingContent")}</div>}
     </div>
   );
 }

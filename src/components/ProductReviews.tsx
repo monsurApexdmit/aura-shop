@@ -13,6 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { SectionCard } from "@/components/common/SectionCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
 
 interface ProductReviewsProps {
   productSlug: string;
@@ -21,6 +22,7 @@ interface ProductReviewsProps {
 }
 
 export default function ProductReviews({ productSlug, productRating, reviewCount }: ProductReviewsProps) {
+  const { t } = useTranslation();
   const [helpfulClicked, setHelpfulClicked] = useState<Set<string>>(new Set());
   const [selectedRating, setSelectedRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -81,12 +83,12 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
 
   const handleSubmit = async () => {
     if (!isLoggedIn) {
-      toast.error("Please sign in to write a review.");
+      toast.error(t("product:reviews.toast.signIn"));
       return;
     }
 
     if (comment.trim().length < 5) {
-      toast.error("Please write at least 5 characters.");
+      toast.error(t("product:reviews.toast.minLength", { min: 5 }));
       return;
     }
 
@@ -95,9 +97,10 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
         rating: selectedRating,
         comment: comment.trim(),
       });
-      toast.success(currentUserReview ? "Review updated." : "Review submitted.");
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to save review.");
+      toast.success(currentUserReview ? t("product:reviews.toast.updated") : t("product:reviews.toast.submitted"));
+    } catch (error) {
+      const apiMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(apiMessage || t("product:reviews.toast.failed"));
     }
   };
 
@@ -111,7 +114,7 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
               <Star key={i} className={cn("h-4 w-4", i < Math.floor(displayRating) ? "fill-amber-400 text-amber-400" : "text-border")} />
             ))}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">Based on {displayReviewCount} reviews</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("product:reviews.basedOn", { count: displayReviewCount })}</p>
         </div>
         <div className="flex-1 space-y-2">
           {ratingDistribution.map(({ stars, percent, count }) => (
@@ -133,8 +136,8 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
       </div>
 
       <SectionCard
-        title={currentUserReview ? "Update your review" : "Write a review"}
-        description={isLoggedIn ? "Share your experience with this product." : "Sign in to submit a review for this product."}
+        title={currentUserReview ? t("product:reviews.updateTitle") : t("product:reviews.writeTitle")}
+        description={isLoggedIn ? t("product:reviews.descSignedIn") : t("product:reviews.descSignedOut")}
         contentClassName="space-y-4"
       >
 
@@ -143,12 +146,12 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
             const value = index + 1;
 
             return (
-              <WithTooltip key={value} content={`Rate ${value} star${value > 1 ? "s" : ""}`}><Button
+              <WithTooltip key={value} content={t("product:reviews.rate", { count: value })}><Button
                
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={`Rate ${value} star${value > 1 ? "s" : ""}`}
+                aria-label={t("product:reviews.rate", { count: value })}
                 aria-pressed={value <= selectedRating}
                 onClick={() => setSelectedRating(value)}
                 className="[&_svg]:size-6"
@@ -163,7 +166,7 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
         <Textarea
           value={comment}
           onChange={(event) => setComment(event.target.value)}
-          placeholder="Tell other shoppers what you liked or didn’t like."
+          placeholder={t("product:reviews.placeholder")}
           className="min-h-28"
           disabled={!isLoggedIn || submitReview.isPending}
         />
@@ -171,28 +174,28 @@ export default function ProductReviews({ productSlug, productRating, reviewCount
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {!isLoggedIn ? (
             <Button asChild variant="link" className="h-auto p-0">
-              <Link to="/login">Sign in to write a review</Link>
+              <Link to="/login">{t("product:reviews.signInToWrite")}</Link>
             </Button>
           ) : (
-            <span className="text-xs text-muted-foreground">Your review appears immediately on this product.</span>
+            <span className="text-xs text-muted-foreground">{t("product:reviews.appearsImmediately")}</span>
           )}
 
           <Button onClick={handleSubmit} disabled={!isLoggedIn || submitReview.isPending}>
             {submitReview.isPending && <Spinner />}
-            {currentUserReview ? "Update Review" : "Submit Review"}
+            {currentUserReview ? t("product:reviews.update") : t("product:reviews.submit")}
           </Button>
         </div>
       </SectionCard>
 
       <div className="space-y-4">
         {reviewQuery.isLoading ? (
-          <div className="text-sm text-muted-foreground">Loading reviews...</div>
+          <div className="text-sm text-muted-foreground">{t("product:reviews.loading")}</div>
         ) : reviews.length === 0 ? (
           <EmptyState
             bordered
             icon={MessageSquareText}
-            title="No reviews yet"
-            description="Be the first to share your experience with this product."
+            title={t("product:reviews.emptyTitle")}
+            description={t("product:reviews.emptyText")}
           />
         ) : reviews.map((review, i) => (
           <motion.div

@@ -35,6 +35,8 @@ export interface PlaceOrderPayload {
   }
   /** Last-touch ad/social attribution (utm, click id, campaign link code, landing page, referrer). */
   attribution?: AttributionPayload
+  /** One key per checkout attempt: a repeat with the same key returns the first order (no double stock). */
+  idempotency_key?: string
 }
 
 export interface ApiOrderItem {

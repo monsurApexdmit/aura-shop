@@ -4,8 +4,10 @@ import contentPageApi, { type StorefrontContentPage } from "@/services/contentPa
 import { Markdown } from "@/lib/markdown";
 import NotFound from "@/pages/NotFound";
 import { Card } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 
 export default function CustomPage() {
+  const { t } = useTranslation();
   const { slug = "" } = useParams();
   const [page, setPage] = useState<StorefrontContentPage | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
@@ -19,15 +21,15 @@ export default function CustomPage() {
         if (!active) return;
         setPage(p);
         setState("ready");
-        const t = p.content?.seo?.title || p.title;
-        if (t) document.title = t;
+        const pageTitle = p.content?.seo?.title || p.title;
+        if (pageTitle) document.title = pageTitle;
       })
       .catch(() => active && setState("missing"));
     return () => { active = false; };
   }, [slug]);
 
   if (state === "missing") return <NotFound />;
-  if (state === "loading" || !page) return <div className="min-h-screen bg-background pt-32 pb-20 container text-muted-foreground">Loading...</div>;
+  if (state === "loading" || !page) return <div className="min-h-screen bg-background pt-32 pb-20 container text-muted-foreground">{t("common:status.loading")}</div>;
 
   const hero = page.content?.hero;
   const title = hero?.title || page.title;

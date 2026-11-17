@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,9 @@ import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
 import LiveChat from "@/components/LiveChat";
 import MarketingTracker from "@/components/MarketingTracker";
+import MobileTabBar from "@/components/MobileTabBar";
+import { useStoreTemplate } from "@/templates/registry";
+import { cn } from "@/lib/utils";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
@@ -28,6 +32,7 @@ import ContentPage, {
 } from "./pages/ContentPage";
 import Contact from "./pages/Contact";
 import Deals from "./pages/Deals";
+import Categories from "./pages/Categories";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
 import TrackOrder from "./pages/TrackOrder";
@@ -63,17 +68,21 @@ const isQuickOrderPath = (pathname: string) => /^\/order\/(?!result\/?$)[^/]+\/?
 
 function FloatingWidgets() {
   const { pathname } = useLocation();
+  const template = useStoreTemplate();
   if (isQuickOrderPath(pathname)) return null;
+  // The template says how high floating buttons sit on phones, clear of its bottom bars.
+  const fabBottom = template?.fabBottom?.(pathname);
   return (
-    <>
+    <div style={fabBottom ? ({ "--fab-bottom": fabBottom } as CSSProperties) : undefined}>
       <BackToTop />
       <LiveChat />
-    </>
+    </div>
   );
 }
 
 function AnimatedRoutes() {
   const location = useLocation();
+  const template = useStoreTemplate();
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
@@ -82,6 +91,8 @@ function AnimatedRoutes() {
         initial="initial"
         animate="animate"
         exit="exit"
+        // Keep page ends clear of the template's phone navigation.
+        className={cn(template?.mobileNavPadding(location.pathname))}
       >
         <Routes location={location}>
           <Route path="/" element={<Index />} />
@@ -95,6 +106,7 @@ function AnimatedRoutes() {
           <Route path="/pages/:slug" element={<CustomPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/deals" element={<Deals />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/collections" element={<Collections />} />
           <Route path="/collections/:slug" element={<CollectionDetail />} />
           <Route path="/track-order" element={<TrackOrder />} />
@@ -137,6 +149,7 @@ const App = () => (
                 <Header />
                 <CartDrawer />
                 <FloatingWidgets />
+                <MobileTabBar />
                 <AnimatedRoutes />
               </BrowserRouter>
             </TooltipProvider>

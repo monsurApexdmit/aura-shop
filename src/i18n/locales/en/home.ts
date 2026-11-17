@@ -1,0 +1,91 @@
+// English strings for the "home" namespace. Keys are grouped by component; see src/i18n/README.md.
+// Shared home-page blocks in src/components (hero, coupons, aisles, perks, lookbook, store hours…).
+const en = {
+  shopName: "Shop {{name}}",
+  announcement: {
+    label: "Store announcements",
+    coupon: "Code {{code}}: {{offer}}",
+    couponMin: "Code {{code}}: {{offer}} over {{amount}}",
+  },
+  coupons: {
+    title: "Offers for you",
+    tapToCopy: "Tap to copy",
+    copyHint: "Copy a code, use it at checkout",
+    freeShipping: "Free shipping",
+    minOrder: "On orders over {{amount}}",
+    noMinimum: "No minimum order",
+    copyCode: "Copy code {{code}}",
+  },
+  features: {
+    label: "Store perks",
+    delivery: "Delivery to your door",
+    deliveryText: "See delivery areas, charges and timelines.",
+    returns: "Returns & exchanges",
+    returnsText: "See what you can return and how.",
+    secure: "Secure checkout",
+    payWith: "Pay with {{methods}}.",
+    secureText: "Your payment details stay protected.",
+  },
+  storeHours: {
+    closedToday: "We are closed today for a holiday. Orders placed now will be processed when we reopen.",
+    closingSoon: "Heads up: we will be closed on {{date}}.",
+    title: "Opening hours",
+    closedTodayShort: "Closed today (holiday)",
+    nextClosure: "Next closure: {{date}}",
+  },
+  aisles: {
+    title: "Pick your aisle",
+    subtitle_one: "{{word}} aisle, one wardrobe philosophy.",
+    subtitle_other: "{{word}} aisles, one wardrobe philosophy.",
+    numbers: {
+      one: "One",
+      two: "Two",
+      three: "Three",
+      four: "Four",
+      five: "Five",
+      six: "Six",
+    },
+    tagline: {
+      women: "Soft power, loud color.",
+      men: "Easy tailoring, sun-baked color.",
+      kids: "Built for jumping, spinning, climbing.",
+    },
+    shopAll: "Shop all {{name}}",
+    explore: "Explore",
+    everyAisle: "Every<br/><em>aisle</em> →",
+  },
+  hero: {
+    tag: "The new season is here",
+    title: "Wear the\n*happy* stuff.",
+    subtitle: "Color-forward clothing for women, men and the kids who set the tone.",
+    cta: "Shop the drop",
+    newSeason: "New season",
+    carousel: "carousel",
+    chooseSlide: "Choose slide",
+    showSlide: "Show slide {{number}}: {{title}}",
+  },
+  collections: {
+    title: "Shop by collection",
+    subtitle: "Hand-picked edits, refreshed often.",
+    all: "All collections",
+  },
+  products: {
+    title: "This week's bloom",
+    subtitle: "Fresh picks, hand-on-heart approved.",
+    shopAll: "Shop all",
+    empty: "No products here yet.",
+  },
+  lookbook: {
+    tag: "Lookbook",
+    title: "A year of *color*, no apologies.",
+    text: "Bold colour, easy shapes and pieces for the whole family. Find your next favourite in the full collection.",
+    cta: "Explore the collection",
+    spotlightTag: "Spotlight",
+    spotlightTitle: "Fresh in *{{name}}*.",
+    spotlightTextSubs: "{{subs}} and more: new pieces in our {{name}} collection.",
+    spotlightText: "New pieces in our {{name}} collection, picked for you.",
+  },
+  backToTop: "Back to top",
+};
+
+export default en;

@@ -1,0 +1,60 @@
+import type { StoreTheme } from "../types";
+import { gf } from "./gf";
+
+// Fresh Mart: a bright supermarket. White page, fresh green, orange sale prices and CTAs,
+// pastel produce panels, a dark green footer and clean geometric type.
+const fresh: StoreTheme = {
+  id: "fresh",
+  name: "Fresh Mart",
+  fontsHref: gf(["Outfit:wght@500;600;700;800", "Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600"]),
+  fontDisplay: 'Outfit, "Segoe UI", system-ui, sans-serif',
+  fontBody: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif',
+  radius: "0.75rem",
+  radiusPill: "0.5rem",
+  // Peach, mint, sky, blush, cream: always light, dark text sits on them in both modes
+  tiles: ["28 100% 93%", "140 48% 91%", "212 75% 93%", "350 85% 94%", "45 90% 89%"],
+  light: {
+    background: "0 0% 100%",
+    foreground: "160 22% 10%",
+    card: "0 0% 100%",
+    primary: "142 70% 30%",
+    primaryForeground: "0 0% 100%",
+    secondary: "140 30% 96%",
+    mutedForeground: "150 6% 40%",
+    accent: "140 35% 94%",
+    highlight: "21 90% 41%",
+    highlightForeground: "0 0% 100%",
+    highlightSoft: "30 100% 80%",
+    destructive: "0 72% 45%",
+    border: "140 12% 90%",
+    input: "140 10% 84%",
+    ring: "142 70% 30%",
+    ink: "152 45% 13%",
+    inkForeground: "140 20% 96%",
+    cardShadow: "0 1px 2px hsl(160 22% 10% / 0.05)",
+    cardShadowHover: "0 14px 30px -14px hsl(160 22% 10% / 0.25)",
+  },
+  dark: {
+    background: "150 20% 6%",
+    foreground: "140 15% 92%",
+    card: "150 16% 9%",
+    primary: "142 60% 48%",
+    primaryForeground: "150 30% 6%",
+    secondary: "150 14% 12%",
+    mutedForeground: "140 8% 62%",
+    accent: "150 14% 15%",
+    highlight: "24 95% 58%",
+    highlightForeground: "20 40% 8%",
+    highlightSoft: "30 100% 80%",
+    destructive: "0 65% 55%",
+    border: "150 12% 17%",
+    input: "150 10% 24%",
+    ring: "142 60% 48%",
+    ink: "152 40% 9%",
+    inkForeground: "140 15% 92%",
+    cardShadow: "0 1px 2px hsl(0 0% 0% / 0.3)",
+    cardShadowHover: "0 14px 30px -14px hsl(0 0% 0% / 0.6)",
+  },
+};
+
+export default fresh;

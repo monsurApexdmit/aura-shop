@@ -5,6 +5,7 @@ import { MapPin, Edit2, Trash2, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useTranslation } from "react-i18next";
 
 export interface Address {
   id: string;
@@ -80,6 +81,7 @@ export default function AddressCard({
   actions,
   className = "",
 }: AddressCardProps) {
+  const { t } = useTranslation();
   return (
     <Card className={cn("p-4 sm:p-6", isDefault && "border-primary bg-primary/5 ring-1 ring-primary", className)}>
       {/* Header with Default Badge */}
@@ -91,7 +93,7 @@ export default function AddressCard({
         {isDefault && (
           <Badge variant="secondary" className="gap-1">
             <CheckCircle2 className="h-3 w-3" />
-            Default
+            {t("account:addressCard.default")}
           </Badge>
         )}
       </div>
@@ -116,7 +118,7 @@ export default function AddressCard({
             className="gap-1.5"
           >
             <Edit2 className="h-4 w-4" />
-            Edit
+            {t("common:actions.edit")}
           </Button>
         )}
 
@@ -127,7 +129,7 @@ export default function AddressCard({
             className="gap-1.5"
           >
             <CheckCircle2 className="h-4 w-4" />
-            Set as Default
+            {t("account:addressCard.setDefault")}
           </Button>
         )}
 
@@ -135,14 +137,14 @@ export default function AddressCard({
           <Button
             variant="destructive"
             onClick={() => {
-              if (confirm("Are you sure you want to delete this address?")) {
+              if (confirm(t("account:addressCard.deleteConfirm"))) {
                 onDelete(address.id);
               }
             }}
             className="gap-1.5"
           >
             <Trash2 className="h-4 w-4" />
-            Delete
+            {t("common:actions.delete")}
           </Button>
         )}
 

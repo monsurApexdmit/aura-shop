@@ -19,8 +19,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
-        body: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        // Set per store theme (src/themes); defaults live in index.css
+        display: "var(--font-display)",
+        body: "var(--font-body)",
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,6 +52,18 @@ export default {
         highlight: {
           DEFAULT: "hsl(var(--highlight))",
           foreground: "hsl(var(--highlight-foreground))",
+          soft: "hsl(var(--highlight-soft))",
+        },
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          foreground: "hsl(var(--ink-foreground))",
+        },
+        tile: {
+          1: "hsl(var(--tile-1))",
+          2: "hsl(var(--tile-2))",
+          3: "hsl(var(--tile-3))",
+          4: "hsl(var(--tile-4))",
+          5: "hsl(var(--tile-5))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -72,11 +85,14 @@ export default {
         },
       },
       borderRadius: {
+        // Scale with the theme's --radius so square themes stay square (1rem gives the original 16/20/24px)
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        xl: "calc(var(--radius) + 4px)",
-        "2xl": "calc(var(--radius) + 8px)",
+        md: "max(0px, calc(var(--radius) - 2px))",
+        sm: "max(0px, calc(var(--radius) - 4px))",
+        xl: "calc(var(--radius) * 1.25)",
+        "2xl": "calc(var(--radius) * 1.5)",
+        "3xl": "calc(var(--radius) * 1.5)",
+        pill: "var(--radius-pill)",
       },
       keyframes: {
         "accordion-down": {

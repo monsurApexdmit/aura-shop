@@ -1,4 +1,6 @@
 import "@testing-library/jest-dom";
+// Translations load in English, as in the app, so tests keep asserting on English text
+import "@/i18n";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,

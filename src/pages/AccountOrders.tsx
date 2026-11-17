@@ -14,10 +14,20 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatusBadge, type StatusVariant } from "@/components/common/StatusBadge";
 import Footer from "@/components/Footer";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
+import { localeTag } from "@/i18n";
 
 const statusIcons = { yellow: Clock, blue: Truck, green: CheckCircle2, red: XCircle, gray: Package };
 
 type StatusFilter = "all" | "processing" | "shipped" | "delivered" | "cancelled";
+
+const FILTERS: { value: StatusFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "account:orders.filter.all" },
+  { value: "processing", labelKey: "account:orders.filter.processing" },
+  { value: "shipped", labelKey: "account:orders.filter.shipped" },
+  { value: "delivered", labelKey: "account:orders.filter.delivered" },
+  { value: "cancelled", labelKey: "account:orders.filter.cancelled" },
+];
 
 const statusVariantMap: Record<string, StatusVariant> = {
   yellow: "secondary",
@@ -28,6 +38,7 @@ const statusVariantMap: Record<string, StatusVariant> = {
 };
 
 export default function AccountOrders() {
+  const { t } = useTranslation();
   const { isLoggedIn } = useAuth();
   const { data, isLoading, isError } = useOrders(isLoggedIn);
   const { formatCurrency } = useCurrency();
@@ -50,12 +61,12 @@ export default function AccountOrders() {
         <div className="container max-w-4xl">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-              <Link to="/account" className="hover:text-primary">My Account</Link>
+              <Link to="/account" className="hover:text-primary">{t("common:nav.myAccount")}</Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-foreground font-medium">Orders</span>
+              <span className="text-foreground font-medium">{t("account:breadcrumb.orders")}</span>
             </div>
 
-            <PageHeader title="My Orders" className="mb-6" />
+            <PageHeader title={t("account:orders.title")} className="mb-6" />
 
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -64,12 +75,12 @@ export default function AccountOrders() {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by order ID..."
+                  placeholder={t("account:orders.searchPlaceholder")}
                   className="w-full pl-10"
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
-                {(["all", "processing", "shipped", "delivered", "cancelled"] as StatusFilter[]).map((s) => (
+                {FILTERS.map(({ value: s, labelKey }) => (
                   <Button
                     key={s}
                     size="sm"
@@ -78,7 +89,7 @@ export default function AccountOrders() {
                     onClick={() => setFilter(s)}
                     className="capitalize"
                   >
-                    {s}
+                    {t(labelKey)}
                   </Button>
                 ))}
               </div>
@@ -90,9 +101,9 @@ export default function AccountOrders() {
                 {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24" />)}
               </div>
             ) : isError ? (
-              <EmptyState bordered className="py-16" icon={Package} title="We could not load your orders" />
+              <EmptyState bordered className="py-16" icon={Package} title={t("account:orders.loadError")} />
             ) : filtered.length === 0 ? (
-              <EmptyState bordered className="py-16" icon={Package} title="No orders found" />
+              <EmptyState bordered className="py-16" icon={Package} title={t("account:orders.empty")} />
             ) : (
               <div className="space-y-3">
                 {filtered.map((order, i) => {
@@ -102,8 +113,8 @@ export default function AccountOrders() {
                   const itemCount = Array.isArray(order.items) ? order.items.length : 0;
                   const orderDate = order.order_time ? new Date(order.order_time) : null;
                   const orderDateLabel = orderDate && !Number.isNaN(orderDate.getTime())
-                    ? orderDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-                    : "Date unavailable";
+                    ? orderDate.toLocaleDateString(localeTag(), { month: "long", day: "numeric", year: "numeric" })
+                    : t("account:dateUnavailable");
                   return (
                     <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                       <Item asChild variant="outline" className="bg-card flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -113,16 +124,16 @@ export default function AccountOrders() {
                           </ItemMedia>
                           <ItemContent className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <ItemTitle className="font-mono">{order.invoice_no || `Order #${order.id}`}</ItemTitle>
-                              <StatusBadge status={label} variant={statusVariant} />
+                              <ItemTitle className="font-mono">{order.invoice_no || t("account:orderNumber", { id: order.id })}</ItemTitle>
+                              <StatusBadge status={label} label={t(`account:orderStatus.${order.fulfillment_status}`, { defaultValue: label })} variant={statusVariant} />
                             </div>
                             <ItemDescription>
-                              {orderDateLabel} · {itemCount} item{itemCount !== 1 ? "s" : ""} · {order.method || "Standard"}
+                              {orderDateLabel} · {t("common:product.items", { count: itemCount })} · {order.method || t("account:orders.standard")}
                             </ItemDescription>
                           </ItemContent>
                           <ItemActions className="sm:flex-col sm:items-end sm:gap-0">
                             <p className="font-semibold tabular-nums">{formatCurrency(order.amount)}</p>
-                            <p className="text-xs text-muted-foreground">{order.payment_status}</p>
+                            <p className="text-xs text-muted-foreground">{order.payment_status ? t(`account:paymentStatus.${order.payment_status}`, { defaultValue: order.payment_status }) : null}</p>
                           </ItemActions>
                           <ChevronRight className="hidden h-4 w-4 text-muted-foreground shrink-0 sm:block" />
                         </Link>

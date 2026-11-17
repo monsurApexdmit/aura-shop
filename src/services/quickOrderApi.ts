@@ -87,6 +87,8 @@ export interface QuickOrderPayload {
   note?: string
   /** Honeypot: humans never fill this (hidden field); the server rejects non-empty values. */
   website?: string
+  /** One key per order attempt: a repeat with the same key returns the first order. */
+  idempotencyKey?: string
   attribution?: AttributionPayload
 }
 

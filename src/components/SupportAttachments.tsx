@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { WithTooltip } from "@/components/common/WithTooltip"
+import { useTranslation } from "react-i18next";
 
 function formatFileSize(sizeBytes: number): string {
   if (sizeBytes < 1024) return `${sizeBytes} B`;
@@ -12,6 +13,7 @@ function formatFileSize(sizeBytes: number): string {
 }
 
 export function MessageAttachments({ attachments }: { attachments: SupportAttachment[] }) {
+  const { t } = useTranslation();
   if (attachments.length === 0) return null;
 
   return (
@@ -37,7 +39,7 @@ export function MessageAttachments({ attachments }: { attachments: SupportAttach
                   <ItemDescription className="text-xs">{formatFileSize(attachment.sizeBytes)}</ItemDescription>
                 </ItemContent>
                 <ItemActions>
-                  <span className="text-primary">Open</span>
+                  <span className="text-primary">{t("chat:attachments.open")}</span>
                 </ItemActions>
               </a>
             </Item>
@@ -55,6 +57,7 @@ export function SelectedAttachments({
   attachments: File[];
   onRemove: (index: number) => void;
 }) {
+  const { t } = useTranslation();
   if (attachments.length === 0) return null;
 
   return (
@@ -62,7 +65,7 @@ export function SelectedAttachments({
       {attachments.map((file, index) => (
         <Badge key={`${file.name}-${index}`} variant="outline" className="gap-1 pr-1 font-normal">
           <span className="max-w-40 truncate">{file.name}</span>
-          <WithTooltip content={`Remove ${file.name}`}><Button type="button" variant="ghost" size="icon" className="size-5" aria-label={`Remove ${file.name}`} onClick={() => onRemove(index)}>
+          <WithTooltip content={t("chat:attachments.remove", { name: file.name })}><Button type="button" variant="ghost" size="icon" className="size-5" aria-label={t("chat:attachments.remove", { name: file.name })} onClick={() => onRemove(index)}>
             ×
           </Button></WithTooltip>
         </Badge>
